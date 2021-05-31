@@ -1,0 +1,90 @@
+[Buttons]
+Apply
+Cancel
+
+[Controls]
+class: "label"
+x: 0
+y: 0
+width: 1
+height: 1
+label: "This is a label"
+
+class: "edit"
+x: 1
+y: 0
+width: 1
+height: 1
+hint: ""
+text: ""
+
+class: "intedit"
+x: 2
+y: 0
+width: 1
+height: 1
+hint: ""
+value: 26
+min: nil
+max: nil
+
+class: "floatedit"
+x: 3
+y: 0
+width: 1
+height: 1
+hint: ""
+value: 37.42
+min: 30
+max: 40
+step: .2
+
+class: "textbox"
+x: 4
+y: 0
+width: 1
+height: 1
+hint: ""
+text: ""
+
+class: "dropdown"
+x: 0
+y: 1
+width: 1
+height: 1
+hint: ""
+items: {"item1", "item2", "item3", "item4"}
+value: "item2"
+
+class: "checkbox"
+x: 1
+y: 1
+width: 1
+height: 1
+hint: ""
+label: "This is a checkbox"
+value: false
+
+class: "color"
+x: 2
+y: 1
+width: 1
+height: 1
+hint: ""
+value: "#RRGGBB"
+
+class: "coloralpha"
+x: 3
+y: 1
+width: 1
+height: 1
+hint: ""
+value: "#RRGGBBAA"
+
+class:  "alpha"
+x: 4
+y: 1
+width: 1
+height: 1
+hint: ""
+value: "#AA"
