@@ -1,8 +1,18 @@
-___
-items:
-  - things:
-      thing1: huey
-      things2: dewey
-      thing3: louie
-  - other things:
-      key: value
+---
+Buttons: ["Apply","Cancel"]
+Controls:
+  item1:
+    class: "label"
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+    label: "This is a label"
+  item2:
+    class: "edit"
+    x: 1
+    y: 0
+    width: 1
+    height: 1
+    hint: ""
+    text: ""
