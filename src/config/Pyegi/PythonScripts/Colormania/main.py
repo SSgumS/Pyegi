@@ -6,10 +6,14 @@ Created on Fri May 23 13:38:34 2021
 """
 
 from pyonfx import *
-import math
 import numpy as np
 import sys
-import json
+
+from pathlib import Path
+file = Path(__file__).resolve()
+sys.path.append(str(file.parents[2]) + "/Pyegi")
+import Pyegi # TODO: I don't know shit about python packages; but this library should convert to an installable one. These path-play must not exist
+# from .. .. Pyegi import Pyegi # this is for having intellisense in development
 
 output_data = []
 
@@ -30,9 +34,8 @@ def send_line(l, ln): # l: line table, ln: line number
     )
     output_data.insert(0, str_out)
 
-with open(sys.argv[1]+sys.argv[2]+'/gui_returned_values.json','r') as file:
-    input_table = json.load(file)
-for items in input_table['Controls']:
+parameters_table = Pyegi.GetParameters()
+for items in parameters_table['Controls']:
     if items['name'] == 'dropdown1':
         direction1 = items['value']
     if items['name'] == 'floatedit1':
@@ -43,9 +46,7 @@ if direction1 == 'Slant':
     if angle1 == 90:
         direction1 = 'Horizontal'
 
-temp1 = 'C:/Users/saman/AppData/Roaming/Aegisub/automation/autoload/PythonScripts/'
-# io = Ass(temp1+"InputSubtitle.ass")
-io = Ass(sys.argv[1]+"InputSubtitle.ass")
+io = Ass(Pyegi.GetInputFilePath())
 meta, styles, lines = io.get_data()
 
 # oval specs
@@ -59,7 +60,7 @@ def sub(line, l, ln): # ln: line number
     l.start_time = line.start_time
     l.end_time = line.end_time
     l.dur = l.end_time - l.start_time
-    
+
     w1 = line.width
     # w1 = 300
     h1 = line.height
@@ -211,9 +212,4 @@ for line in lines:
     sub(line, line.copy(), line.i+1)
 
 
-output_data = ''.join(output_data)
-output_data = output_data[:-1]
-# with open(temp1+'output.txt', 'w', encoding='utf-8') as output_file:
-with open(sys.argv[1]+'output.txt', 'w', encoding='utf-8') as output_file:
-    output_file.write(output_data)
-    output_file.close()
+Pyegi.CreateOutputFile(output_data)
