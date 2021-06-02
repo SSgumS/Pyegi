@@ -1,3 +1,6 @@
+### Custom
+settings.override.json
+
 ### Lua
 # Compiled Lua sources
 luac.out
