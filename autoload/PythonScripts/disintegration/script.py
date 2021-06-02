@@ -1,5 +1,5 @@
 """
-Just a test to show pixels in action, this file will be removed as soon as I prepare the new examples.
+
 """
 
 from pyonfx import *

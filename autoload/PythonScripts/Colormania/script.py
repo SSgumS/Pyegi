@@ -30,7 +30,7 @@ def send_line(l, ln): # l: line table, ln: line number
     )
     output_data.insert(0, str_out)
 
-with open(sys.argv[1]+'SimpleGradient/gui_returned_values.json','r') as file:
+with open(sys.argv[1]+sys.argv[2]+'/gui_returned_values.json','r') as file:
     input_table = json.load(file)
 for items in input_table['Controls']:
     if items['name'] == 'dropdown1':
@@ -48,6 +48,12 @@ temp1 = 'C:/Users/saman/AppData/Roaming/Aegisub/automation/autoload/PythonScript
 io = Ass(sys.argv[1]+"InputSubtitle.ass")
 meta, styles, lines = io.get_data()
 
+# oval specs
+os1 = .436
+os1p = 1.+os1
+os2 = .689
+os2p = 1.+os2
+
 def sub(line, l, ln): # ln: line number
     # Translation Effect
     l.start_time = line.start_time
@@ -60,7 +66,7 @@ def sub(line, l, ln): # ln: line number
     # h1 = 200
 
     # We define precision, increasing it will result in a gain on preformance and decrease of fidelity (due to less lines produced)
-    precision = 1
+    precision = 20
     if direction1 == 'Horizontal':
         n = int(w1 / precision)
     elif direction1 == 'Vertical':
@@ -76,9 +82,9 @@ def sub(line, l, ln): # ln: line number
     if direction1 == 'Horizontal':
         for i in range(n):
             clip = "%.2f,%.2f,%.2f,%.2f" % (
-                line.left + w1 * (i / n),
+                line.right - w1 * ((i + 1) / n),
                 line.top,
-                line.left + w1 * ((i + 1) / n),
+                line.right - w1 * (i / n),
                 line.bottom,
             )
     
@@ -98,9 +104,9 @@ def sub(line, l, ln): # ln: line number
         for i in range(n):
             clip = "%.2f,%.2f,%.2f,%.2f" % (
                 line.left,
-                line.top + h1 * (i / n),
+                line.bottom - h1 * ((i + 1) / n),
                 line.right,
-                line.top + h1 * ((i + 1) / n),
+                line.bottom - h1 * (i / n),
             )
     
             color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
@@ -141,30 +147,55 @@ def sub(line, l, ln): # ln: line number
                 )
         
                 send_line(l, ln)
+                
+        else:
+            for i in range(n):
+                clip = "m %.2f %.2f l %.2f %.2f %.2f %.2f %.2f %.2f" % (
+                    line.right - h1*sin1*cos1 - h2*(i/n)*sin1,
+                    line.top + h1*sin1**2 - h2*(i/n)*cos1,
+                    line.right - w1*cos1**2 - h2*(i/n)*sin1,
+                    line.top + w1*sin1*cos1 - h2*(i/n)*cos1,
+                    line.right - w1*cos1**2 - h2*((i+1)/n)*sin1 - eps1,
+                    line.top + w1*sin1*cos1 - h2*((i+1)/n)*cos1 + eps1,
+                    line.right - h1*sin1*cos1 - h2*((i+1)/n)*sin1 - eps1,
+                    line.top + h1*sin1**2 - h2*((i+1)/n)*cos1 + eps1,
+                )
+        
+                color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
+        
+                l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\bord0\\shad0\\c%s}%s" % (
+                    line.center,
+                    line.middle,
+                    clip,
+                    color,
+                    line.raw_text,
+                )
+        
+                send_line(l, ln)
         
     if direction1 == 'Oval':
         for i in range(n):
             # m 50 0 b 117 0 117 100 50 100 -17 100 -17 0 50 0
             clip = "m %.2f %.2f b %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f" % (
                 line.center,
-                line.top - .415*h1/2 + (1.415*h1/2)*(i/n),
-                line.right + .656*w1/2 - (1.656*w1/2)*(i/n),
-                line.top - .415*h1/2 + (1.415*h1/2)*(i/n),
-                line.right + .656*w1/2 - (1.656*w1/2)*(i/n),
-                line.bottom + .415*h1/2 - (1.415*h1/2)*(i/n),
+                line.top - os1*h1/2 + (os1p*h1/2)*(i/n),
+                line.right + os2*w1/2 - (os2p*w1/2)*(i/n),
+                line.top - os1*h1/2 + (os1p*h1/2)*(i/n),
+                line.right + os2*w1/2 - (os2p*w1/2)*(i/n),
+                line.bottom + os1*h1/2 - (os1p*h1/2)*(i/n),
                 line.center,
-                line.bottom + .415*h1/2 - (1.415*h1/2)*(i/n),
-                line.left - .656*w1/2 + (1.656*w1/2)*(i/n),
-                line.bottom + .415*h1/2 - (1.415*h1/2)*(i/n),
-                line.left - .656*w1/2 + (1.656*w1/2)*(i/n),
-                line.top - .415*h1/2 + (1.415*h1/2)*(i/n),
+                line.bottom + os1*h1/2 - (os1p*h1/2)*(i/n),
+                line.left - os2*w1/2 + (os2p*w1/2)*(i/n),
+                line.bottom + os1*h1/2 - (os1p*h1/2)*(i/n),
+                line.left - os2*w1/2 + (os2p*w1/2)*(i/n),
+                line.top - os1*h1/2 + (os1p*h1/2)*(i/n),
                 line.center,
-                line.top - .415*h1/2 + (1.415*h1/2)*(i/n),
+                line.top - os1*h1/2 + (os1p*h1/2)*(i/n),
             )
     
             color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
     
-            l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\c%s}%s" % (
+            l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\bord0\\shad0\\c%s}%s" % (
                 line.center,
                 line.middle,
                 clip,
