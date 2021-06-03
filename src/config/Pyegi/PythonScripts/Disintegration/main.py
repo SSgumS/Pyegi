@@ -6,7 +6,11 @@ from pyonfx import *
 import math
 import random
 import sys
-import yaml
+
+from pathlib import Path
+file = Path(__file__).resolve()
+sys.path.append(str(file.parents[2]) + "/Pyegi")
+import Pyegi
 
 output_data = []
 
@@ -27,7 +31,7 @@ def send_line(l, ln): # l: line table, ln: line number
     )
     output_data.insert(0, str_out)
 
-io = Ass(sys.argv[1]+"InputSubtitle.ass")
+io = Ass(Pyegi.GetInputFilePath())
 meta, styles, lines = io.get_data()
 
 
@@ -87,12 +91,4 @@ for line in lines:
     sub(line, line.copy(), line.i+1)
 
 
-output_data = ''.join(output_data)
-output_data = output_data[:-1]
-with open(sys.argv[1]+'output.txt', 'w', encoding='utf-8') as output_file:
-    output_file.write(output_data)
-    output_file.close()
-# yaml_file = open(sys.argv[1]+'output.yaml', "w", encoding='utf-8')
-# yaml.dump(output_data, yaml_file, allow_unicode=True, width=10000)
-# yaml_file.close()
-
+Pyegi.CreateOutputFile(output_data)
