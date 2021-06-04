@@ -267,27 +267,27 @@ local function post_init(sub, sel)
 		
 		if btn2 == btns[1] then -- "Apply"
 			-- modifying the desired lines' number of the table
-			local desired_lines_modified = {}
+			local filtered_desired_lines = {}
 			if res.chckbx then
 				if res.apply_on2 == "Style" then
 					for _, l_t in ipairs(desired_lines) do
-						if sub[l_t].style == res2.apply_on_style then table.insert(desired_lines_modified,l_t) end
+						if sub[l_t].style == res2.apply_on_style then table.insert(filtered_desired_lines,l_t) end
 					end
 				elseif res.apply_on2 == "Actor" then
 					for _, l_t in ipairs(desired_lines) do
-						if sub[l_t].actor == res2.apply_on_actor then table.insert(desired_lines_modified,l_t) end
+						if sub[l_t].actor == res2.apply_on_actor then table.insert(filtered_desired_lines,l_t) end
 					end
 				elseif res.apply_on2 == "Style and Actor" then
 					for _, l_t in ipairs(desired_lines) do
-						if sub[l_t].style == res2.apply_on_style and sub[l_t].actor == res2.apply_on_actor then table.insert(desired_lines_modified,l_t) end
+						if sub[l_t].style == res2.apply_on_style and sub[l_t].actor == res2.apply_on_actor then table.insert(filtered_desired_lines,l_t) end
 					end
 				elseif res.apply_on2 == "Style or Actor" then
 					for _, l_t in ipairs(desired_lines) do
-						if sub[l_t].style == res2.apply_on_style or sub[l_t].actor == res2.apply_on_actor then table.insert(desired_lines_modified,l_t) end
+						if sub[l_t].style == res2.apply_on_style or sub[l_t].actor == res2.apply_on_actor then table.insert(filtered_desired_lines,l_t) end
 					end
 				end
 			else
-				for _, l_t in ipairs(desired_lines) do table.insert(desired_lines_modified,l_t) end
+				for _, l_t in ipairs(desired_lines) do table.insert(filtered_desired_lines,l_t) end
 			end
 			-- write parameters' value into a file
 			APT("Preparing python script inputs...")
@@ -331,7 +331,7 @@ local function post_init(sub, sel)
 				end
 			end
 			str = str.."\n\n".."[Events]".."\n".."Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-			for _, i in ipairs(desired_lines_modified) do
+			for _, i in ipairs(filtered_desired_lines) do
 				local l = sub[i]
 				str = str.."\n"..l.raw
 				-- Comment lines
@@ -384,7 +384,7 @@ local function post_init(sub, sel)
 				l2.margin_t = tonumber(all_lines[line_params_number*(counter1-1) + 9])
 				l2.effect = all_lines[line_params_number*(counter1-1) + 10]
 				l2.text = all_lines[line_params_number*(counter1-1) + 11]
-				sub.insert(desired_lines_modified[line_number]+1, l2)
+				sub.insert(filtered_desired_lines[line_number]+1, l2)
 			end
 			APT("")
 		end
