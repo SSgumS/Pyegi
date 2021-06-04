@@ -136,13 +136,15 @@ local function post_init(sub, sel)
 		{x=2,y=0,class="label",label="Filter:"},
 		{x=3,y=0,class="edit",name="filter_field",hint='Filter the list of scripts:\nAfter hitting the "Apply Filter" button\nonly the script(s) containing the filter term\nwill be displayed.',value=filter_term},
 		{x=0,y=1,class="label",label="Apply on:"},
-		{x=1,y=1,class="dropdown",name="apply_on",items={"Selected line(s)", "All lines"},value="Selected line(s)"}
+		{x=1,y=1,class="dropdown",name="apply_on",items={"Selected line(s)", "All lines"},value="Selected line(s)"},
+		{x=2,y=1,class="checkbox",name="chckbx",label="Also apply on:",hint="Among the line(s) selected from the lines selection checkbox\napply the script on a certain style or actor.",value=false},
+		{x=3,y=1,class="dropdown",name="apply_on2",items={"Style", "Actor", "Style and Actor", "Style or Actor"},value="Style"}
 	}
 	APT("")
 	local btn, res = ADD(main_gui, btns, {ok="Apply", cancel="Cancel"})
 	local py_script_name = res.tscript
 
-    if btn == btns[1] then
+    if btn == btns[1] and res.tscript ~= "" then
 		-- load python script settings
 		APT("Loading python script settings...")
 		local py_settings_filepath = ""
@@ -155,16 +157,138 @@ local function post_init(sub, sel)
 		end
 		local py_settings = json.decode(read_all_file_as_string(py_settings_filepath))
 
+		-- adding the desired lines' number to a table
+		local desired_lines = {}
+		if res.apply_on == "All lines" then
+			for l_t=1,#sub do if sub[l_t].class == "dialogue" then table.insert(desired_lines,l_t) end end
+		else
+			for _, l_t in ipairs(sel) do table.insert(desired_lines,l_t) end
+		end
+
 		-- add python script's parameters' gui
-		local btns2 = py_settings.Buttons
 		local inputs_gui={}
+		local styles_table = {}
+		local actors_table = {}
+		local btns2 = py_settings.Buttons
+		local style_exists
+		local actor_exists
+		if res.chckbx then
+			if res.apply_on2 == "Style" then
+				for _, l_t in ipairs(desired_lines) do
+					style_exists = false
+					for _, s_t in pairs(styles_table) do
+						if s_t == sub[l_t].style then style_exists = true end
+					end
+					if not style_exists then table.insert(styles_table,sub[l_t].style) end
+				end
+				inputs_gui={
+					{x=0,y=0,class="label",label="Style to apply on:"},
+					{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]}
+				}
+			elseif res.apply_on2 == "Actor" then
+				for _, l_t in ipairs(desired_lines) do
+					actor_exists = false
+					for _, s_t in pairs(actors_table) do
+						if s_t == sub[l_t].actor then actor_exists = true end
+					end
+					if not actor_exists and sub[l_t].actor ~= "" then table.insert(actors_table,sub[l_t].actor) end
+				end
+				if actors_table then
+					inputs_gui={
+						{x=2,y=0,class="label",label="Actor to apply on:"},
+						{x=3,y=0,class="dropdown",name="apply_on_actor",items=actors_table,value=actors_table[1]}
+					}
+				else
+					inputs_gui={
+						{x=2,y=0,class="label",label="No actors to display!"}
+					}
+				end
+			elseif res.apply_on2 == "Style and Actor" then
+				for _, l_t in ipairs(desired_lines) do
+					style_exists = false
+					for _, s_t in pairs(styles_table) do
+						if s_t == sub[l_t].style then style_exists = true end
+					end
+					if not style_exists then table.insert(styles_table,sub[l_t].style) end
+					actor_exists = false
+					for _, s_t in pairs(actors_table) do
+						if s_t == sub[l_t].actor then actor_exists = true end
+					end
+					if not actor_exists and sub[l_t].actor ~= "" then table.insert(actors_table,sub[l_t].actor) end
+				end
+				if actors_table then
+					inputs_gui={
+						{x=0,y=0,class="label",label="Style to apply on:"},
+						{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
+						{x=2,y=0,class="label",label="Actor to apply on:"},
+						{x=3,y=0,class="dropdown",name="apply_on_actor",items=actors_table,value=actors_table[1]}
+					}
+				else
+					inputs_gui={
+						{x=0,y=0,class="label",label="Style to apply on:"},
+						{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
+						{x=2,y=0,class="label",label="No actors to display!"}
+					}
+				end
+			elseif res.apply_on2 == "Style or Actor" then
+				for _, l_t in ipairs(desired_lines) do
+					style_exists = false
+					for _, s_t in pairs(styles_table) do
+						if s_t == sub[l_t].style then style_exists = true end
+					end
+					if not style_exists then table.insert(styles_table,sub[l_t].style) end
+					actor_exists = false
+					for _, s_t in pairs(actors_table) do
+						if s_t == sub[l_t].actor then actor_exists = true end
+					end
+					if not actor_exists and sub[l_t].actor ~= "" then table.insert(actors_table,sub[l_t].actor) end
+				end
+				if actors_table then
+					inputs_gui={
+						{x=0,y=0,class="label",label="Style to apply on:"},
+						{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
+						{x=2,y=0,class="label",label="Actor to apply on:"},
+						{x=3,y=0,class="dropdown",name="apply_on_actor",items=actors_table,value=actors_table[1]}
+					}
+				else
+					inputs_gui={
+						{x=0,y=0,class="label",label="Style to apply on:"},
+						{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
+						{x=2,y=0,class="label",label="No actors to display!"}
+					}
+				end
+			end
+		end
 		for _, items1 in pairs(py_settings.Controls) do
-			table.insert(inputs_gui,{class=items1.class,name=items1.name,x=items1.x,y=items1.y,width=items1.width,height=items1.height,label=items1.label,hint=items1.hint,text=items1.text,value=items1.value,min=items1.min,max=items1.max,step=items1.step,items=items1.items})
+			table.insert(inputs_gui,{class=items1.class,name=items1.name,x=items1.x,y=items1.y+1,width=items1.width,height=items1.height,label=items1.label,hint=items1.hint,text=items1.text,value=items1.value,min=items1.min,max=items1.max,step=items1.step,items=items1.items})
 		end
 		APT("")
 		local btn2, res2 = ADD(inputs_gui, btns2, {ok=btns2[1], cancel=btns2[-1]})
 		
 		if btn2 == btns[1] then -- "Apply"
+			-- modifying the desired lines' number of the table
+			local desired_lines_modified = {}
+			if res.chckbx then
+				if res.apply_on2 == "Style" then
+					for _, l_t in ipairs(desired_lines) do
+						if sub[l_t].style == res2.apply_on_style then table.insert(desired_lines_modified,l_t) end
+					end
+				elseif res.apply_on2 == "Actor" then
+					for _, l_t in ipairs(desired_lines) do
+						if sub[l_t].actor == res2.apply_on_actor then table.insert(desired_lines_modified,l_t) end
+					end
+				elseif res.apply_on2 == "Style and Actor" then
+					for _, l_t in ipairs(desired_lines) do
+						if sub[l_t].style == res2.apply_on_style and sub[l_t].actor == res2.apply_on_actor then table.insert(desired_lines_modified,l_t) end
+					end
+				elseif res.apply_on2 == "Style or Actor" then
+					for _, l_t in ipairs(desired_lines) do
+						if sub[l_t].style == res2.apply_on_style or sub[l_t].actor == res2.apply_on_actor then table.insert(desired_lines_modified,l_t) end
+					end
+				end
+			else
+				for _, l_t in ipairs(desired_lines) do table.insert(desired_lines_modified,l_t) end
+			end
 			-- write parameters' value into a file
 			APT("Preparing python script inputs...")
 			local save_table = py_settings
@@ -179,12 +303,6 @@ local function post_init(sub, sel)
 			assert(py_parameters:close())
 
 			-- Building the string resembling the current subtitle file only with selected line(s) to be sent to the python script.
-			local target_lines = {}
-			if res.apply_on == "All lines" then
-				for l_t=1,#sub do if sub[l_t].class == "dialogue" then table.insert(target_lines,l_t) end end
-			else
-				for _, l_t in ipairs(sel) do table.insert(target_lines,l_t) end
-			end
 			local str = ""
 			local info_header, style_header = true, true
 			for i=1,#sub do
@@ -213,7 +331,7 @@ local function post_init(sub, sel)
 				end
 			end
 			str = str.."\n\n".."[Events]".."\n".."Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-			for _, i in ipairs(target_lines) do
+			for _, i in ipairs(desired_lines_modified) do
 				local l = sub[i]
 				str = str.."\n"..l.raw
 				-- Comment lines
@@ -266,7 +384,7 @@ local function post_init(sub, sel)
 				l2.margin_t = tonumber(all_lines[line_params_number*(counter1-1) + 9])
 				l2.effect = all_lines[line_params_number*(counter1-1) + 10]
 				l2.text = all_lines[line_params_number*(counter1-1) + 11]
-				sub.insert(target_lines[line_number]+1, l2)
+				sub.insert(desired_lines_modified[line_number]+1, l2)
 			end
 			APT("")
 		end
