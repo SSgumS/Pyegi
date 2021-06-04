@@ -1,5 +1,5 @@
 {
-  "Buttons": ["Apply", "Cancel"],
+  "Buttons": ["Apply", "Back", "Cancel"],
   "Controls": [
     {
       "name": "label1",

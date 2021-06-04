@@ -1,5 +1,5 @@
 {
-  "Buttons": ["Apply", "Alaki", "Cancel"],
+  "Buttons": ["Apply", "Alaki", "Back", "Cancel"],
   "Controls": [
     {
       "x": 0,
