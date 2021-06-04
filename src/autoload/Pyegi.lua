@@ -42,19 +42,19 @@ local function macro_init() -- aegisub is nil on script's load
 end
 
 -- Source: https://stackoverflow.com/a/11130774
-local function scandir(directory, filter_t)
+local function scandir(directory, filter_term)
     local i, t, popen = 0, {}, io.popen
 	local pfile = popen('dir "'..directory..'" /b /ad')
-    for filename in pfile:lines() do
-		if filter_t ~= "" then
-			if filename and re.match(string.lower(filename), string.lower(filter_t)) then
+    for dirname in pfile:lines() do
+		if filter_term ~= "" then
+			if dirname and re.match(string.lower(dirname), string.lower(filter_term)) then
 				i = i + 1
-				t[i] = filename
+				t[i] = dirname
 			end
 		else
-			if filename then
+			if dirname then
 				i = i + 1
-				t[i] = filename
+				t[i] = dirname
 			end
 		end
     end
@@ -134,10 +134,10 @@ local function post_init(sub, sel)
 		{x=0,y=0,class="label",label="Please select a script:"},
 		{x=1,y=0,class="dropdown",name="tscript",items=dir_table,value=dir_table[1]},
 		{x=2,y=0,class="label",label="Filter:"},
-		{x=3,y=0,class="edit",name="filter_field",hint='Filter the list of scripts:\nAfter hitting the "Apply Filter" button\nonly the script(s) containing the filter term\nwill be displayed.',value=filter_term},
+		{x=3,y=0,class="edit",name="filter_field",hint='Filter scripts:\nAfter hitting the "Apply Filter" button\nonly the script(s) containing the filter term\nwill be displayed.',value=filter_term},
 		{x=0,y=1,class="label",label="Apply on:"},
 		{x=1,y=1,class="dropdown",name="apply_on",items={"Selected line(s)", "All lines"},value="Selected line(s)"},
-		{x=2,y=1,class="checkbox",name="chckbx",label="Also apply on:",hint="Among the line(s) selected from the lines selection checkbox\napply the script on a certain style or actor.",value=false},
+		{x=2,y=1,class="checkbox",name="chckbx",label="Filter Lines based on:",hint="Among the line(s) selected from the lines selection checkbox\napply the script on a certain style or actor.",value=false},
 		{x=3,y=1,class="dropdown",name="apply_on2",items={"Style", "Actor", "Style and Actor", "Style or Actor"},value="Style"}
 	}
 	APT("")
@@ -388,7 +388,7 @@ local function post_init(sub, sel)
 			end
 			APT("")
 		end
-	elseif btn == btns[2] then -- "Settings"
+	elseif btn == "Settings" then
 		-- load current settings
 		local settings = default_settings
 		if file_exists(settings_filepath) then
@@ -417,7 +417,7 @@ local function post_init(sub, sel)
 		end
 		-- return to the Main function
 		post_init(sub, sel)
-	elseif btn == btns[3] then -- "Apply Filter"
+	elseif btn == "Apply Filter" then
 		filter_term = res.filter_field
 		post_init(sub, sel)
 	end
