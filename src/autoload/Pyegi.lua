@@ -25,22 +25,17 @@ local APT
 local config_dir
 local scripts_dir
 local settings_filepath
+local dir_table
+local tscript_display_number
 local filter_term
+local apply_on_displayed
+local chckbx_state
+local apply_on2_displayed
 local default_settings = {
 	python_path = ""
 }
 
 ----- Functions -----
-local function macro_init() -- aegisub is nil on script's load
-	ADP = aegisub.decode_path
-	ADD = aegisub.dialog.display
-	APT = aegisub.progress.task
-	config_dir = ADP("?user").."/automation/config/Pyegi/"
-	scripts_dir = config_dir.."PythonScripts/"
-	settings_filepath = config_dir.."settings.json"
-	filter_term = ""
-end
-
 -- Source: https://stackoverflow.com/a/11130774
 local function scandir(directory, filter_term)
     local i, t, popen = 0, {}, io.popen
@@ -124,25 +119,45 @@ local function serialize(val, name, skipnewlines, depth)
     return tmp
 end
 
+local function macro_init() -- aegisub is nil on script's load
+	ADP = aegisub.decode_path
+	ADD = aegisub.dialog.display
+	APT = aegisub.progress.task
+	config_dir = ADP("?user").."/automation/config/Pyegi/"
+	scripts_dir = config_dir.."PythonScripts/"
+	settings_filepath = config_dir.."settings.json"
+	filter_term = ""
+	tscript_display_number = 1
+	apply_on_displayed = "Selected line(s)"
+	chckbx_state = false
+	apply_on2_displayed = "Style"
+end
+
 local function post_init(sub, sel)
 	APT("Loading the main GUI...")
 
 	-- select python script
-	local dir_table = scandir(scripts_dir, filter_term)
+	dir_table = scandir(scripts_dir, filter_term)
 	local btns = {"Apply", "&Settings", "Apply &Filter", "Cancel"}
 	local main_gui={
 		{x=0,y=0,class="label",label="Please select a script:"},
-		{x=1,y=0,class="dropdown",name="tscript",items=dir_table,value=dir_table[1]},
-		{x=2,y=0,class="label",label="Filter:"},
-		{x=3,y=0,class="edit",name="filter_field",hint='Filter scripts:\nAfter hitting the "Apply Filter" button\nonly the script(s) containing the filter term\nwill be displayed.',value=filter_term},
+		{x=1,y=0,class="dropdown",name="tscript",items=dir_table,value=dir_table[tscript_display_number]},
+		{x=2,y=0,class="label",label="Filter term for scripts:"},
+		{x=3,y=0,class="edit",name="filter_field",hint='After hitting the "Apply Filter" button\nonly the script(s) containing the filter term\nwill be displayed.\n(Leave empty to see all the scripts)',value=filter_term},
 		{x=0,y=1,class="label",label="Apply on:"},
-		{x=1,y=1,class="dropdown",name="apply_on",items={"Selected line(s)", "All lines"},value="Selected line(s)"},
-		{x=2,y=1,class="checkbox",name="chckbx",label="Filter Lines based on:",hint="Among the line(s) selected from the lines selection checkbox\napply the script on a certain style or actor.",value=false},
-		{x=3,y=1,class="dropdown",name="apply_on2",items={"Style", "Actor", "Style and Actor", "Style or Actor"},value="Style"}
+		{x=1,y=1,class="dropdown",name="apply_on",items={"Selected line(s)", "All lines"},value=apply_on_displayed},
+		{x=2,y=1,class="checkbox",name="chckbx",label="Filter Lines based on:",hint="Among the line(s) selected from the lines selection checkbox\napply the script on a certain style or actor.",value=chckbx_state},
+		{x=3,y=1,class="dropdown",name="apply_on2",items={"Style", "Actor", "Style and Actor", "Style or Actor"},value=apply_on2_displayed}
 	}
 	APT("")
 	local btn, res = ADD(main_gui, btns, {ok="Apply", cancel="Cancel"})
 	local py_script_name = res.tscript
+
+	-- save the current selections
+	for index_temp,script_name_temp in pairs(dir_table) do if script_name_temp == res.tscript then tscript_display_number = index_temp end end
+	apply_on_displayed = res.apply_on
+	chckbx_state = res.chckbx
+	apply_on2_displayed = res.apply_on2
 
     if btn == btns[1] and res.tscript ~= "" then
 		-- load python script settings
@@ -169,7 +184,6 @@ local function post_init(sub, sel)
 		local inputs_gui={}
 		local styles_table = {}
 		local actors_table = {}
-		local btns2 = py_settings.Buttons
 		local style_exists
 		local actor_exists
 		if res.chckbx then
@@ -183,7 +197,8 @@ local function post_init(sub, sel)
 				end
 				inputs_gui={
 					{x=0,y=0,class="label",label="Style to apply on:"},
-					{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]}
+					{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
+					{x=2,y=0,class="label",label="No certain actor desired."}
 				}
 			elseif res.apply_on2 == "Actor" then
 				for _, l_t in ipairs(desired_lines) do
@@ -193,13 +208,15 @@ local function post_init(sub, sel)
 					end
 					if not actor_exists and sub[l_t].actor ~= "" then table.insert(actors_table,sub[l_t].actor) end
 				end
-				if actors_table then
+				if actors_table[1] then
 					inputs_gui={
+						{x=0,y=0,class="label",label="No certain style desired."},
 						{x=2,y=0,class="label",label="Actor to apply on:"},
 						{x=3,y=0,class="dropdown",name="apply_on_actor",items=actors_table,value=actors_table[1]}
 					}
 				else
 					inputs_gui={
+						{x=0,y=0,class="label",label="No certain style desired."},
 						{x=2,y=0,class="label",label="No actors to display!"}
 					}
 				end
@@ -216,7 +233,7 @@ local function post_init(sub, sel)
 					end
 					if not actor_exists and sub[l_t].actor ~= "" then table.insert(actors_table,sub[l_t].actor) end
 				end
-				if actors_table then
+				if actors_table[1] then
 					inputs_gui={
 						{x=0,y=0,class="label",label="Style to apply on:"},
 						{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
@@ -243,7 +260,7 @@ local function post_init(sub, sel)
 					end
 					if not actor_exists and sub[l_t].actor ~= "" then table.insert(actors_table,sub[l_t].actor) end
 				end
-				if actors_table then
+				if actors_table[1] then
 					inputs_gui={
 						{x=0,y=0,class="label",label="Style to apply on:"},
 						{x=1,y=0,class="dropdown",name="apply_on_style",items=styles_table,value=styles_table[1]},
@@ -258,14 +275,19 @@ local function post_init(sub, sel)
 					}
 				end
 			end
+		else
+			inputs_gui={
+				{x=0,y=0,class="label",label="No certain style desired."},
+				{x=2,y=0,class="label",label="No certain actor desired."}
+			}
 		end
 		for _, items1 in pairs(py_settings.Controls) do
 			table.insert(inputs_gui,{class=items1.class,name=items1.name,x=items1.x,y=items1.y+1,width=items1.width,height=items1.height,label=items1.label,hint=items1.hint,text=items1.text,value=items1.value,min=items1.min,max=items1.max,step=items1.step,items=items1.items})
 		end
 		APT("")
-		local btn2, res2 = ADD(inputs_gui, btns2, {ok=btns2[1], cancel=btns2[-1]})
+		local btn2, res2 = ADD(inputs_gui, {"Apply", "&Back", "Cancel"}, {ok="Apply", cancel="Cancel"})
 		
-		if btn2 == btns[1] then -- "Apply"
+		if btn2 == "Apply" then
 			-- modifying the desired lines' number of the table
 			local filtered_desired_lines = {}
 			if res.chckbx then
@@ -387,8 +409,10 @@ local function post_init(sub, sel)
 				sub.insert(filtered_desired_lines[line_number]+1, l2)
 			end
 			APT("")
+		elseif btn2 == "&Back" then
+			post_init(sub, sel)
 		end
-	elseif btn == "Settings" then
+	elseif btn == "&Settings" then
 		-- load current settings
 		local settings = default_settings
 		if file_exists(settings_filepath) then
@@ -400,7 +424,7 @@ local function post_init(sub, sel)
 		local btns = {"Save", "Cancel"}
 		local gui={
 			{x=0,y=0,class="label",label="Python Path:"},
-			{x=1,y=0,width=25,class="edit",name="python_path",value=settings.python_path}
+			{x=1,y=0,width=25,class="edit",name="python_path",value=settings.python_path,hint="Leave empty if your [desired] python runs through console."}
 		}
 		local btn, res = ADD(gui, btns, {ok="Save", cancel="Cancel"})
 
@@ -417,8 +441,9 @@ local function post_init(sub, sel)
 		end
 		-- return to the Main function
 		post_init(sub, sel)
-	elseif btn == "Apply Filter" then
+	elseif btn == "Apply &Filter" then
 		filter_term = res.filter_field
+		tscript_display_number = 1
 		post_init(sub, sel)
 	end
 end
