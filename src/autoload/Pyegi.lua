@@ -184,7 +184,6 @@ local function post_init(sub, sel)
 		local inputs_gui={}
 		local styles_table = {}
 		local actors_table = {}
-		local btns2 = py_settings.Buttons
 		local style_exists
 		local actor_exists
 		if res.chckbx then
@@ -286,9 +285,9 @@ local function post_init(sub, sel)
 			table.insert(inputs_gui,{class=items1.class,name=items1.name,x=items1.x,y=items1.y+1,width=items1.width,height=items1.height,label=items1.label,hint=items1.hint,text=items1.text,value=items1.value,min=items1.min,max=items1.max,step=items1.step,items=items1.items})
 		end
 		APT("")
-		local btn2, res2 = ADD(inputs_gui, btns2, {ok=btns2[1], cancel=btns2[-1]})
+		local btn2, res2 = ADD(inputs_gui, {"Apply", "&Back", "Cancel"}, {ok="Apply", cancel="Cancel"})
 		
-		if btn2 == btns[1] then -- "Apply"
+		if btn2 == "Apply" then
 			-- modifying the desired lines' number of the table
 			local filtered_desired_lines = {}
 			if res.chckbx then
@@ -410,7 +409,7 @@ local function post_init(sub, sel)
 				sub.insert(filtered_desired_lines[line_number]+1, l2)
 			end
 			APT("")
-		elseif btn2 == "Back" then
+		elseif btn2 == "&Back" then
 			post_init(sub, sel)
 		end
 	elseif btn == "&Settings" then
