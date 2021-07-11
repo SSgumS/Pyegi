@@ -12,7 +12,7 @@
         {
             "label": "update-requirements",
             "type": "shell",
-            "command": "pipreqs --no-pin --savepath requirements.txt task",
+            "command": "pipreqs --no-pin --savepath requirements.txt task && pypyr --dir task update-requirements",
             "problemMatcher": []
         }
     ]
