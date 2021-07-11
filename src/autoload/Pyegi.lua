@@ -5,7 +5,7 @@ pip install pyonfx
 
 ----- Dependencies -----
 --include('karaskel.lua')
-local json = require 'Azarakhsh.json'
+local json = require 'Pyegi.json'
 local re = require 'aegisub.re'
 
 ----- Script Info -----
