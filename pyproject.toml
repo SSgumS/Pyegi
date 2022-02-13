@@ -1,0 +1,19 @@
+[tool.poetry]
+authors = [
+  "DrunkSimurgh <>",
+  "SSgumS <sssafais@hotmail.com>",
+]
+description = "Python + Aegisub"
+name = "Pyegi"
+version = "0.0.1"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.10"
+
+[tool.poetry.dev-dependencies]
+pypyr = "^5.1.0"
+appdirs = "^1.4.4"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]

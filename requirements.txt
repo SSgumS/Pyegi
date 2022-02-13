@@ -1,3 +1,0 @@
-appdirs
-pypyr
-pepreqs

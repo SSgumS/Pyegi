@@ -6,13 +6,7 @@
         {
             "label": "release",
             "type": "shell",
-            "command": "pypyr --dir task release",
-            "problemMatcher": []
-        },
-        {
-            "label": "update-requirements",
-            "type": "shell",
-            "command": "pipreqs --no-pin --savepath requirements.txt task && pypyr --dir task update-requirements",
+            "command": "pypyr tasks/release",
             "problemMatcher": []
         }
     ]

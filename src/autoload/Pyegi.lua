@@ -57,19 +57,6 @@ local function scandir(directory, filter_term)
     return t
 end
 
-local function scandir_f(directory, ext) --ext: file extension (string)
-    local t, popen = "", io.popen
-	local pfile = popen('dir "'..directory..'" /b /a-d')
-    for filename in pfile:lines() do
-		filename = filename:match(".*%."..ext.."$")
-		if filename then
-			t = filename
-		end
-    end
-    pfile:close()
-    return t
-end
-
 -- Source (with modification): https://stackoverflow.com/a/11204889
 -- see if the file exists
 local function file_exists(file_path)
@@ -154,12 +141,12 @@ local function post_init(sub, sel)
 	local py_script_name = res.tscript
 
 	-- save the current selections
-	for index_temp,script_name_temp in pairs(dir_table) do if script_name_temp == res.tscript then tscript_display_number = index_temp end end
+	for index_temp,script_name_temp in pairs(dir_table) do if script_name_temp == py_script_name then tscript_display_number = index_temp end end
 	apply_on_displayed = res.apply_on
 	chckbx_state = res.chckbx
 	apply_on2_displayed = res.apply_on2
 
-    if btn == btns[1] and res.tscript ~= "" then
+    if btn == btns[1] and py_script_name ~= "" then
 		-- load python script settings
 		APT("Loading python script settings...")
 		local py_settings_filepath = ""
@@ -378,12 +365,13 @@ local function post_init(sub, sel)
 			local py_out_file_path = os.tmpname()
 			aegisub.log(5, serialize(py_out_file_path).."\n")
 			local is_py_absolute = settings.python_path ~= ""
-			local py_script_path = scripts_dir..res["tscript"].."/main.py"
+			local py_script_path = scripts_dir..py_script_name.."/main.py"
 			local command_parameters_string = ' "'..py_script_path..'" "'..lua_out_file_path..'" "'..py_out_file_path..'" "'..py_parameters_file_path..'"'
 			aegisub.log(5, serialize(command_parameters_string).."\n")
 			APT("Waiting for python results...")
 			if is_py_absolute then
-				assert(os.execute('""'..settings.python_path..'"'..command_parameters_string..'"')) -- TODO: not working on platforms other than windows probably
+				-- TODO: probably not working on platforms other than windows (because of ""command"" windows-specific format)
+				assert(os.execute('""'..settings.python_path..'"'..command_parameters_string..'"'))
 			else
 				assert(os.execute("python"..command_parameters_string))
 			end
