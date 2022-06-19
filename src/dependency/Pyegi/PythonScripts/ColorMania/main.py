@@ -67,7 +67,7 @@ def sub(line, l, ln): # ln: line number
     # h1 = 200
 
     # We define precision, increasing it will result in a gain on preformance and decrease of fidelity (due to less lines produced)
-    precision = 20
+    precision = 5
     if direction1 == 'Horizontal':
         n = int(w1 / precision)
     elif direction1 == 'Vertical':
