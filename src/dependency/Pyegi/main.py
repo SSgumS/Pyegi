@@ -27,15 +27,15 @@ class Ui_SecondWindow(object):
         offY = 25 # offset in the Y axis direction
         Wfinal = 0 # final width of the window
         Hfinal = 0 # final height of the window
+        lua_pyqt_conversion = {
+            'label': 'QLabel',
+            'dropdown': 'QComboBox',
+            'floatedit': 'QDoubleSpinBox'
+            }
         for widget in widgets['Controls']:
             name1 = widget['name']
             class1 = widget['class']
-            if class1 == 'label':
-                exec(f'self.{name1} = QtWidgets.QLabel(self.centralwidget)')
-            if class1 == 'dropdown':
-                exec(f'self.{name1} = QtWidgets.QComboBox(self.centralwidget)')
-            if class1 == 'floatedit':
-                exec(f'self.{name1} = QtWidgets.QLineEdit(self.centralwidget)')
+            exec(f'self.{name1} = QtWidgets.{lua_pyqt_conversion.get(class1, "QLabel")}(self.centralwidget)')
             Xtemp = offX + defW*widget["x"]
             Ytemp = offY + defH*widget["y"]
             Wtemp = defW*widget["width"]
@@ -81,13 +81,19 @@ class Ui_SecondWindow(object):
             text1 = ""
             if class1 == 'label':
                 text1 = widget["label"]
+            else:
+                text2 = f'{widget["hint"]}'.encode(encoding='UTF-8')
+                exec(f'self.{name1}.setToolTip(_translate("MainWindow", {text2}))')
             if class1 == 'floatedit':
-                text1 = widget["value"]
-                exec(f'self.{name1}.setValidator(QtGui.QDoubleValidator())')
-            if class1 == 'label' or class1 == 'floatedit':
+                exec(f'self.{name1}.setMinimum({widget["min"]})')
+                exec(f'self.{name1}.setMaximum({widget["max"]})')
+                exec(f'self.{name1}.setSingleStep({widget["step"]})')
+                exec(f'self.{name1}.setProperty("value", {widget["value"]})')
+            if class1 == 'label':
                 exec(f'self.{name1}.setText(_translate("MainWindow", "{text1}"))')
             if class1 == 'dropdown':
                 exec(f'self.{name1}.addItems({widget["items"]})')
+                exec(f'self.{name1}.setCurrentText(_translate("MainWindow", "{widget["value"]}"))')
         
         self.cancel_pushButton.setText(_translate("MainWindow", "Cancel"))
         self.apply_pushButton.setText(_translate("MainWindow", "Apply"))
