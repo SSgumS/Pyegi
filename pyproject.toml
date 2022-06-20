@@ -1,7 +1,7 @@
 [tool.poetry]
 authors = [
-  "DrunkSimurgh <>",
-  "SSgumS <sssafais@hotmail.com>",
+  "DrunkSimurgh <saman.9267@gmail.com>",
+  "SSgumS <sssafais@hotmail.com>"
 ]
 description = "Python + Aegisub"
 name = "Pyegi"
@@ -9,6 +9,11 @@ version = "0.0.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
+Pillow = "^9.0.1"
+pyonfx = "^0.9.12"
+PyQt5 = "^5.15.6"
+PyQt5Designer = "^5.14.1"
+PyQt6 = "^6.2.3"
 
 [tool.poetry.dev-dependencies]
 pypyr = "^5.1.0"
