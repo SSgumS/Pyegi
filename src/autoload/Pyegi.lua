@@ -1,6 +1,6 @@
 --[[
 
-]]--
+]] --
 
 ----- Dependencies -----
 --include('karaskel.lua')
@@ -22,14 +22,7 @@ local ADP
 local ADD
 local APT
 local dependency_dir
-local scripts_dir
 local settings_filepath
-local dir_table
-local tscript_display_number
-local filter_term
-local apply_on_displayed
-local chckbx_state
-local apply_on2_displayed
 local default_settings = {
 	python_path = ""
 }
@@ -37,9 +30,9 @@ local default_settings = {
 ----- Functions -----
 -- Source: https://stackoverflow.com/a/11130774
 local function scandir(directory, filter_term)
-    local i, t, popen = 0, {}, io.popen
-	local pfile = popen('dir "'..directory..'" /b /ad')
-    for dirname in pfile:lines() do
+	local i, t, popen = 0, {}, io.popen
+	local pfile = popen('dir "' .. directory .. '" /b /ad')
+	for dirname in pfile:lines() do
 		if filter_term ~= "" then
 			if dirname and re.match(string.lower(dirname), string.lower(filter_term)) then
 				i = i + 1
@@ -51,110 +44,114 @@ local function scandir(directory, filter_term)
 				t[i] = dirname
 			end
 		end
-    end
-    pfile:close()
-    return t
+	end
+	pfile:close()
+	return t
 end
 
 -- Source (with modification): https://stackoverflow.com/a/11204889
 -- see if the file exists
 local function file_exists(file_path)
-  local f = io.open(file_path, "rb")
-  if f then f:close() end
-  return f ~= nil
+	local f = io.open(file_path, "rb")
+	if f then f:close() end
+	return f ~= nil
 end
 
--- get all lines from a file, returns an empty 
+-- get all lines from a file, returns an empty
 -- list/table if the file does not exist
 local function lines_from(file_path)
-  local lines = {}
-  for line in io.lines(file_path) do 
-    lines[#lines + 1] = line
-  end
-  return lines
+	local lines = {}
+	for line in io.lines(file_path) do
+		lines[#lines + 1] = line
+	end
+	return lines
 end
 
 -- get the string from a file, returns nil if the file does not exist
 local function read_all_file_as_string(file_path)
-  local f = assert(io.open(file_path, "rb"))
-  local str = f:read("*a")
-  assert(f:close())
-  return str
+	local f = assert(io.open(file_path, "rb"))
+	local str = f:read("*a")
+	assert(f:close())
+	return str
 end
 
 local function serialize(val, name, skipnewlines, depth)
-    skipnewlines = skipnewlines or false
-    depth = depth or 0
-    local tmp = string.rep(" ", depth)
-    if name then tmp = tmp .. name .. " = " end
-    if type(val) == "table" then
-        tmp = tmp .. "{" .. (not skipnewlines and "\n" or "")
-        for k, v in pairs(val) do
-            tmp =  tmp .. serialize(v, k, skipnewlines, depth + 1) .. "," .. (not skipnewlines and "\n" or "")
-        end
-        tmp = tmp .. string.rep(" ", depth) .. "}"
-    elseif type(val) == "number" then
-        tmp = tmp .. tostring(val)
-    elseif type(val) == "string" then
-        tmp = tmp .. string.format("%q", val)
-    elseif type(val) == "boolean" then
-        tmp = tmp .. (val and "true" or "false")
-    else
-        tmp = tmp .. "\"[inserializeable datatype:" .. type(val) .. "]\""
-    end
-    return tmp
+	skipnewlines = skipnewlines or false
+	depth = depth or 0
+	local tmp = string.rep(" ", depth)
+	if name then tmp = tmp .. name .. " = " end
+	if type(val) == "table" then
+		tmp = tmp .. "{" .. (not skipnewlines and "\n" or "")
+		for k, v in pairs(val) do
+			tmp = tmp .. serialize(v, k, skipnewlines, depth + 1) .. "," .. (not skipnewlines and "\n" or "")
+		end
+		tmp = tmp .. string.rep(" ", depth) .. "}"
+	elseif type(val) == "number" then
+		tmp = tmp .. tostring(val)
+	elseif type(val) == "string" then
+		tmp = tmp .. string.format("%q", val)
+	elseif type(val) == "boolean" then
+		tmp = tmp .. (val and "true" or "false")
+	else
+		tmp = tmp .. "\"[inserializeable datatype:" .. type(val) .. "]\""
+	end
+	return tmp
 end
 
 local function macro_init() -- aegisub is nil on script's load
 	ADP = aegisub.decode_path
 	ADD = aegisub.dialog.display
 	APT = aegisub.progress.task
-	dependency_dir = ADP("?user").."/automation/dependency/Pyegi/"
-	scripts_dir = dependency_dir.."PythonScripts/"
-	settings_filepath = dependency_dir.."settings.json"
-	filter_term = ""
-	tscript_display_number = 1
-	apply_on_displayed = "Selected line(s)"
-	chckbx_state = false
-	apply_on2_displayed = "Style"
+	dependency_dir = ADP("?user") .. "/automation/dependency/Pyegi/"
+	settings_filepath = dependency_dir .. "settings.json"
 end
 
 local function post_init(sub, sel)
-	local desired_lines = {}
-	for _, l_t in ipairs(sel) do table.insert(desired_lines,l_t) end
+	local desired_lines_index = {}
+	for _, line_index in ipairs(sel) do
+		table.insert(desired_lines_index, line_index)
+	end
 
 	-- Building the string resembling the current subtitle file only with selected line(s) to be sent to the python script.
 	local str = ""
 	local info_header, style_header = true, true
-	for i=1,#sub do
+	for i = 1, #sub do
 		local l = sub[i]
 		if l.class == "info" then
 			if info_header then
 				if str == "" then
-					str = "[Script Info]".."\n".."; Script generated by Pyegi".."\n".."; http://www.aegisub.org/"
+					str = "[Script Info]" .. "\n" .. "; Script generated by Pyegi" .. "\n" .. "; http://www.aegisub.org/"
 				else
-					str = str.."\n\n".."[Script Info]".."\n".."; Script generated by Pyegi".."\n".."; http://www.aegisub.org/"
+					str = str .. "\n\n" .. "[Script Info]" .. "\n" .. "; Script generated by Pyegi" .. "\n" ..
+						"; http://www.aegisub.org/"
 				end
 				info_header = false
 			end
-			str = str.."\n"..l.raw
+			str = str .. "\n" .. l.raw
 		end
 		if l.class == "style" then
 			if style_header then
 				if str == "" then
-					str = "[V4+ Styles]".."\n".."Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
+					str = "[V4+ Styles]" ..
+						"\n" ..
+						"Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
 				else
-					str = str.."\n\n".."[V4+ Styles]".."\n".."Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
+					str = str ..
+						"\n\n" ..
+						"[V4+ Styles]" ..
+						"\n" ..
+						"Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
 				end
 				style_header = false
 			end
-			str = str.."\n"..l.raw
+			str = str .. "\n" .. l.raw
 		end
 	end
-	str = str.."\n\n".."[Events]".."\n".."Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-	for _, i in ipairs(desired_lines) do
+	str = str .. "\n\n" ..
+		"[Events]" .. "\n" .. "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+	for _, i in ipairs(desired_lines_index) do
 		local l = sub[i]
-		str = str.."\n"..l.raw
+		str = str .. "\n" .. l.raw
 		-- Comment lines
 		l.comment = true
 		sub[i] = l
@@ -162,52 +159,61 @@ local function post_init(sub, sel)
 
 	-- write the created ass script
 	local lua_out_file_path = os.tmpname()
-	aegisub.log(5, serialize(lua_out_file_path).."\n")
+	aegisub.log(5, serialize(lua_out_file_path) .. "\n")
 	local lua_out = assert(io.open(lua_out_file_path, "wb"))
 	lua_out:write(str)
 	assert(lua_out:close())
 
-	-- Running the python script
+	-- Running main python gui
 	local py_out_file_path = os.tmpname()
-	aegisub.log(5, serialize(py_out_file_path).."\n")
-	local py_script_path = dependency_dir.."main.py"
+	aegisub.log(5, serialize(py_out_file_path) .. "\n")
+	local py_script_path = dependency_dir .. "main.py"
 	local py_parameters_file_path = os.tmpname()
-	local command_parameters_string = ' "'..py_script_path..'" "'..lua_out_file_path..'" "'..py_out_file_path..'" "'..py_parameters_file_path..'"'
-	aegisub.log(5, serialize(command_parameters_string).."\n")
+	local command_parameters_string = ' "' .. py_script_path ..
+		'" "' .. lua_out_file_path ..
+		'" "' .. py_out_file_path ..
+		'" "' .. py_parameters_file_path .. '"'
+	aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for python results...")
-	--[[local l = sub[10]
-	l.text = 'cd '..dependency_dir
-	sub[0] = l]]
+	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
-	-- assert(os.execute('""'..dependency_dir..'.venv/Scripts/python.exe" "'..py_script_path..'""'))
-	assert(os.execute('""'..dependency_dir..'.venv/Scripts/python.exe" '..command_parameters_string..'"'))
-	
 	-- Converting the result to ass lines.
 	APT("Producing new lines...")
 	local all_lines = lines_from(py_out_file_path)
-	local l2 = {}
+	local new_line = {}
 	local line_params_number = 11
-	l2["class"]="dialogue" l2["comment"]=false l2["layer"]=0 l2["start_time"]=0 l2["end_time"]=0 l2["style"]="" l2["actor"]="" l2["margin_l"]=0 l2["margin_r"]=0 l2["margin_t"]=0 l2["effect"]="" l2["text"]=""
-	for counter1=1,(#all_lines/line_params_number) do
-		local line_number = tonumber(all_lines[line_params_number*(counter1-1) + 1])
-		l2.layer = tonumber(all_lines[line_params_number*(counter1-1) + 2])
-		l2.start_time = tonumber(all_lines[line_params_number*(counter1-1) + 3])
-		l2.end_time = tonumber(all_lines[line_params_number*(counter1-1) + 4])
-		l2.style = all_lines[line_params_number*(counter1-1) + 5]
-		l2.actor = all_lines[line_params_number*(counter1-1) + 6]
-		l2.margin_l = tonumber(all_lines[line_params_number*(counter1-1) + 7])
-		l2.margin_r = tonumber(all_lines[line_params_number*(counter1-1) + 8])
-		l2.margin_t = tonumber(all_lines[line_params_number*(counter1-1) + 9])
-		l2.effect = all_lines[line_params_number*(counter1-1) + 10]
-		l2.text = all_lines[line_params_number*(counter1-1) + 11]
-		sub.insert(desired_lines[line_number]+1, l2)
+	new_line["class"] = "dialogue"
+	new_line["comment"] = false
+	new_line["layer"] = 0
+	new_line["start_time"] = 0
+	new_line["end_time"] = 0
+	new_line["style"] = ""
+	new_line["actor"] = ""
+	new_line["margin_l"] = 0
+	new_line["margin_r"] = 0
+	new_line["margin_t"] = 0
+	new_line["effect"] = ""
+	new_line["text"] = ""
+	for counter1 = 1, (#all_lines / line_params_number) do
+		local line_number = tonumber(all_lines[line_params_number * (counter1 - 1) + 1])
+		new_line.layer = tonumber(all_lines[line_params_number * (counter1 - 1) + 2])
+		new_line.start_time = tonumber(all_lines[line_params_number * (counter1 - 1) + 3])
+		new_line.end_time = tonumber(all_lines[line_params_number * (counter1 - 1) + 4])
+		new_line.style = all_lines[line_params_number * (counter1 - 1) + 5]
+		new_line.actor = all_lines[line_params_number * (counter1 - 1) + 6]
+		new_line.margin_l = tonumber(all_lines[line_params_number * (counter1 - 1) + 7])
+		new_line.margin_r = tonumber(all_lines[line_params_number * (counter1 - 1) + 8])
+		new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
+		new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
+		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
+		sub.insert(desired_lines_index[line_number] + 1, new_line)
 	end
 end
 
 function Main(sub, sel)
 	macro_init()
 	post_init(sub, sel)
-	
+
 	aegisub.set_undo_point(main_macro_name)
 end
 
