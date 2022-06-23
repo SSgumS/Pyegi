@@ -29,8 +29,15 @@ class Ui_SecondWindow(object):
         Hfinal = 0 # final height of the window
         lua_pyqt_conversion = {
             'label': 'QLabel',
+            'edit': 'QLineEdit',
+            'intedit': 'QSpinBox',
+            'floatedit': 'QDoubleSpinBox',
+            'textbox': 'QTextEdit',
             'dropdown': 'QComboBox',
-            'floatedit': 'QDoubleSpinBox'
+            'checkbox': 'QCheckBox',
+            'color': 'QPushButton',
+            'coloralpha': 'QPushButton',
+            'alpha': 'QLineEdit'
             }
         for widget in widgets['Controls']:
             name1 = widget['name']
@@ -84,10 +91,17 @@ class Ui_SecondWindow(object):
             else:
                 text2 = f'{widget["hint"]}'.encode(encoding='UTF-8')
                 exec(f'self.{name1}.setToolTip(_translate("MainWindow", {text2}))')
-            if class1 == 'floatedit':
-                exec(f'self.{name1}.setMinimum({widget["min"]})')
-                exec(f'self.{name1}.setMaximum({widget["max"]})')
-                exec(f'self.{name1}.setSingleStep({widget["step"]})')
+            if class1 == 'floatedit' or class1 == 'intedit':
+                try:
+                    exec(f'self.{name1}.setMinimum({widget["min"]})')
+                except:
+                    pass
+                try:
+                    exec(f'self.{name1}.setMaximum({widget["max"]})')
+                except:
+                    pass
+                if class1 == 'floatedit':
+                    exec(f'self.{name1}.setSingleStep({widget["step"]})')
                 exec(f'self.{name1}.setProperty("value", {widget["value"]})')
             if class1 == 'label':
                 exec(f'self.{name1}.setText(_translate("MainWindow", "{text1}"))')
