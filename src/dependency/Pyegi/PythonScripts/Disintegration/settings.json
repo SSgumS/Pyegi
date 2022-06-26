@@ -17,7 +17,7 @@
       "class": "edit",
       "name": "edit1",
       "hint": "",
-      "text": ""
+      "text": "something"
     },
     {
       "x": 2,
@@ -52,7 +52,7 @@
       "class": "textbox",
       "name": "textbox1",
       "hint": "",
-      "text": ""
+      "text": "a new day\na new job"
     },
     {
       "x": 0,
@@ -74,7 +74,7 @@
       "name": "checkbox1",
       "label": "This is a checkbox",
       "hint": "",
-      "value": false
+      "value": "True"
     },
     {
       "x": 2,
@@ -94,7 +94,7 @@
       "class": "coloralpha",
       "name": "coloralpha1",
       "hint": "",
-      "value": "#234567"
+      "value": "#23456789"
     },
     {
       "x": 4,
