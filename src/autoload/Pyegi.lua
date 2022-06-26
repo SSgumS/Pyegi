@@ -22,7 +22,14 @@ local ADP
 local ADD
 local APT
 local dependency_dir
+local scripts_dir
 local settings_filepath
+local dir_table
+local tscript_display_number
+local filter_term
+local apply_on_displayed
+local chckbx_state
+local apply_on2_displayed
 local default_settings = {
 	python_path = ""
 }
@@ -103,14 +110,18 @@ local function macro_init() -- aegisub is nil on script's load
 	ADD = aegisub.dialog.display
 	APT = aegisub.progress.task
 	dependency_dir = ADP("?user") .. "/automation/dependency/Pyegi/"
+	scripts_dir = dependency_dir .. "PythonScripts/"
 	settings_filepath = dependency_dir .. "settings.json"
+	filter_term = ""
+	tscript_display_number = 1
+	apply_on_displayed = "Selected line(s)"
+	chckbx_state = false
+	apply_on2_displayed = "Style"
 end
 
 local function post_init(sub, sel)
-	local desired_lines_index = {}
-	for _, line_index in ipairs(sel) do
-		table.insert(desired_lines_index, line_index)
-	end
+	local desired_lines = {}
+	for _, l_t in ipairs(sel) do table.insert(desired_lines, l_t) end
 
 	-- Building the string resembling the current subtitle file only with selected line(s) to be sent to the python script.
 	local str = ""
@@ -149,7 +160,7 @@ local function post_init(sub, sel)
 	end
 	str = str .. "\n\n" ..
 		"[Events]" .. "\n" .. "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-	for _, i in ipairs(desired_lines_index) do
+	for _, i in ipairs(desired_lines) do
 		local l = sub[i]
 		str = str .. "\n" .. l.raw
 		-- Comment lines
@@ -164,49 +175,52 @@ local function post_init(sub, sel)
 	lua_out:write(str)
 	assert(lua_out:close())
 
-	-- Running main python gui
+	-- Running the python script
 	local py_out_file_path = os.tmpname()
 	aegisub.log(5, serialize(py_out_file_path) .. "\n")
 	local py_script_path = dependency_dir .. "main.py"
 	local py_parameters_file_path = os.tmpname()
-	local command_parameters_string = ' "' .. py_script_path ..
-		'" "' .. lua_out_file_path ..
-		'" "' .. py_out_file_path ..
-		'" "' .. py_parameters_file_path .. '"'
+	local command_parameters_string = ' "' ..
+		py_script_path .. '" "' .. lua_out_file_path .. '" "' .. py_out_file_path .. '" "' .. py_parameters_file_path .. '"'
 	aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for python results...")
+	--[[local l = sub[10]
+	l.text = 'cd '..dependency_dir
+	sub[0] = l]]
+
+	-- assert(os.execute('""'..dependency_dir..'.venv/Scripts/python.exe" "'..py_script_path..'""'))
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
 	-- Converting the result to ass lines.
 	APT("Producing new lines...")
 	local all_lines = lines_from(py_out_file_path)
-	local new_line = {}
+	local l2 = {}
 	local line_params_number = 11
-	new_line["class"] = "dialogue"
-	new_line["comment"] = false
-	new_line["layer"] = 0
-	new_line["start_time"] = 0
-	new_line["end_time"] = 0
-	new_line["style"] = ""
-	new_line["actor"] = ""
-	new_line["margin_l"] = 0
-	new_line["margin_r"] = 0
-	new_line["margin_t"] = 0
-	new_line["effect"] = ""
-	new_line["text"] = ""
+	l2["class"] = "dialogue"
+	l2["comment"] = false
+	l2["layer"] = 0
+	l2["start_time"] = 0
+	l2["end_time"] = 0
+	l2["style"] = ""
+	l2["actor"] = ""
+	l2["margin_l"] = 0
+	l2["margin_r"] = 0
+	l2["margin_t"] = 0
+	l2["effect"] = ""
+	l2["text"] = ""
 	for counter1 = 1, (#all_lines / line_params_number) do
 		local line_number = tonumber(all_lines[line_params_number * (counter1 - 1) + 1])
-		new_line.layer = tonumber(all_lines[line_params_number * (counter1 - 1) + 2])
-		new_line.start_time = tonumber(all_lines[line_params_number * (counter1 - 1) + 3])
-		new_line.end_time = tonumber(all_lines[line_params_number * (counter1 - 1) + 4])
-		new_line.style = all_lines[line_params_number * (counter1 - 1) + 5]
-		new_line.actor = all_lines[line_params_number * (counter1 - 1) + 6]
-		new_line.margin_l = tonumber(all_lines[line_params_number * (counter1 - 1) + 7])
-		new_line.margin_r = tonumber(all_lines[line_params_number * (counter1 - 1) + 8])
-		new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
-		new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
-		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
-		sub.insert(desired_lines_index[line_number] + 1, new_line)
+		l2.layer = tonumber(all_lines[line_params_number * (counter1 - 1) + 2])
+		l2.start_time = tonumber(all_lines[line_params_number * (counter1 - 1) + 3])
+		l2.end_time = tonumber(all_lines[line_params_number * (counter1 - 1) + 4])
+		l2.style = all_lines[line_params_number * (counter1 - 1) + 5]
+		l2.actor = all_lines[line_params_number * (counter1 - 1) + 6]
+		l2.margin_l = tonumber(all_lines[line_params_number * (counter1 - 1) + 7])
+		l2.margin_r = tonumber(all_lines[line_params_number * (counter1 - 1) + 8])
+		l2.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
+		l2.effect = all_lines[line_params_number * (counter1 - 1) + 10]
+		l2.text = all_lines[line_params_number * (counter1 - 1) + 11]
+		sub.insert(desired_lines[line_number] + 1, l2)
 	end
 end
 
