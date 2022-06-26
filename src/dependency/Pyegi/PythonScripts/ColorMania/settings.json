@@ -1,4 +1,5 @@
 {
+  "Format": "lua",
   "Controls": [
     {
       "name": "label1",
