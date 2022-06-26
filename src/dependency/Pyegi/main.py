@@ -178,7 +178,8 @@ class Ui_SecondWindow(object):
                     f"widget['value'] = self.{name1}.palette().button().color().name()")
             if class1 == 'coloralpha':
                 color = eval(f'self.{name1}.palette().button().color()')
-                widget['value'] = f"{color.name()}{(255 - color.alpha()):{2}x}"
+                alpha = f"{(255 - color.alpha()):x}"
+                widget['value'] = f"{color.name()}" + alpha.zfill(2)
             if class1 == 'alpha':
                 exec(f"widget['value'] = self.{name1}.text()")
 
@@ -200,11 +201,12 @@ class Ui_SecondWindow(object):
 
     def set_coloralpha(self, name1):
         color0 = eval(f'self.{name1}.palette().button().color()')
+        color0.setAlpha(255 - color0.alpha())
         color = QtWidgets.QColorDialog.getColor(initial=color0,
                                                 options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel)
         if color.isValid():
             exec(
-                f'self.{name1}.setStyleSheet("background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})")')
+                f'self.{name1}.setStyleSheet("background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {255 - color.alpha()})")')
 
 
 class Ui_MainWindow(object):
