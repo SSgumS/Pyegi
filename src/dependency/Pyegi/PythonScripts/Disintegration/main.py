@@ -2,19 +2,21 @@
 
 """
 
+import Pyegi
 from pyonfx import *
 import math
 import random
 import sys
+import json
 
 from pathlib import Path
 file = Path(__file__).resolve()
 sys.path.append(str(file.parents[2]) + "/Pyegi")
-import Pyegi
 
 output_data = []
 
-def send_line(l, ln): # l: line table, ln: line number
+
+def send_line(l, ln):  # l: line table, ln: line number
     global output_data
     str_out = "%d\n%d\n%d\n%d\n%s\n%s\n%d\n%d\n%d\n%s\n%s\n" % (
         ln,
@@ -31,14 +33,15 @@ def send_line(l, ln): # l: line table, ln: line number
     )
     output_data.insert(0, str_out)
 
+
 io = Ass(Pyegi.GetInputFilePath())
 meta, styles, lines = io.get_data()
 
 
-def sub(line, l, ln): # ln: line number
+def sub(line, l, ln):  # ln: line number
     off = 20
     p_sh = Shape.rectangle()
-    
+
     # Leadin Effect
     l.layer = 0
 
@@ -51,10 +54,10 @@ def sub(line, l, ln): # ln: line number
         line.middle,
         line.center+100,
         line.middle-30,
-        max(min(5000, l.dur-2000),500),
+        max(min(5000, l.dur-2000), 500),
         line.text,
     )
-    
+
     send_line(l, ln)
 
     l.style = "Main - dummy"
@@ -67,7 +70,8 @@ def sub(line, l, ln): # ln: line number
 
     for pixel in Convert.text_to_pixels(line):
         x, y = math.floor(line.left) + pixel.x, math.floor(line.top) + pixel.y
-        x2, y2 = x + random.uniform(-off, off)+100, y + random.uniform(-off, off)-30
+        x2, y2 = x + random.uniform(-off, off) + \
+            100, y + random.uniform(-off, off)-30
         alpha = (
             "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha)
             if pixel.alpha != 255
@@ -86,9 +90,19 @@ def sub(line, l, ln): # ln: line number
         send_line(l, ln)
 
 
-for line in lines:
-    # Generating lines
-    sub(line, line.copy(), line.i+1)
+system_inputs = sys.argv
+f = open(system_inputs[4])
+selected_lines_and_flag = json.load(f)
+f.close()
+if selected_lines_and_flag['isSelected'] == "True":
+    for i in selected_lines_and_flag['selected_lines']:
+        line = lines[i]
+        # Generating lines
+        sub(line, line.copy(), line.i+1)
+else:
+    for line in lines:
+        # Generating lines
+        sub(line, line.copy(), line.i+1)
 
 
 Pyegi.CreateOutputFile(output_data)

@@ -187,7 +187,7 @@ class Ui_LuaConverter(object):
             json.dump(widgets, outfile)
 
         os.system(
-            f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}""')
+            f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}""')
         sys.exit()
 
     def set_color(self, name1):

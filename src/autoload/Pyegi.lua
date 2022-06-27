@@ -107,9 +107,15 @@ local function macro_init() -- aegisub is nil on script's load
 end
 
 local function post_init(sub, sel)
-	local desired_lines_index = {}
+	local selected_lines_index = {}
 	for _, line_index in ipairs(sel) do
-		table.insert(desired_lines_index, line_index)
+		table.insert(selected_lines_index, line_index)
+	end
+	local all_lines_index = {}
+	for line_index = 1, #sub do
+		if sub[line_index].class == "dialogue" then
+			table.insert(all_lines_index, line_index)
+		end
 	end
 
 	-- Building the string resembling the current subtitle file only with selected line(s) to be sent to the python script.
@@ -149,12 +155,9 @@ local function post_init(sub, sel)
 	end
 	str = str .. "\n\n" ..
 		"[Events]" .. "\n" .. "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-	for _, i in ipairs(desired_lines_index) do
+	for _, i in ipairs(all_lines_index) do
 		local l = sub[i]
 		str = str .. "\n" .. l.raw
-		-- Comment lines
-		l.comment = true
-		sub[i] = l
 	end
 
 	-- write the created ass script
@@ -164,6 +167,31 @@ local function post_init(sub, sel)
 	lua_out:write(str)
 	assert(lua_out:close())
 
+	-- calculate the true line numbers for the selected line(s)
+	local is_nondialogue_line = true
+	local first_dialogue_line_number = 0
+	while is_nondialogue_line do
+		first_dialogue_line_number = first_dialogue_line_number + 1
+		local current_line = sub[first_dialogue_line_number]
+		if current_line.class == "dialogue" then
+			is_nondialogue_line = false
+		end
+	end
+	local selected_lines_numbers = {}
+	for selection_index, selection_value in ipairs(sel) do
+		selected_lines_numbers[selection_index] = selection_value - first_dialogue_line_number
+	end
+
+	-- create and write the selected line(s) numbers and flag table (if flag is True, the script will be applied on selected line(s) only (may be changed through PyQt GUI))
+	local selected_lines_and_flag = {
+		selected_lines = selected_lines_numbers,
+		isSelected = "True"
+	}
+	local selected_lines_path = os.tmpname()
+	local selected_lines_file = assert(io.open(selected_lines_path, "wb"))
+	selected_lines_file:write(json.encode(selected_lines_and_flag))
+	assert(selected_lines_file:close())
+
 	-- Running main python gui
 	local py_out_file_path = os.tmpname()
 	aegisub.log(5, serialize(py_out_file_path) .. "\n")
@@ -172,13 +200,28 @@ local function post_init(sub, sel)
 	local command_parameters_string = ' "' .. py_script_path ..
 		'" "' .. lua_out_file_path ..
 		'" "' .. py_out_file_path ..
-		'" "' .. py_parameters_file_path .. '"'
+		'" "' .. py_parameters_file_path ..
+		'" "' .. selected_lines_path .. '"'
 	aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for python results...")
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
 	-- Converting the result to ass lines.
 	APT("Producing new lines...")
+	selected_lines_and_flag = json.decode(read_all_file_as_string(selected_lines_path))
+	aegisub.log(5, serialize(selected_lines_and_flag) .. "\n")
+	local desired_lines_index
+	if selected_lines_and_flag["isSelected"] == "True" then
+		desired_lines_index = selected_lines_index
+	else
+		desired_lines_index = all_lines_index
+	end
+	for _, i in ipairs(desired_lines_index) do
+		local l = sub[i]
+		-- Comment lines
+		l.comment = true
+		sub[i] = l
+	end
 	local all_lines = lines_from(py_out_file_path)
 	local new_line = {}
 	local line_params_number = 11
@@ -206,7 +249,7 @@ local function post_init(sub, sel)
 		new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
 		new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
 		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
-		sub.insert(desired_lines_index[line_number] + 1, new_line)
+		sub.insert(all_lines_index[line_number] + 1, new_line)
 	end
 end
 
