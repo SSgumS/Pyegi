@@ -107,12 +107,32 @@ local function macro_init() -- aegisub is nil on script's load
 end
 
 local function post_init(sub, sel)
+	-- Running main python gui
+	local main_py_script_path = dependency_dir .. "main.py"
+	local main_py_parameters_file_path = os.tmpname()
+	aegisub.log(5, serialize(main_py_parameters_file_path) .. "\n")
+	local command_parameters_string = ' "' .. main_py_script_path .. '" "' .. main_py_parameters_file_path .. '"'
+	aegisub.log(5, serialize(command_parameters_string) .. "\n")
+	APT("Waiting for user to select a python script...")
+	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
+
+	-- Processing the selected parameters from the python main GUI
+	local main_py_parameters = json.decode(read_all_file_as_string(main_py_parameters_file_path))
+	aegisub.log(5, serialize(main_py_parameters) .. "\n")
 	local desired_lines_index = {}
-	for _, line_index in ipairs(sel) do
-		table.insert(desired_lines_index, line_index)
+	if main_py_parameters["applyOn"] == "selected lines" then
+		for _, line_index in ipairs(sel) do
+			table.insert(desired_lines_index, line_index)
+		end
+	else
+		for line_index = 1, #sub do
+			if sub[line_index].class == "dialogue" then
+				table.insert(desired_lines_index, line_index)
+			end
+		end
 	end
 
-	-- Building the string resembling the current subtitle file only with selected line(s) to be sent to the python script.
+	-- Building the string resembling the current subtitle file (or only with selected line(s)) to be sent to the python script.
 	local str = ""
 	local info_header, style_header = true, true
 	for i = 1, #sub do
@@ -167,12 +187,14 @@ local function post_init(sub, sel)
 	-- Running main python gui
 	local py_out_file_path = os.tmpname()
 	aegisub.log(5, serialize(py_out_file_path) .. "\n")
-	local py_script_path = dependency_dir .. "main.py"
+	local py_script_path = dependency_dir .. "second.py"
 	local py_parameters_file_path = os.tmpname()
+	local selected_script = main_py_parameters["selectedScript"]
 	local command_parameters_string = ' "' .. py_script_path ..
 		'" "' .. lua_out_file_path ..
 		'" "' .. py_out_file_path ..
-		'" "' .. py_parameters_file_path .. '"'
+		'" "' .. py_parameters_file_path ..
+		'" "' .. selected_script .. '"'
 	aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for python results...")
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
