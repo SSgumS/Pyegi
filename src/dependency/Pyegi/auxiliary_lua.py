@@ -71,6 +71,7 @@ class Ui_LuaConverter(object):
                     f'self.{name1}.clicked.connect(lambda: self.set_coloralpha("{name1}"))', _locals)
         Wfinal += offX
         Hfinal += offY + 70
+        Wfinal = max(Wfinal, 200)
         LuaConverter.resize(Wfinal, Hfinal)
 
         self.cancel_pushButton = QtWidgets.QPushButton(
@@ -187,7 +188,7 @@ class Ui_LuaConverter(object):
             json.dump(widgets, outfile)
 
         os.system(
-            f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}""')
+            f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""')
         sys.exit()
 
     def set_color(self, name1):

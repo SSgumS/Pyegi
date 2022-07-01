@@ -37,7 +37,7 @@ class Ui_EmptyWindow(object):
             self.window.show()
         else:
             os.system(
-                f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}""')
+                f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{system_inputs[3]}" "{system_inputs[4]}" "{system_inputs[5]}""')
 
         self.retranslateUi(EmptyWindow)
         QtCore.QMetaObject.connectSlotsByName(EmptyWindow)

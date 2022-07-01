@@ -1,0 +1,14 @@
+{
+  "Format": "lua",
+  "Controls": [
+    {
+      "name": "label1",
+      "x": 0,
+      "label": "Just press apply!",
+      "y": 0,
+      "class": "label",
+      "height": 1,
+      "width": 1
+    }
+  ]
+}
