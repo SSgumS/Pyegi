@@ -102,6 +102,7 @@ local function macro_init() -- aegisub is nil on script's load
 	ADP = aegisub.decode_path
 	ADD = aegisub.dialog.display
 	APT = aegisub.progress.task
+	APS = aegisub.progress.set
 	dependency_dir = ADP("?user") .. "/automation/dependency/Pyegi/"
 	settings_filepath = dependency_dir .. "settings.json"
 end
@@ -117,6 +118,7 @@ local function post_init(sub, sel)
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
 	-- Processing the selected parameters from the python main GUI
+	APT("Preparing the data...")
 	local main_py_parameters = json.decode(read_all_file_as_string(main_py_parameters_file_path))
 	aegisub.log(5, serialize(main_py_parameters) .. "\n")
 	local desired_lines_index = {}
@@ -169,13 +171,6 @@ local function post_init(sub, sel)
 	end
 	str = str .. "\n\n" ..
 		"[Events]" .. "\n" .. "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-	for _, i in ipairs(desired_lines_index) do
-		local l = sub[i]
-		str = str .. "\n" .. l.raw
-		-- Comment lines
-		l.comment = true
-		sub[i] = l
-	end
 
 	-- write the created ass script
 	local lua_out_file_path = os.tmpname()
@@ -184,23 +179,64 @@ local function post_init(sub, sel)
 	lua_out:write(str)
 	assert(lua_out:close())
 
+	str = ""
+	local str_threshold = 10000
+
+	local desired_lines_length = #desired_lines_index
+	for z, i in ipairs(desired_lines_index) do
+		APS(z / desired_lines_length * 100)
+		local l = sub[i]
+		str = str .. "\n" .. l.raw
+		if #str > str_threshold then
+			lua_out = assert(io.open(lua_out_file_path, "ab"))
+			lua_out:write(str)
+			assert(lua_out:close())
+			str = ""
+		end
+	end
+
+	-- write the remaining created ass script
+	if #str > 0 then
+		lua_out = assert(io.open(lua_out_file_path, "ab"))
+		lua_out:write(str)
+		assert(lua_out:close())
+		str = ""
+	end
+
 	-- Running main python gui
 	local py_out_file_path = os.tmpname()
 	aegisub.log(5, serialize(py_out_file_path) .. "\n")
 	local py_script_path = dependency_dir .. "second.py"
 	local py_parameters_file_path = os.tmpname()
 	local selected_script = main_py_parameters["selectedScript"]
+	local lines_parameters_file_path = os.tmpname()
 	local command_parameters_string = ' "' .. py_script_path ..
 		'" "' .. lua_out_file_path ..
 		'" "' .. py_out_file_path ..
 		'" "' .. py_parameters_file_path ..
-		'" "' .. selected_script .. '"'
+		'" "' .. selected_script ..
+		'" "' .. lines_parameters_file_path .. '"'
 	aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for python results...")
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
 	-- Converting the result to ass lines.
 	APT("Producing new lines...")
+	local auxiliary_output = json.decode(read_all_file_as_string(lines_parameters_file_path))
+	aegisub.log(5, serialize(auxiliary_output) .. "\n")
+	if auxiliary_output["Original Lines"] == "C" then
+		for _, i in ipairs(desired_lines_index) do
+			local l = sub[i]
+			-- Comment lines
+			l.comment = true
+			sub[i] = l
+		end
+	elseif auxiliary_output["Original Lines"] == "D" then
+		for i = #desired_lines_index, 1, -1 do
+			local index = desired_lines_index[i]
+			sub.delete(index)
+		end
+	end
 	local all_lines = lines_from(py_out_file_path)
 	local new_line = {}
 	local line_params_number = 11
@@ -216,6 +252,14 @@ local function post_init(sub, sel)
 	new_line["margin_t"] = 0
 	new_line["effect"] = ""
 	new_line["text"] = ""
+	local pointer = 1
+	local pointer_value = auxiliary_output["Produced Lines"][1]
+	local add_index
+	if auxiliary_output["Original Lines"] == "D" then
+		add_index = 0
+	else
+		add_index = 1
+	end
 	for counter1 = 1, (#all_lines / line_params_number) do
 		local line_number = tonumber(all_lines[line_params_number * (counter1 - 1) + 1])
 		new_line.layer = tonumber(all_lines[line_params_number * (counter1 - 1) + 2])
@@ -228,7 +272,19 @@ local function post_init(sub, sel)
 		new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
 		new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
 		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
-		sub.insert(desired_lines_index[line_number] + 1, new_line)
+		sub.insert(desired_lines_index[line_number] + add_index, new_line)
+		pointer_value = pointer_value - 1
+		if pointer_value == 0 then
+			if auxiliary_output["Original Lines"] == "D" then
+				add_index = auxiliary_output["Produced Lines_cs"][pointer]
+			else
+				add_index = auxiliary_output["Produced Lines_cs"][pointer] + 1
+			end
+			pointer = pointer + 1
+			pointer_value = auxiliary_output["Produced Lines"][pointer]
+		else
+			add_index = add_index + 1
+		end
 	end
 end
 
