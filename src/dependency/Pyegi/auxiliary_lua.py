@@ -1,7 +1,9 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 import os
+from os.path import exists
 import json
 import sys
+
 
 dependency_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 scriptPath = dependency_dir + 'PythonScripts/'
@@ -16,16 +18,26 @@ def exec2(self, string):
 
 
 class Ui_LuaConverter(object):
-    def setupUi(self, LuaConverter, script_name):
+    def setupUi(self, LuaConverter, script_name, window_name="main_window"):
         LuaConverter.setObjectName("LuaConverter")
 
         self.centralwidget = QtWidgets.QWidget(LuaConverter)
         self.centralwidget.setObjectName("centralwidget")
 
-        script_settings = scriptPath + f'{script_name}/settings.json'
-        f = open(script_settings)
-        widgets = json.load(f)
+        if exists(system_inputs[3]):
+            script_settings_file_path = system_inputs[3]
+        else:
+            script_settings_file_path = scriptPath + \
+                f'{script_name}/settings.json'
+
+        f = open(script_settings_file_path)
+        script_settings = json.load(f)
         f.close()
+
+        for i, w in enumerate(script_settings['Windows']):
+            if w['name'] == window_name:
+                widgets = w
+                window_index = i
 
         defW = 120  # default width
         defH = 25  # default height
@@ -43,7 +55,8 @@ class Ui_LuaConverter(object):
             'checkbox': 'QCheckBox',
             'color': 'QPushButton',
             'coloralpha': 'QPushButton',
-            'alpha': 'QLineEdit'
+            'alpha': 'QLineEdit',
+            'Pyegi_button': 'QPushButton'
         }
         for widget in widgets['Controls']:
             name1 = widget['name']
@@ -69,23 +82,14 @@ class Ui_LuaConverter(object):
                 _locals = locals()
                 exec(
                     f'self.{name1}.clicked.connect(lambda: self.set_coloralpha("{name1}"))', _locals)
+            if class1 == 'Pyegi_button':
+                _locals = locals()
+                exec(
+                    f'self.{name1}.clicked.connect(lambda: self.button_clicked({widget}, LuaConverter, script_settings, script_name, window_index))', _locals)
         Wfinal += offX
-        Hfinal += offY + 70
+        Hfinal += offY
         Wfinal = max(Wfinal, 200)
         LuaConverter.resize(Wfinal, Hfinal)
-
-        self.cancel_pushButton = QtWidgets.QPushButton(
-            self.centralwidget, clicked=lambda: self.closeSecond(LuaConverter))
-        self.cancel_pushButton.setGeometry(
-            QtCore.QRect(offX, Hfinal-offY-30, 80, 30))
-        self.cancel_pushButton.setObjectName("cancel_pushButton")
-
-        self.apply_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.apply_pushButton.setGeometry(
-            QtCore.QRect(Wfinal-offX-80, Hfinal-offY-30, 80, 30))
-        self.apply_pushButton.setObjectName("apply_pushButton")
-        self.apply_pushButton.clicked.connect(
-            lambda: self.apply_inputs(widgets, script_name, dependency_dir))
 
         LuaConverter.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(LuaConverter)
@@ -112,7 +116,7 @@ class Ui_LuaConverter(object):
                 text2 = "hint"
                 exec(
                     f'self.{widget["name"]}.setToolTip(_translate("LuaConverter", {f"{widget[text2]}".encode(encoding="UTF-8")}))')
-            if class1 == 'edit':
+            if class1 == 'edit' or class1 == 'Pyegi_button':
                 exec(
                     f'self.{widget["name"]}.setText(_translate("LuaConverter", "{widget["text"]}"))')
             if class1 == 'floatedit' or class1 == 'intedit':
@@ -151,45 +155,47 @@ class Ui_LuaConverter(object):
                 exec(
                     f'self.{widget["name"]}.setInputMask("\#HH")')
 
-        self.cancel_pushButton.setText(_translate("LuaConverter", "Cancel"))
-        self.apply_pushButton.setText(_translate("LuaConverter", "Apply"))
+    def button_clicked(self, button, LuaConverter, script_settings, script_name, window_index):
+        widgets = script_settings['Windows'][window_index]
+        if button['action'].lower() == 'cancel':
+            LuaConverter.close()
+        else:
+            for widget in widgets['Controls']:
+                name1 = widget['name']
+                class1 = widget['class']
+                if class1 == 'edit':
+                    exec(f"widget['text'] = self.{name1}.text()")
+                if class1 == 'intedit':
+                    exec(f"widget['value'] = int(self.{name1}.text())")
+                if class1 == 'floatedit':
+                    exec(f"widget['value'] = float(self.{name1}.text())")
+                if class1 == 'textbox':
+                    exec(f"widget['text'] = self.{name1}.toPlainText()")
+                if class1 == 'dropdown':
+                    exec(f"widget['value'] = self.{name1}.currentText()")
+                if class1 == 'checkbox':
+                    exec(f"widget['value'] = str(self.{name1}.isChecked())")
+                if class1 == 'color':
+                    exec(
+                        f"widget['value'] = self.{name1}.palette().button().color().name()")
+                if class1 == 'coloralpha':
+                    color = eval(f'self.{name1}.palette().button().color()')
+                    alpha = f"{(255 - color.alpha()):x}"
+                    widget['value'] = f"{color.name()}" + alpha.zfill(2)
+                if class1 == 'alpha':
+                    exec(f"widget['value'] = self.{name1}.text()")
 
-    def closeSecond(self, second_w):
-        second_w.close()
+            py_parameters_file_path = system_inputs[3]
+            with open(py_parameters_file_path, 'w') as outfile:
+                json.dump(script_settings, outfile)
 
-    def apply_inputs(self, widgets, script_name, dependency_dir):
-        for widget in widgets['Controls']:
-            name1 = widget['name']
-            class1 = widget['class']
-            if class1 == 'edit':
-                exec(f"widget['text'] = self.{name1}.text()")
-            if class1 == 'intedit':
-                exec(f"widget['value'] = int(self.{name1}.text())")
-            if class1 == 'floatedit':
-                exec(f"widget['value'] = float(self.{name1}.text())")
-            if class1 == 'textbox':
-                exec(f"widget['text'] = self.{name1}.toPlainText()")
-            if class1 == 'dropdown':
-                exec(f"widget['value'] = self.{name1}.currentText()")
-            if class1 == 'checkbox':
-                exec(f"widget['value'] = str(self.{name1}.isChecked())")
-            if class1 == 'color':
-                exec(
-                    f"widget['value'] = self.{name1}.palette().button().color().name()")
-            if class1 == 'coloralpha':
-                color = eval(f'self.{name1}.palette().button().color()')
-                alpha = f"{(255 - color.alpha()):x}"
-                widget['value'] = f"{color.name()}" + alpha.zfill(2)
-            if class1 == 'alpha':
-                exec(f"widget['value'] = self.{name1}.text()")
-
-        py_parameters_file_path = system_inputs[3]
-        with open(py_parameters_file_path, 'w') as outfile:
-            json.dump(widgets, outfile)
-
-        os.system(
-            f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""')
-        sys.exit()
+            if button['action'].lower() == 'apply':
+                os.system(
+                    f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""')
+                sys.exit()
+            else:
+                self.setupUi(LuaConverter, script_name,
+                             button["transition to"])
 
     def set_color(self, name1):
         color0 = eval(f'self.{name1}.palette().button().color()')

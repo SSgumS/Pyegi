@@ -12,7 +12,7 @@ from pathlib import Path
 file = Path(__file__).resolve()
 sys.path.append(str(file.parents[2]) + "/Pyegi")
 
-io = Ass(Pyegi.GetInputFilePath())
+io = Ass(Pyegi.GetInputFilePath(), extended=True)
 meta, styles, lines = io.get_data()
 
 

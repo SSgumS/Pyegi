@@ -17,7 +17,7 @@ sys.path.append(str(file.parents[2]) + "/Pyegi")
 
 
 parameters_table = Pyegi.GetParameters()
-for items in parameters_table['Controls']:
+for items in parameters_table['Windows'][0]['Controls']:
     if items['name'] == 'dropdown1':
         direction1 = items['value']
     if items['name'] == 'floatedit1':
@@ -28,7 +28,7 @@ if direction1 == 'Slant':
     if angle1 == 90:
         direction1 = 'Horizontal'
 
-io = Ass(Pyegi.GetInputFilePath())
+io = Ass(Pyegi.GetInputFilePath(), extended=True)
 meta, styles, lines = io.get_data()
 
 # oval specs

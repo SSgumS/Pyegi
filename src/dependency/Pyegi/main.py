@@ -3,7 +3,6 @@ from PyQt6.QtGui import QMovie
 import os
 import json
 import sys
-from auxiliary_lua import Ui_LuaConverter
 
 dependency_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 scriptPath = dependency_dir + 'PythonScripts/'
