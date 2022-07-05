@@ -98,6 +98,14 @@ local function serialize(val, name, skipnewlines, depth)
 	return tmp
 end
 
+local function cumsum_i(vector, index)
+	local sum = 0
+	for i = 1, index do
+		sum = sum + vector[i]
+	end
+	return sum
+end
+
 local function macro_init() -- aegisub is nil on script's load
 	ADP = aegisub.decode_path
 	ADD = aegisub.dialog.display
@@ -236,6 +244,15 @@ local function post_init(sub, sel)
 			local index = desired_lines_index[i]
 			sub.delete(index)
 		end
+		local subtracted_value = 0
+		for i = 1, #desired_lines_index do
+			subtracted_value = subtracted_value + 1
+			desired_lines_index[i] = desired_lines_index[i] - subtracted_value
+		end
+	end
+	local prduced_lines = {}
+	for i = 1, #desired_lines_index do
+		prduced_lines[i] = 0
 	end
 	local all_lines = lines_from(py_out_file_path)
 	local new_line = {}
@@ -252,14 +269,6 @@ local function post_init(sub, sel)
 	new_line["margin_t"] = 0
 	new_line["effect"] = ""
 	new_line["text"] = ""
-	local pointer = 1
-	local pointer_value = auxiliary_output["Produced Lines"][1]
-	local add_index
-	if auxiliary_output["Original Lines"] == "D" then
-		add_index = 0
-	else
-		add_index = 1
-	end
 	for counter1 = 1, (#all_lines / line_params_number) do
 		local line_number = tonumber(all_lines[line_params_number * (counter1 - 1) + 1])
 		new_line.layer = tonumber(all_lines[line_params_number * (counter1 - 1) + 2])
@@ -272,19 +281,8 @@ local function post_init(sub, sel)
 		new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
 		new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
 		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
-		sub.insert(desired_lines_index[line_number] + add_index, new_line)
-		pointer_value = pointer_value - 1
-		if pointer_value == 0 then
-			if auxiliary_output["Original Lines"] == "D" then
-				add_index = auxiliary_output["Produced Lines_cs"][pointer]
-			else
-				add_index = auxiliary_output["Produced Lines_cs"][pointer] + 1
-			end
-			pointer = pointer + 1
-			pointer_value = auxiliary_output["Produced Lines"][pointer]
-		else
-			add_index = add_index + 1
-		end
+		sub.insert(desired_lines_index[line_number] + cumsum_i(prduced_lines, line_number) + 1, new_line)
+		prduced_lines[line_number] = prduced_lines[line_number] + 1
 	end
 end
 

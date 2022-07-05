@@ -31,7 +31,11 @@ def sub(line, l):  # ln: line number
     Pyegi.send_line(l)
 
 
-for line in lines:
+for line in lines[1:-1]:
+    # Generating lines
+    sub(line, line.copy())
+
+for line in reversed(lines):
     # Generating lines
     sub(line, line.copy())
 
