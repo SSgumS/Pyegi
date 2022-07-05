@@ -6,10 +6,7 @@ import numpy as np
 output_data = [0]
 auxiliary_output = {
     'Original Lines': 'C',  # 'C' for Commented, 'U' for Unchanged, and 'D' for deleted
-    'Produced Lines': [],
-    'Produced Lines_cs': []  # cumsum
 }
-corresponding_lines = []
 
 
 def GetInputFilePath() -> str:
@@ -31,7 +28,7 @@ def AppendOutputFile(data: list[str]):
 
 
 def send_line(l):  # l: line table, ln: line number
-    global output_data, auxiliary_output, corresponding_lines
+    global output_data, auxiliary_output
     ln = l.i+1
     str_out = "%d\n%d\n%d\n%d\n%s\n%s\n%d\n%d\n%d\n%s\n%s\n" % (
         ln,
@@ -46,11 +43,6 @@ def send_line(l):  # l: line table, ln: line number
         l.effect,
         l.text
     )
-    if ln in corresponding_lines:
-        auxiliary_output['Produced Lines'][corresponding_lines.index(ln)] += 1
-    else:
-        corresponding_lines.append(ln)
-        auxiliary_output['Produced Lines'].append(1)
     output_data.append(str_out)
     output_data[0] += len(str_out)
     if output_data[0] > 1000000:
@@ -59,15 +51,9 @@ def send_line(l):  # l: line table, ln: line number
 
 
 def CreateOutputFile(original='C'):
-    global output_data, auxiliary_output, corresponding_lines
+    global output_data, auxiliary_output
     AppendOutputFile(output_data)
     output_data = [0]
     auxiliary_output['Original Lines'] = original
-    if original == 'D':
-        auxiliary_output['Produced Lines_cs'] = np.cumsum(
-            np.array(auxiliary_output['Produced Lines'])-1).tolist()
-    else:
-        auxiliary_output['Produced Lines_cs'] = np.cumsum(
-            np.array(auxiliary_output['Produced Lines'])).tolist()
     file_name = sys.argv[5]
     json.dump(auxiliary_output, open(file_name, "w"))

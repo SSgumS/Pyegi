@@ -29,7 +29,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "intedit",
-		  "name": "G_intedit1",
+		  "name": "intedit1",
 		  "hint": "",
 		  "min": "nil",
 		  "max": "nil",
@@ -41,7 +41,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "floatedit",
-		  "name": "G_floatedit1",
+		  "name": "floatedit1",
 		  "hint": "",
 		  "min": 30,
 		  "max": 40,
@@ -54,7 +54,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "textbox",
-		  "name": "G_textbox1",
+		  "name": "textbox1",
 		  "hint": "",
 		  "text": "a new day\na new job"
 		},
@@ -96,7 +96,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "coloralpha",
-		  "name": "G_coloralpha1",
+		  "name": "coloralpha1",
 		  "hint": "",
 		  "value": "#23456789"
 		},
@@ -106,7 +106,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "alpha",
-		  "name": "G_alpha1",
+		  "name": "alpha1",
 		  "hint": "",
 		  "value": "#AA"
 		},
@@ -171,41 +171,6 @@
 		  "text": "something"
 		},
 		{
-		  "x": 2,
-		  "y": 0,
-		  "width": 1,
-		  "height": 1,
-		  "class": "intedit",
-		  "name": "G_intedit1",
-		  "hint": "",
-		  "min": "nil",
-		  "max": "nil",
-		  "value": 26
-		},
-		{
-		  "x": 3,
-		  "y": 0,
-		  "width": 1,
-		  "height": 1,
-		  "class": "floatedit",
-		  "name": "G_floatedit1",
-		  "hint": "",
-		  "min": 30,
-		  "max": 40,
-		  "value": 37.42,
-		  "step": ".2"
-		},
-		{
-		  "x": 4,
-		  "y": 0,
-		  "width": 1,
-		  "height": 1,
-		  "class": "textbox",
-		  "name": "G_textbox1",
-		  "hint": "",
-		  "text": "a new day\na new job"
-		},
-		{
 		  "x": 0,
 		  "y": 1,
 		  "width": 1,
@@ -236,26 +201,6 @@
 		  "name": "G_color1",
 		  "hint": "",
 		  "value": "#F0EA82"
-		},
-		{
-		  "x": 3,
-		  "y": 1,
-		  "width": 1,
-		  "height": 1,
-		  "class": "coloralpha",
-		  "name": "G_coloralpha1",
-		  "hint": "",
-		  "value": "#23456789"
-		},
-		{
-		  "x": 4,
-		  "y": 1,
-		  "width": 1,
-		  "height": 1,
-		  "class": "alpha",
-		  "name": "G_alpha1",
-		  "hint": "",
-		  "value": "#AA"
 		},
 		{
 			"class": "Pyegi_button",
