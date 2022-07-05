@@ -5,14 +5,152 @@
 	  "name": "main_window",
 	  "Controls": [
 		{
-		  "name": "label1",
 		  "x": 0,
-		  "label": "Direction:",
 		  "y": 0,
-		  "class": "label",
+		  "width": 1,
 		  "height": 1,
-		  "width": 1
+		  "class": "label",
+		  "name": "label1",
+		  "label": "This is not a label?!"
 		},
+		{
+		  "x": 1,
+		  "y": 0,
+		  "width": 1,
+		  "height": 1,
+		  "class": "edit",
+		  "name": "G_edit1",
+		  "hint": "",
+		  "text": "something"
+		},
+		{
+		  "x": 2,
+		  "y": 0,
+		  "width": 1,
+		  "height": 1,
+		  "class": "intedit",
+		  "name": "G_intedit1",
+		  "hint": "",
+		  "min": "nil",
+		  "max": "nil",
+		  "value": 26
+		},
+		{
+		  "x": 3,
+		  "y": 0,
+		  "width": 1,
+		  "height": 1,
+		  "class": "floatedit",
+		  "name": "G_floatedit1",
+		  "hint": "",
+		  "min": 30,
+		  "max": 40,
+		  "value": 37.42,
+		  "step": ".2"
+		},
+		{
+		  "x": 4,
+		  "y": 0,
+		  "width": 1,
+		  "height": 1,
+		  "class": "textbox",
+		  "name": "G_textbox1",
+		  "hint": "",
+		  "text": "a new day\na new job"
+		},
+		{
+		  "x": 0,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "dropdown",
+		  "name": "G_dropdown1",
+		  "hint": "",
+		  "items": ["item1", "item2", "item3", "item4"],
+		  "value": "item2"
+		},
+		{
+		  "x": 1,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "checkbox",
+		  "name": "G_checkbox1",
+		  "label": "This is a checkbox",
+		  "hint": "",
+		  "value": "True"
+		},
+		{
+		  "x": 2,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "color",
+		  "name": "G_color1",
+		  "hint": "",
+		  "value": "#F0EA82"
+		},
+		{
+		  "x": 3,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "coloralpha",
+		  "name": "G_coloralpha1",
+		  "hint": "",
+		  "value": "#23456789"
+		},
+		{
+		  "x": 4,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "alpha",
+		  "name": "G_alpha1",
+		  "hint": "",
+		  "value": "#AA"
+		},
+		{
+			"class": "Pyegi_button",
+			"name": "cancel_button",
+			"text": "Cancel",
+			"action": "Cancel",
+			"transition to": "",
+			"hint": "",
+			"x": 0,
+			"y": 3,
+			"width": 1,
+			"height": 1
+		},
+		{
+			"class": "Pyegi_button",
+			"name": "new_window_button",
+			"text": "New Window",
+			"action": "Transition",
+			"transition to": "new_window",
+			"hint": "",
+			"x": 2,
+			"y": 3,
+			"width": 1,
+			"height": 1
+		},
+		{
+			"class": "Pyegi_button",
+			"name": "apply_button",
+			"text": "Apply",
+			"action": "Apply",
+			"transition to": "",
+			"hint": "",
+			"x": 4,
+			"y": 3,
+			"width": 1,
+			"height": 1
+		}
+		]
+	  },
+	  {
+	  "name": "new_window",
+	  "Controls": [
 		{
 		  "x": 0,
 		  "y": 0,
@@ -28,7 +166,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "edit",
-		  "name": "edit1",
+		  "name": "G_edit1",
 		  "hint": "",
 		  "text": "something"
 		},
@@ -38,7 +176,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "intedit",
-		  "name": "intedit1",
+		  "name": "G_intedit1",
 		  "hint": "",
 		  "min": "nil",
 		  "max": "nil",
@@ -50,7 +188,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "floatedit",
-		  "name": "floatedit1",
+		  "name": "G_floatedit1",
 		  "hint": "",
 		  "min": 30,
 		  "max": 40,
@@ -63,7 +201,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "textbox",
-		  "name": "textbox1",
+		  "name": "G_textbox1",
 		  "hint": "",
 		  "text": "a new day\na new job"
 		},
@@ -73,7 +211,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "dropdown",
-		  "name": "dropdown1",
+		  "name": "G_dropdown1",
 		  "hint": "",
 		  "items": ["item1", "item2", "item3", "item4"],
 		  "value": "item2"
@@ -84,7 +222,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "checkbox",
-		  "name": "checkbox1",
+		  "name": "G_checkbox1",
 		  "label": "This is a checkbox",
 		  "hint": "",
 		  "value": "True"
@@ -95,7 +233,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "color",
-		  "name": "color1",
+		  "name": "G_color1",
 		  "hint": "",
 		  "value": "#F0EA82"
 		},
@@ -105,7 +243,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "coloralpha",
-		  "name": "coloralpha1",
+		  "name": "G_coloralpha1",
 		  "hint": "",
 		  "value": "#23456789"
 		},
@@ -115,7 +253,7 @@
 		  "width": 1,
 		  "height": 1,
 		  "class": "alpha",
-		  "name": "alpha1",
+		  "name": "G_alpha1",
 		  "hint": "",
 		  "value": "#AA"
 		},
@@ -127,6 +265,18 @@
 			"transition to": "",
 			"hint": "",
 			"x": 0,
+			"y": 3,
+			"width": 1,
+			"height": 1
+		},
+		{
+			"class": "Pyegi_button",
+			"name": "main_window_button",
+			"text": "Main Window",
+			"action": "Transition",
+			"transition to": "main_window",
+			"hint": "",
+			"x": 3,
 			"y": 3,
 			"width": 1,
 			"height": 1

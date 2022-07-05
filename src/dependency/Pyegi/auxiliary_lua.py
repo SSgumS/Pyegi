@@ -184,6 +184,44 @@ class Ui_LuaConverter(object):
                     widget['value'] = f"{color.name()}" + alpha.zfill(2)
                 if class1 == 'alpha':
                     exec(f"widget['value'] = self.{name1}.text()")
+                if name1[:2] == 'G_':
+                    all_windows = script_settings['Windows']
+                    for index2, widgets2 in enumerate(all_windows):
+                        if index2 != window_index:
+                            for widget2 in widgets2['Controls']:
+                                name2 = widget2['name']
+                                class2 = widget2['class']
+                                if name2 == name1:
+                                    if class2 == 'edit':
+                                        exec(
+                                            f"widget2['text'] = self.{name1}.text()")
+                                    if class2 == 'intedit':
+                                        exec(
+                                            f"widget2['value'] = int(self.{name1}.text())")
+                                    if class2 == 'floatedit':
+                                        exec(
+                                            f"widget2['value'] = float(self.{name1}.text())")
+                                    if class2 == 'textbox':
+                                        exec(
+                                            f"widget2['text'] = self.{name1}.toPlainText()")
+                                    if class2 == 'dropdown':
+                                        exec(
+                                            f"widget2['value'] = self.{name1}.currentText()")
+                                    if class2 == 'checkbox':
+                                        exec(
+                                            f"widget2['value'] = str(self.{name1}.isChecked())")
+                                    if class2 == 'color':
+                                        exec(
+                                            f"widget2['value'] = self.{name1}.palette().button().color().name()")
+                                    if class2 == 'coloralpha':
+                                        color = eval(
+                                            f'self.{name1}.palette().button().color()')
+                                        alpha = f"{(255 - color.alpha()):x}"
+                                        widget2['value'] = f"{color.name()}" + \
+                                            alpha.zfill(2)
+                                    if class2 == 'alpha':
+                                        exec(
+                                            f"widget2['value'] = self.{name1}.text()")
 
             py_parameters_file_path = system_inputs[3]
             with open(py_parameters_file_path, 'w') as outfile:
