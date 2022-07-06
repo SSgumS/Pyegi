@@ -1,6 +1,6 @@
 [tool.poetry]
 authors = [
-  "DrunkSimurgh <>",
+  "DrunkSimurgh <saman.9267@gmail.com>",
   "SSgumS <sssafais@hotmail.com>",
 ]
 description = "Python + Aegisub"
@@ -8,11 +8,15 @@ name = "Pyegi"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
+Pillow = "^9.0.1"
+PyQt6 = "^6.2.3"
+pyonfx = "^0.9.13"
 python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
-pypyr = "^5.1.0"
+PyQt5Designer = "^5.14.1"
 appdirs = "^1.4.4"
+pypyr = "^5.1.0"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
