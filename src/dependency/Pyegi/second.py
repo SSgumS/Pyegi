@@ -4,8 +4,8 @@ import json
 import sys
 from auxiliary_lua import Ui_LuaConverter
 
-dependency_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
-scriptPath = dependency_dir + 'PythonScripts/'
+dependency_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 
 
@@ -25,19 +25,22 @@ class Ui_EmptyWindow(object):
         EmptyWindow.setStatusBar(self.statusbar)
 
         script_name = system_inputs[4]
-        script_settings = scriptPath + f'{script_name}/settings.json'
+        script_settings = scriptsPath + f"{script_name}/settings.json"
         f = open(script_settings)
         widgets = json.load(f)
         f.close()
 
-        if widgets['Format'].lower() == "lua":
+        if widgets["Format"].lower() == "lua":
             self.window = QtWidgets.QMainWindow()
             self.ui = Ui_LuaConverter()
             self.ui.setupUi(self.window, script_name)
             self.window.show()
         else:
+            arguments = '"' + '" "'.join(system_inputs) + '"'
             os.system(
-                f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{system_inputs[3]}" "{system_inputs[4]}" "{system_inputs[5]}""')
+                f'""{dependency_dir}.venv/Scripts/python.exe" \
+                "{scriptsPath}{script_name}/main.py" {arguments}"'
+            )
 
         self.retranslateUi(EmptyWindow)
         QtCore.QMetaObject.connectSlotsByName(EmptyWindow)
@@ -48,7 +51,6 @@ class Ui_EmptyWindow(object):
 
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     EmptyWindow = QtWidgets.QMainWindow()
     ui = Ui_EmptyWindow()

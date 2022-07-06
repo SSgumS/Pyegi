@@ -211,7 +211,7 @@ local function post_init(sub, sel)
 		str = ""
 	end
 
-	-- Running main python gui
+	-- Running second python gui
 	local py_out_file_path = os.tmpname()
 	aegisub.log(5, serialize(py_out_file_path) .. "\n")
 	local py_script_path = dependency_dir .. "second.py"
@@ -250,12 +250,14 @@ local function post_init(sub, sel)
 			desired_lines_index[i] = desired_lines_index[i] - subtracted_value
 		end
 	end
-	local prduced_lines = {}
+	local produced_lines = {}
 	for i = 1, #desired_lines_index do
-		prduced_lines[i] = 0
+		produced_lines[i] = 0
 	end
-	local desired_lines_max = math.max(unpack(desired_lines_index))
+	local desired_lines_max = #desired_lines_index
+	aegisub.log(5, serialize(desired_lines_index) .. "\n")
 	local all_lines = lines_from(py_out_file_path)
+	aegisub.log(5, serialize(all_lines) .. "\n")
 	local new_line = {}
 	local line_params_number = 11
 	new_line["class"] = "dialogue"
@@ -284,12 +286,12 @@ local function post_init(sub, sel)
 		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
 		if (line_number < 0) or (auxiliary_output["Placement"] == "S") then
 			sub.insert(1, new_line)
-			prduced_lines[1] = prduced_lines[1] + 1
+			produced_lines[1] = produced_lines[1] + 1
 		elseif (line_number > desired_lines_max) or (auxiliary_output["Placement"] == "E") then
 			sub[0] = new_line
 		else
-			sub.insert(desired_lines_index[line_number] + cumsum_i(prduced_lines, line_number) + 1, new_line)
-			prduced_lines[line_number] = prduced_lines[line_number] + 1
+			sub.insert(desired_lines_index[line_number] + cumsum_i(produced_lines, line_number) + 1, new_line)
+			produced_lines[line_number] = produced_lines[line_number] + 1
 		end
 	end
 end
