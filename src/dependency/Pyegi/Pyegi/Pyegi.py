@@ -6,6 +6,7 @@ import numpy as np
 output_data = [0]
 auxiliary_output = {
     'Original Lines': 'C',  # 'C' for Commented, 'U' for Unchanged, and 'D' for deleted
+    'Placement': 'O'  # 'O' for below Original, 'E' for End, and 'S' for Start
 }
 
 
@@ -50,10 +51,17 @@ def send_line(l):  # l: line table, ln: line number
         output_data = [0]
 
 
-def CreateOutputFile(original='C'):
+def CreateOutputFile(original='C', placement='O'):
+    # original choices: 'C': the original lines in the subtitle file will be Commented
+    # 'D': the original lines in the subtitle file will be Deleted
+    # 'U': the original lines in the subtitle file won't be modified
+    # placement choices: 'O': produced line(s) will be placed below the corresponding Original line
+    # 'E': produced line(s) will be placed at the end of subtitle file
+    # 'S': produced line(s) will be placed at the start of subtitle file
     global output_data, auxiliary_output
     AppendOutputFile(output_data)
     output_data = [0]
     auxiliary_output['Original Lines'] = original
+    auxiliary_output['Placement'] = placement
     file_name = sys.argv[5]
     json.dump(auxiliary_output, open(file_name, "w"))

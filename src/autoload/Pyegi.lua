@@ -254,6 +254,7 @@ local function post_init(sub, sel)
 	for i = 1, #desired_lines_index do
 		prduced_lines[i] = 0
 	end
+	local desired_lines_max = math.max(unpack(desired_lines_index))
 	local all_lines = lines_from(py_out_file_path)
 	local new_line = {}
 	local line_params_number = 11
@@ -281,8 +282,15 @@ local function post_init(sub, sel)
 		new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
 		new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
 		new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
-		sub.insert(desired_lines_index[line_number] + cumsum_i(prduced_lines, line_number) + 1, new_line)
-		prduced_lines[line_number] = prduced_lines[line_number] + 1
+		if (line_number < 0) or (auxiliary_output["Placement"] == "S") then
+			sub.insert(1, new_line)
+			prduced_lines[1] = prduced_lines[1] + 1
+		elseif (line_number > desired_lines_max) or (auxiliary_output["Placement"] == "E") then
+			sub[0] = new_line
+		else
+			sub.insert(desired_lines_index[line_number] + cumsum_i(prduced_lines, line_number) + 1, new_line)
+			prduced_lines[line_number] = prduced_lines[line_number] + 1
+		end
 	end
 end
 
