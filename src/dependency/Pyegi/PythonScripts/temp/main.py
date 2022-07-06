@@ -40,4 +40,4 @@ for line in reversed(lines):
     sub(line, line.copy())
 
 
-Pyegi.CreateOutputFile(original='D')
+Pyegi.CreateOutputFile(original='D', placement='S')
