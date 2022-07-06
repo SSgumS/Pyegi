@@ -10,6 +10,7 @@ version = "0.0.1"
 [tool.poetry.dependencies]
 Pillow = "^9.0.1"
 PyQt6 = "^6.2.3"
+pyonfx = "^0.9.13"
 python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]

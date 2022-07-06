@@ -4,8 +4,8 @@ import os
 import json
 import sys
 
-dependency_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
-scriptPath = dependency_dir + 'PythonScripts/'
+dependency_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 
 
@@ -19,7 +19,8 @@ class Ui_MainWindow(object):
         self.ScriptSelection_label.setGeometry(QtCore.QRect(30, 20, 81, 16))
         self.ScriptSelection_label.setObjectName("ScriptSelection_label")
         self.scriptNames_comboBox = QtWidgets.QComboBox(
-            self.centralwidget, currentIndexChanged=lambda: self.preview())
+            self.centralwidget, currentIndexChanged=self.preview
+        )
         self.scriptNames_comboBox.setGeometry(QtCore.QRect(120, 20, 651, 22))
         self.scriptNames_comboBox.setObjectName("scriptNames_comboBox")
         self.preview_label = QtWidgets.QLabel(self.centralwidget)
@@ -32,25 +33,22 @@ class Ui_MainWindow(object):
         self.cancel_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.cancel_pushButton.setGeometry(QtCore.QRect(20, 510, 121, 31))
         self.cancel_pushButton.setObjectName("cancel_pushButton")
-        self.cancel_pushButton.clicked.connect(
-            QtCore.QCoreApplication.instance().quit)
+        self.cancel_pushButton.clicked.connect(QtCore.QCoreApplication.instance().quit)
         self.settings_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.settings_pushButton.setGeometry(QtCore.QRect(150, 510, 121, 31))
         self.settings_pushButton.setObjectName("settings_pushButton")
         self.next_pushButton = QtWidgets.QPushButton(
-            self.centralwidget, clicked=lambda: self.writeSettings())
+            self.centralwidget, clicked=self.writeMainWindowOutput
+        )
         self.next_pushButton.setGeometry(QtCore.QRect(650, 510, 121, 31))
         self.next_pushButton.setObjectName("next_pushButton")
         self.LinesSelection_label = QtWidgets.QLabel(self.centralwidget)
         self.LinesSelection_label.setGeometry(QtCore.QRect(430, 510, 85, 16))
         self.LinesSelection_label.setObjectName("LinesSelection_label")
-        self.SelectedLines_radioButton = QtWidgets.QRadioButton(
-            self.centralwidget)
-        self.SelectedLines_radioButton.setGeometry(
-            QtCore.QRect(520, 510, 100, 20))
+        self.SelectedLines_radioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.SelectedLines_radioButton.setGeometry(QtCore.QRect(520, 510, 100, 20))
         self.SelectedLines_radioButton.setChecked(True)
-        self.SelectedLines_radioButton.setObjectName(
-            "SelectedLines_radioButton")
+        self.SelectedLines_radioButton.setObjectName("SelectedLines_radioButton")
         self.AllLines_radioButton = QtWidgets.QRadioButton(self.centralwidget)
         self.AllLines_radioButton.setGeometry(QtCore.QRect(520, 530, 100, 20))
         self.AllLines_radioButton.setObjectName("AllLines_radioButton")
@@ -67,17 +65,17 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
         first_item = True
-        main_gif_path = ''
-        for file in os.listdir(scriptPath):
-            if os.path.isdir(scriptPath+file):
+        main_gif_path = ""
+        for file in os.listdir(scriptsPath):
+            if os.path.isdir(scriptsPath + file):
                 self.scriptNames_comboBox.addItem(file)
                 if first_item:
                     first_item = False
-                    for file2 in os.listdir(scriptPath+file):
+                    for file2 in os.listdir(scriptsPath + file):
                         if file2.endswith(".gif"):
-                            main_gif_path = scriptPath+file+'/'+file2
+                            main_gif_path = scriptsPath + file + "/" + file2
 
-        if main_gif_path != '':
+        if main_gif_path != "":
             self.movie = QMovie(main_gif_path)
             self.preview_label.setMovie(self.movie)
             self.movie.start()
@@ -85,37 +83,34 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.ScriptSelection_label.setText(
-            _translate("MainWindow", "Select Script"))
+        self.ScriptSelection_label.setText(_translate("MainWindow", "Select Script"))
         self.preview_label.setText(_translate("MainWindow", "Preview"))
         self.cancel_pushButton.setText(_translate("MainWindow", "Cancel"))
         self.settings_pushButton.setText(_translate("MainWindow", "Settings"))
         self.next_pushButton.setText(_translate("MainWindow", "Next"))
-        self.LinesSelection_label.setText(
-            _translate("MainWindow", "Apply script on:"))
+        self.LinesSelection_label.setText(_translate("MainWindow", "Apply script on:"))
         self.SelectedLines_radioButton.setText(
-            _translate("MainWindow", "selected line(s)"))
-        self.AllLines_radioButton.setText(
-            _translate("MainWindow", "all lines"))
+            _translate("MainWindow", "selected line(s)")
+        )
+        self.AllLines_radioButton.setText(_translate("MainWindow", "all lines"))
 
-    def writeSettings(self):
+    def writeMainWindowOutput(self):
         main_py_parameters = {}
         if self.AllLines_radioButton.isChecked():
-            main_py_parameters['applyOn'] = "all lines"
+            main_py_parameters["applyOn"] = "all lines"
         else:
-            main_py_parameters['applyOn'] = "selected lines"
-        main_py_parameters['selectedScript'] = self.scriptNames_comboBox.currentText(
-        )
+            main_py_parameters["applyOn"] = "selected lines"
+        main_py_parameters["selectedScript"] = self.scriptNames_comboBox.currentText()
         json.dump(main_py_parameters, open(system_inputs[1], "w"))
-        sys.exit()
+        QtCore.QCoreApplication.instance().quit()
 
     def preview(self):
-        main_gif_path = ''
+        main_gif_path = ""
         scriptFolder = self.scriptNames_comboBox.currentText()
-        for file in os.listdir(scriptPath+scriptFolder):
+        for file in os.listdir(scriptsPath + scriptFolder):
             if file.endswith(".gif"):
-                main_gif_path = scriptPath+scriptFolder+'/'+file
-        if main_gif_path != '':
+                main_gif_path = scriptsPath + scriptFolder + "/" + file
+        if main_gif_path != "":
             self.movie = QMovie(main_gif_path)
             self.preview_label.setMovie(self.movie)
             self.movie.start()
@@ -124,11 +119,10 @@ class Ui_MainWindow(object):
             # print(self.movie.CacheMode(0))
             # self.movie.loopCount()
         else:
-            self.preview_label.setText('No Preview')
+            self.preview_label.setText("No Preview")
 
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
