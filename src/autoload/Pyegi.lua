@@ -257,7 +257,6 @@ local function post_init(sub, sel)
 	local desired_lines_max = #desired_lines_index
 	aegisub.log(5, serialize(desired_lines_index) .. "\n")
 	local all_lines = lines_from(py_out_file_path)
-	aegisub.log(5, serialize(all_lines) .. "\n")
 	local new_line = {}
 	local line_params_number = 11
 	new_line["class"] = "dialogue"
