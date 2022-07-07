@@ -1,4 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtWidgets import QCompleter
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMovie
 import os
 import json
@@ -66,19 +68,32 @@ class Ui_MainWindow(object):
 
         first_item = True
         main_gif_path = ""
+        combobox_items = []
         for file in os.listdir(scriptsPath):
             if os.path.isdir(scriptsPath + file):
                 self.scriptNames_comboBox.addItem(file)
+                combobox_items.append(file)
                 if first_item:
                     first_item = False
                     for file2 in os.listdir(scriptsPath + file):
                         if file2.endswith(".gif"):
                             main_gif_path = scriptsPath + file + "/" + file2
+        self.completer = QCompleter(combobox_items)
+        self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.scriptNames_comboBox.activated.connect(self.comboBox_activated)
+        self.scriptNames_comboBox.highlighted.connect(self.comboBox_highlighted)
 
         if main_gif_path != "":
             self.movie = QMovie(main_gif_path)
             self.preview_label.setMovie(self.movie)
             self.movie.start()
+
+    def comboBox_activated(self):
+        self.scriptNames_comboBox.setEditable(False)
+
+    def comboBox_highlighted(self):
+        self.scriptNames_comboBox.setEditable(True)
+        self.scriptNames_comboBox.setCompleter(self.completer)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
