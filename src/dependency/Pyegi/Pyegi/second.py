@@ -4,7 +4,7 @@ import json
 import sys
 from auxiliary_lua import Ui_LuaConverter
 
-dependency_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 
@@ -38,8 +38,7 @@ class Ui_EmptyWindow(object):
         else:
             arguments = '"' + '" "'.join(system_inputs) + '"'
             os.system(
-                f'""{dependency_dir}.venv/Scripts/python.exe" \
-                "{scriptsPath}{script_name}/main.py" {arguments}"'
+                f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" {arguments}"'
             )
 
         self.retranslateUi(EmptyWindow)
