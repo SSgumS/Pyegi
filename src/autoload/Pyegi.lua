@@ -117,18 +117,18 @@ end
 
 local function post_init(sub, sel)
 	-- Running main python gui
-	local main_py_script_path = dependency_dir .. "main.py"
+	local main_py_script_path = dependency_dir .. "Pyegi/main.py"
 	local main_py_parameters_file_path = os.tmpname()
-	aegisub.log(5, serialize(main_py_parameters_file_path) .. "\n")
+	-- aegisub.log(5, serialize(main_py_parameters_file_path) .. "\n")
 	local command_parameters_string = ' "' .. main_py_script_path .. '" "' .. main_py_parameters_file_path .. '"'
-	aegisub.log(5, serialize(command_parameters_string) .. "\n")
+	-- aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for user to select a python script...")
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
 	-- Processing the selected parameters from the python main GUI
 	APT("Preparing the data...")
 	local main_py_parameters = json.decode(read_all_file_as_string(main_py_parameters_file_path))
-	aegisub.log(5, serialize(main_py_parameters) .. "\n")
+	-- aegisub.log(5, serialize(main_py_parameters) .. "\n")
 	local desired_lines_index = {}
 	if main_py_parameters["applyOn"] == "selected lines" then
 		for _, line_index in ipairs(sel) do
@@ -182,7 +182,7 @@ local function post_init(sub, sel)
 
 	-- write the created ass script
 	local lua_out_file_path = os.tmpname()
-	aegisub.log(5, serialize(lua_out_file_path) .. "\n")
+	-- aegisub.log(5, serialize(lua_out_file_path) .. "\n")
 	local lua_out = assert(io.open(lua_out_file_path, "wb"))
 	lua_out:write(str)
 	assert(lua_out:close())
@@ -213,8 +213,8 @@ local function post_init(sub, sel)
 
 	-- Running second python gui
 	local py_out_file_path = os.tmpname()
-	aegisub.log(5, serialize(py_out_file_path) .. "\n")
-	local py_script_path = dependency_dir .. "second.py"
+	-- aegisub.log(5, serialize(py_out_file_path) .. "\n")
+	local py_script_path = dependency_dir .. "Pyegi/second.py"
 	local py_parameters_file_path = os.tmpname()
 	local selected_script = main_py_parameters["selectedScript"]
 	local lines_parameters_file_path = os.tmpname()
@@ -224,14 +224,14 @@ local function post_init(sub, sel)
 		'" "' .. py_parameters_file_path ..
 		'" "' .. selected_script ..
 		'" "' .. lines_parameters_file_path .. '"'
-	aegisub.log(5, serialize(command_parameters_string) .. "\n")
+	-- aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for python results...")
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
 	-- Converting the result to ass lines.
 	APT("Producing new lines...")
 	local auxiliary_output = json.decode(read_all_file_as_string(lines_parameters_file_path))
-	aegisub.log(5, serialize(auxiliary_output) .. "\n")
+	-- aegisub.log(5, serialize(auxiliary_output) .. "\n")
 	if auxiliary_output["Original Lines"] == "C" then
 		for _, i in ipairs(desired_lines_index) do
 			local l = sub[i]
@@ -255,7 +255,7 @@ local function post_init(sub, sel)
 		produced_lines[i] = 0
 	end
 	local desired_lines_max = #desired_lines_index
-	aegisub.log(5, serialize(desired_lines_index) .. "\n")
+	-- aegisub.log(5, serialize(desired_lines_index) .. "\n")
 	local all_lines = lines_from(py_out_file_path)
 	local new_line = {}
 	local line_params_number = 11

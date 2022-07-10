@@ -5,7 +5,7 @@ import json
 import sys
 
 
-dependency_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 

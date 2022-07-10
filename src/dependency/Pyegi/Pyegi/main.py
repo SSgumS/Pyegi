@@ -6,9 +6,27 @@ import os
 import json
 import sys
 
-dependency_dir = os.path.dirname(os.path.realpath(__file__)) + "/"
+dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
+
+
+class ComboBoxLineEdit(QtWidgets.QLineEdit):
+    def mousePressEvent(self, e: QtGui.QMouseEvent) -> None:
+        super().mousePressEvent(e)
+
+        combobox: QtWidgets.QComboBox = self.parent()
+        completer = combobox.completer()
+
+        if combobox.currentText() == "":
+            completer.setCompletionMode(
+                QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion
+            )
+        else:
+            completer.setCompletionMode(
+                QtWidgets.QCompleter.CompletionMode.PopupCompletion
+            )
+        completer.complete()
 
 
 class Ui_MainWindow(object):
@@ -20,11 +38,29 @@ class Ui_MainWindow(object):
         self.ScriptSelection_label = QtWidgets.QLabel(self.centralwidget)
         self.ScriptSelection_label.setGeometry(QtCore.QRect(30, 20, 81, 16))
         self.ScriptSelection_label.setObjectName("ScriptSelection_label")
-        self.scriptNames_comboBox = QtWidgets.QComboBox(
-            self.centralwidget, currentIndexChanged=self.preview
-        )
-        self.scriptNames_comboBox.setGeometry(QtCore.QRect(120, 20, 651, 22))
-        self.scriptNames_comboBox.setObjectName("scriptNames_comboBox")
+
+        # combobox
+        self.selected_script = ""
+        self.combobox = QtWidgets.QComboBox(self.centralwidget)
+        self.combobox.setGeometry(QtCore.QRect(120, 20, 651, 22))
+        self.combobox.setObjectName("scriptNames_comboBox")
+        combobox_items = []
+        for script_name in os.listdir(scriptsPath):
+            if not os.path.isdir(scriptsPath + script_name):
+                continue
+            self.combobox.addItem(script_name)
+            combobox_items.append(script_name)
+        self.combobox.setLineEdit(ComboBoxLineEdit(self.combobox))
+        self.combobox.lineEdit().setPlaceholderText("Please select a script.")
+        self.combobox.setCurrentIndex(-1)
+        completer = QtWidgets.QCompleter(combobox_items)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        completer.setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
+        self.combobox.setCompleter(completer)
+        self.combobox.currentIndexChanged.connect(self.preview)
+        self.combobox.currentTextChanged.connect(self.textChangedHandler)
+
         self.preview_label = QtWidgets.QLabel(self.centralwidget)
         self.preview_label.setGeometry(QtCore.QRect(20, 60, 761, 431))
         font = QtGui.QFont()
@@ -66,40 +102,13 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-        first_item = True
-        main_gif_path = ""
-        combobox_items = []
-        for file in os.listdir(scriptsPath):
-            if os.path.isdir(scriptsPath + file):
-                self.scriptNames_comboBox.addItem(file)
-                combobox_items.append(file)
-                if first_item:
-                    first_item = False
-                    for file2 in os.listdir(scriptsPath + file):
-                        if file2.endswith(".gif"):
-                            main_gif_path = scriptsPath + file + "/" + file2
-        self.completer = QCompleter(combobox_items)
-        self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        self.scriptNames_comboBox.activated.connect(self.comboBox_activated)
-        self.scriptNames_comboBox.highlighted.connect(self.comboBox_highlighted)
-
-        if main_gif_path != "":
-            self.movie = QMovie(main_gif_path)
-            self.preview_label.setMovie(self.movie)
-            self.movie.start()
-
-    def comboBox_activated(self):
-        self.scriptNames_comboBox.setEditable(False)
-
-    def comboBox_highlighted(self):
-        self.scriptNames_comboBox.setEditable(True)
-        self.scriptNames_comboBox.setCompleter(self.completer)
-
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.ScriptSelection_label.setText(_translate("MainWindow", "Select Script"))
-        self.preview_label.setText(_translate("MainWindow", "Preview"))
+        self.preview_label.setText(
+            _translate("MainWindow", "No script selected to preview.")
+        )
         self.cancel_pushButton.setText(_translate("MainWindow", "Cancel"))
         self.settings_pushButton.setText(_translate("MainWindow", "Settings"))
         self.next_pushButton.setText(_translate("MainWindow", "Next"))
@@ -110,18 +119,25 @@ class Ui_MainWindow(object):
         self.AllLines_radioButton.setText(_translate("MainWindow", "all lines"))
 
     def writeMainWindowOutput(self):
+        if self.selected_script == "":
+            return
         main_py_parameters = {}
         if self.AllLines_radioButton.isChecked():
             main_py_parameters["applyOn"] = "all lines"
         else:
             main_py_parameters["applyOn"] = "selected lines"
-        main_py_parameters["selectedScript"] = self.scriptNames_comboBox.currentText()
+        main_py_parameters["selectedScript"] = self.selected_script
         json.dump(main_py_parameters, open(system_inputs[1], "w"))
         QtCore.QCoreApplication.instance().quit()
 
     def preview(self):
+        if self.combobox.currentIndex() == -1:
+            self.preview_label.setText("No script selected to preview.")
+            self.selected_script = ""
+        else:
+            self.selected_script = self.combobox.itemText(self.combobox.currentIndex())
         main_gif_path = ""
-        scriptFolder = self.scriptNames_comboBox.currentText()
+        scriptFolder = self.selected_script
         for file in os.listdir(scriptsPath + scriptFolder):
             if file.endswith(".gif"):
                 main_gif_path = scriptsPath + scriptFolder + "/" + file
@@ -134,7 +150,22 @@ class Ui_MainWindow(object):
             # print(self.movie.CacheMode(0))
             # self.movie.loopCount()
         else:
-            self.preview_label.setText("No Preview")
+            self.preview_label.setText(f"No preview for {scriptFolder}.")
+
+    def textChangedHandler(self, text: str):
+        combobox = self.combobox
+        completer = combobox.completer()
+        if text == "":
+            if combobox.hasFocus():
+                completer.setCompletionMode(
+                    QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion
+                )
+                completer.setCompletionPrefix(text)  # QCompleter is not updated yet...
+                completer.complete()  # TODO: doesn't work :/!
+        else:
+            completer.setCompletionMode(
+                QtWidgets.QCompleter.CompletionMode.PopupCompletion
+            )
 
 
 if __name__ == "__main__":
