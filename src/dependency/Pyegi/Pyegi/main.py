@@ -28,6 +28,22 @@ class ComboBoxLineEdit(QtWidgets.QLineEdit):
             )
         completer.complete()
 
+    def keyPressEvent(self, e: QtGui.QMouseEvent) -> None:
+        super().keyPressEvent(e)
+
+        combobox: QtWidgets.QComboBox = self.parent()
+        completer = combobox.completer()
+
+        if combobox.currentText() == "":
+            completer.setCompletionMode(
+                QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion
+            )
+        else:
+            completer.setCompletionMode(
+                QtWidgets.QCompleter.CompletionMode.PopupCompletion
+            )
+        completer.complete()
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
