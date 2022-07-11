@@ -27,7 +27,6 @@ class ComboBoxLineEdit(QtWidgets.QLineEdit):
 
         combobox: QtWidgets.QComboBox = self.parent()
         completer = combobox.completer()
-
         if combobox.currentText() == "":
             completer.setCompletionMode(
                 QCompleter.CompletionMode.UnfilteredPopupCompletion
@@ -41,13 +40,9 @@ class ComboBoxLineEdit(QtWidgets.QLineEdit):
 
         combobox: QtWidgets.QComboBox = self.parent()
         completer = combobox.completer()
-
-        if combobox.currentText() == "":
-            completer.setCompletionMode(
-                QCompleter.CompletionMode.UnfilteredPopupCompletion
-            )
-        else:
-            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        if combobox.currentText() != "":
+            return
+        completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
         completer.complete()
 
 
@@ -188,7 +183,7 @@ class Ui_MainWindow(object):
                     QCompleter.CompletionMode.UnfilteredPopupCompletion
                 )
                 completer.setCompletionPrefix(text)  # QCompleter is not updated yet...
-                completer.complete()  # TODO: doesn't work :/!
+                # completer.complete()  # TODO: doesn't work :/!
         else:
             completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 
