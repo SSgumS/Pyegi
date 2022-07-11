@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QCompleter
+from PyQt6.QtWidgets import QPushButton, QCompleter, QGridLayout, QSizePolicy
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QMovie
 import os
@@ -11,6 +11,16 @@ scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 
 
+class QPushButton2(QPushButton):
+    def __init__(self, parent: QPushButton):
+        super().__init__(parent)
+
+        self.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Expanding,
+        )
+
+
 class ComboBoxLineEdit(QtWidgets.QLineEdit):
     def mousePressEvent(self, e: QtGui.QMouseEvent) -> None:
         super().mousePressEvent(e)
@@ -20,12 +30,10 @@ class ComboBoxLineEdit(QtWidgets.QLineEdit):
 
         if combobox.currentText() == "":
             completer.setCompletionMode(
-                QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion
+                QCompleter.CompletionMode.UnfilteredPopupCompletion
             )
         else:
-            completer.setCompletionMode(
-                QtWidgets.QCompleter.CompletionMode.PopupCompletion
-            )
+            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         completer.complete()
 
     def keyPressEvent(self, e: QtGui.QMouseEvent) -> None:
@@ -36,12 +44,10 @@ class ComboBoxLineEdit(QtWidgets.QLineEdit):
 
         if combobox.currentText() == "":
             completer.setCompletionMode(
-                QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion
+                QCompleter.CompletionMode.UnfilteredPopupCompletion
             )
         else:
-            completer.setCompletionMode(
-                QtWidgets.QCompleter.CompletionMode.PopupCompletion
-            )
+            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         completer.complete()
 
 
@@ -51,15 +57,19 @@ class Ui_MainWindow(object):
         MainWindow.resize(800, 600)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        self.window_layout = QGridLayout(self.centralwidget)
+        self.window_layout.setObjectName("window_layout")
+        self.widgets_layout = QGridLayout()
+        self.widgets_layout.setObjectName("widgets_layout")
         self.ScriptSelection_label = QtWidgets.QLabel(self.centralwidget)
-        self.ScriptSelection_label.setGeometry(QtCore.QRect(30, 20, 81, 16))
         self.ScriptSelection_label.setObjectName("ScriptSelection_label")
+        self.widgets_layout.addWidget(self.ScriptSelection_label, 0, 0, 1, 1)
 
         # combobox
         self.selected_script = ""
         self.combobox = QtWidgets.QComboBox(self.centralwidget)
-        self.combobox.setGeometry(QtCore.QRect(120, 20, 651, 22))
         self.combobox.setObjectName("scriptNames_comboBox")
+        self.widgets_layout.addWidget(self.combobox, 0, 1, 1, 5)
         combobox_items = []
         for script_name in os.listdir(scriptsPath):
             if not os.path.isdir(scriptsPath + script_name):
@@ -69,43 +79,44 @@ class Ui_MainWindow(object):
         self.combobox.setLineEdit(ComboBoxLineEdit(self.combobox))
         self.combobox.lineEdit().setPlaceholderText("Please select a script.")
         self.combobox.setCurrentIndex(-1)
-        completer = QtWidgets.QCompleter(combobox_items)
+        completer = QCompleter(combobox_items)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        completer.setCompletionMode(QtWidgets.QCompleter.CompletionMode.PopupCompletion)
+        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         self.combobox.setCompleter(completer)
         self.combobox.currentIndexChanged.connect(self.preview)
         self.combobox.currentTextChanged.connect(self.textChangedHandler)
 
         self.preview_label = QtWidgets.QLabel(self.centralwidget)
-        self.preview_label.setGeometry(QtCore.QRect(20, 60, 761, 431))
         font = QtGui.QFont()
         font.setPointSize(14)
         self.preview_label.setFont(font)
         self.preview_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setObjectName("preview_label")
-        self.cancel_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.cancel_pushButton.setGeometry(QtCore.QRect(20, 510, 121, 31))
+        self.widgets_layout.addWidget(self.preview_label, 1, 0, 7, 6)
+        self.cancel_pushButton = QPushButton2(self.centralwidget)
         self.cancel_pushButton.setObjectName("cancel_pushButton")
+        self.widgets_layout.addWidget(self.cancel_pushButton, 8, 0, 2, 1)
         self.cancel_pushButton.clicked.connect(QtCore.QCoreApplication.instance().quit)
-        self.settings_pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.settings_pushButton.setGeometry(QtCore.QRect(150, 510, 121, 31))
+        self.settings_pushButton = QPushButton2(self.centralwidget)
         self.settings_pushButton.setObjectName("settings_pushButton")
-        self.next_pushButton = QtWidgets.QPushButton(
-            self.centralwidget, clicked=self.writeMainWindowOutput
-        )
-        self.next_pushButton.setGeometry(QtCore.QRect(650, 510, 121, 31))
+        self.widgets_layout.addWidget(self.settings_pushButton, 8, 1, 2, 1)
+        self.next_pushButton = QPushButton2(self.centralwidget)
         self.next_pushButton.setObjectName("next_pushButton")
+        self.widgets_layout.addWidget(self.next_pushButton, 8, 5, 2, 1)
+        self.next_pushButton.clicked.connect(self.writeMainWindowOutput)
         self.LinesSelection_label = QtWidgets.QLabel(self.centralwidget)
-        self.LinesSelection_label.setGeometry(QtCore.QRect(430, 510, 85, 16))
         self.LinesSelection_label.setObjectName("LinesSelection_label")
+        self.LinesSelection_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.widgets_layout.addWidget(self.LinesSelection_label, 8, 3, 1, 1)
         self.SelectedLines_radioButton = QtWidgets.QRadioButton(self.centralwidget)
-        self.SelectedLines_radioButton.setGeometry(QtCore.QRect(520, 510, 100, 20))
         self.SelectedLines_radioButton.setChecked(True)
         self.SelectedLines_radioButton.setObjectName("SelectedLines_radioButton")
+        self.widgets_layout.addWidget(self.SelectedLines_radioButton, 8, 4, 1, 1)
         self.AllLines_radioButton = QtWidgets.QRadioButton(self.centralwidget)
-        self.AllLines_radioButton.setGeometry(QtCore.QRect(520, 530, 100, 20))
         self.AllLines_radioButton.setObjectName("AllLines_radioButton")
+        self.widgets_layout.addWidget(self.AllLines_radioButton, 9, 4, 1, 1)
+        self.window_layout.addLayout(self.widgets_layout, 0, 0)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
@@ -174,14 +185,12 @@ class Ui_MainWindow(object):
         if text == "":
             if combobox.hasFocus():
                 completer.setCompletionMode(
-                    QtWidgets.QCompleter.CompletionMode.UnfilteredPopupCompletion
+                    QCompleter.CompletionMode.UnfilteredPopupCompletion
                 )
                 completer.setCompletionPrefix(text)  # QCompleter is not updated yet...
                 completer.complete()  # TODO: doesn't work :/!
         else:
-            completer.setCompletionMode(
-                QtWidgets.QCompleter.CompletionMode.PopupCompletion
-            )
+            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 
 
 if __name__ == "__main__":
