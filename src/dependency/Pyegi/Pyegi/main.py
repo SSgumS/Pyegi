@@ -1,7 +1,16 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtWidgets import QPushButton, QCompleter, QGridLayout, QSizePolicy
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMovie
+from PyQt6.QtWidgets import (
+    QPushButton,
+    QLineEdit,
+    QComboBox,
+    QCompleter,
+    QGridLayout,
+    QSizePolicy,
+    QLabel,
+    QRadioButton,
+)
+from PyQt6.QtCore import Qt, QCoreApplication
+from PyQt6.QtGui import QMouseEvent, QMovie
 import os
 import json
 import sys
@@ -21,11 +30,11 @@ class QPushButton2(QPushButton):
         )
 
 
-class ComboBoxLineEdit(QtWidgets.QLineEdit):
-    def mousePressEvent(self, e: QtGui.QMouseEvent) -> None:
+class ComboBoxLineEdit(QLineEdit):
+    def mousePressEvent(self, e: QMouseEvent) -> None:
         super().mousePressEvent(e)
 
-        combobox: QtWidgets.QComboBox = self.parent()
+        combobox: QComboBox = self.parent()
         completer = combobox.completer()
         if combobox.currentText() == "":
             completer.setCompletionMode(
@@ -38,7 +47,7 @@ class ComboBoxLineEdit(QtWidgets.QLineEdit):
     def keyPressEvent(self, e: QtGui.QMouseEvent) -> None:
         super().keyPressEvent(e)
 
-        combobox: QtWidgets.QComboBox = self.parent()
+        combobox: QComboBox = self.parent()
         completer = combobox.completer()
         if combobox.currentText() != "":
             return
@@ -56,13 +65,13 @@ class Ui_MainWindow(object):
         self.window_layout.setObjectName("window_layout")
         self.widgets_layout = QGridLayout()
         self.widgets_layout.setObjectName("widgets_layout")
-        self.ScriptSelection_label = QtWidgets.QLabel(self.centralwidget)
+        self.ScriptSelection_label = QLabel(self.centralwidget)
         self.ScriptSelection_label.setObjectName("ScriptSelection_label")
         self.widgets_layout.addWidget(self.ScriptSelection_label, 0, 0, 1, 1)
 
         # combobox
         self.selected_script = ""
-        self.combobox = QtWidgets.QComboBox(self.centralwidget)
+        self.combobox = QComboBox(self.centralwidget)
         self.combobox.setObjectName("scriptNames_comboBox")
         self.widgets_layout.addWidget(self.combobox, 0, 1, 1, 5)
         combobox_items = []
@@ -82,17 +91,17 @@ class Ui_MainWindow(object):
         self.combobox.currentIndexChanged.connect(self.preview)
         self.combobox.currentTextChanged.connect(self.textChangedHandler)
 
-        self.preview_label = QtWidgets.QLabel(self.centralwidget)
+        self.preview_label = QLabel(self.centralwidget)
         font = QtGui.QFont()
         font.setPointSize(14)
         self.preview_label.setFont(font)
-        self.preview_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setObjectName("preview_label")
         self.widgets_layout.addWidget(self.preview_label, 1, 0, 7, 6)
         self.cancel_pushButton = QPushButton2(self.centralwidget)
         self.cancel_pushButton.setObjectName("cancel_pushButton")
         self.widgets_layout.addWidget(self.cancel_pushButton, 8, 0, 2, 1)
-        self.cancel_pushButton.clicked.connect(QtCore.QCoreApplication.instance().quit)
+        self.cancel_pushButton.clicked.connect(QCoreApplication.instance().quit)
         self.settings_pushButton = QPushButton2(self.centralwidget)
         self.settings_pushButton.setObjectName("settings_pushButton")
         self.widgets_layout.addWidget(self.settings_pushButton, 8, 1, 2, 1)
@@ -100,15 +109,15 @@ class Ui_MainWindow(object):
         self.next_pushButton.setObjectName("next_pushButton")
         self.widgets_layout.addWidget(self.next_pushButton, 8, 5, 2, 1)
         self.next_pushButton.clicked.connect(self.writeMainWindowOutput)
-        self.LinesSelection_label = QtWidgets.QLabel(self.centralwidget)
+        self.LinesSelection_label = QLabel(self.centralwidget)
         self.LinesSelection_label.setObjectName("LinesSelection_label")
         self.LinesSelection_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.widgets_layout.addWidget(self.LinesSelection_label, 8, 3, 1, 1)
-        self.SelectedLines_radioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.SelectedLines_radioButton = QRadioButton(self.centralwidget)
         self.SelectedLines_radioButton.setChecked(True)
         self.SelectedLines_radioButton.setObjectName("SelectedLines_radioButton")
         self.widgets_layout.addWidget(self.SelectedLines_radioButton, 8, 4, 1, 1)
-        self.AllLines_radioButton = QtWidgets.QRadioButton(self.centralwidget)
+        self.AllLines_radioButton = QRadioButton(self.centralwidget)
         self.AllLines_radioButton.setObjectName("AllLines_radioButton")
         self.widgets_layout.addWidget(self.AllLines_radioButton, 9, 4, 1, 1)
         self.window_layout.addLayout(self.widgets_layout, 0, 0)
@@ -125,7 +134,7 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
+        _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.ScriptSelection_label.setText(_translate("MainWindow", "Select Script"))
         self.preview_label.setText(
@@ -150,7 +159,7 @@ class Ui_MainWindow(object):
             main_py_parameters["applyOn"] = "selected lines"
         main_py_parameters["selectedScript"] = self.selected_script
         json.dump(main_py_parameters, open(system_inputs[1], "w"))
-        QtCore.QCoreApplication.instance().quit()
+        QCoreApplication.instance().quit()
 
     def preview(self):
         if self.combobox.currentIndex() == -1:

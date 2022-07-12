@@ -1,4 +1,17 @@
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtWidgets import (
+    QGridLayout,
+    QLabel,
+    QLineEdit,
+    QSpinBox,
+    QDoubleSpinBox,
+    QTextEdit,
+    QComboBox,
+    QCheckBox,
+    QPushButton,
+    QColorDialog,
+)
+from PyQt6.QtCore import QCoreApplication
 import os
 from os.path import exists
 import json
@@ -23,6 +36,11 @@ class Ui_LuaConverter(object):
 
         self.centralwidget = QtWidgets.QWidget(LuaConverter)
         self.centralwidget.setObjectName("centralwidget")
+
+        self.window_layout = QGridLayout(self.centralwidget)
+        self.window_layout.setObjectName("window_layout")
+        self.widgets_layout = QGridLayout()
+        self.widgets_layout.setObjectName("widgets_layout")
 
         if exists(system_inputs[3]):
             script_settings_file_path = system_inputs[3]
@@ -61,18 +79,10 @@ class Ui_LuaConverter(object):
             name1 = widget["name"]
             class1 = widget["class"]
             exec(
-                f'self.{name1} = QtWidgets.{lua_pyqt_conversion.get(class1, "QLabel")}(self.centralwidget)'
+                f'self.{name1} = {lua_pyqt_conversion.get(class1, "QLabel")}(self.centralwidget)'
             )
-            Xtemp = offX + defW * widget["x"]
-            Ytemp = offY + defH * widget["y"]
-            Wtemp = defW * widget["width"]
-            Htemp = defH * widget["height"]
-            if Xtemp + Wtemp > Wfinal:
-                Wfinal = Xtemp + Wtemp
-            if Ytemp + Htemp > Hfinal:
-                Hfinal = Ytemp + Htemp
             exec(
-                f"self.{name1}.setGeometry(QtCore.QRect({Xtemp}, {Ytemp}, {Wtemp}, {Htemp}))"
+                f"self.widgets_layout.addWidget(self.{name1}, {widget['y']}, {widget['x']}, {widget['height']}, {widget['width']})"
             )
             exec(f'self.{name1}.setObjectName("{name1}")')
             if class1 == "color":
@@ -93,10 +103,8 @@ class Ui_LuaConverter(object):
                     f"self.{name1}.clicked.connect(lambda: self.button_clicked({widget}, LuaConverter, script_settings, script_name, window_index))",
                     _locals,
                 )
-        Wfinal += offX
-        Hfinal += offY
-        Wfinal = max(Wfinal, 200)
-        LuaConverter.resize(Wfinal, Hfinal)
+
+        self.window_layout.addLayout(self.widgets_layout, 0, 0)
 
         LuaConverter.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(LuaConverter)
@@ -111,7 +119,7 @@ class Ui_LuaConverter(object):
         QtCore.QMetaObject.connectSlotsByName(LuaConverter)
 
     def retranslateUi(self, LuaConverter, widgets, script_name):
-        _translate = QtCore.QCoreApplication.translate
+        _translate = QCoreApplication.translate
         LuaConverter.setWindowTitle(_translate("LuaConverter", script_name))
 
         for widget in widgets["Controls"]:
@@ -260,16 +268,16 @@ class Ui_LuaConverter(object):
 
     def set_color(self, name1):
         color0 = eval(f"self.{name1}.palette().button().color()")
-        color = QtWidgets.QColorDialog.getColor(initial=color0)
+        color = QColorDialog.getColor(initial=color0)
         if color.isValid():
             exec(f'self.{name1}.setStyleSheet("background-color: {color.name()}")')
 
     def set_coloralpha(self, name1):
         color0 = eval(f"self.{name1}.palette().button().color()")
         color0.setAlpha(255 - color0.alpha())
-        color = QtWidgets.QColorDialog.getColor(
+        color = QColorDialog.getColor(
             initial=color0,
-            options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel,
+            options=QColorDialog.ColorDialogOption.ShowAlphaChannel,
         )
         if color.isValid():
             exec(
