@@ -10,12 +10,14 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QPushButton,
     QColorDialog,
+    QSpacerItem,
 )
 from PyQt6.QtCore import QCoreApplication
 import os
 from os.path import exists
 import json
 import sys
+import numpy as np
 
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
@@ -41,6 +43,8 @@ class Ui_LuaConverter(object):
         self.window_layout.setObjectName("window_layout")
         self.widgets_layout = QGridLayout()
         self.widgets_layout.setObjectName("widgets_layout")
+        self.widgets_layout.setContentsMargins(20, 20, 20, 0)
+        self.widgets_layout.setVerticalSpacing(10)
 
         if exists(system_inputs[3]):
             script_settings_file_path = system_inputs[3]
@@ -75,15 +79,22 @@ class Ui_LuaConverter(object):
             "alpha": "QLineEdit",
             "Pyegi_button": "QPushButton",
         }
+        max_row_col = 100
+        widgets_map = np.zeros((max_row_col, max_row_col))
         for widget in widgets["Controls"]:
             name1 = widget["name"]
             class1 = widget["class"]
             exec(
                 f'self.{name1} = {lua_pyqt_conversion.get(class1, "QLabel")}(self.centralwidget)'
             )
-            exec(
-                f"self.widgets_layout.addWidget(self.{name1}, {widget['y']}, {widget['x']}, {widget['height']}, {widget['width']})"
-            )
+            Y1 = widget["y"]
+            X1 = widget["x"]
+            H1 = widget["height"]
+            W1 = widget["width"]
+            exec(f"self.widgets_layout.addWidget(self.{name1}, {Y1}, {X1}, {H1}, {W1})")
+            for i1 in range(H1):
+                for i2 in range(W1):
+                    widgets_map[Y1 + i1][X1 + i2] += 1
             exec(f'self.{name1}.setObjectName("{name1}")')
             if class1 == "color":
                 _locals = locals()
@@ -103,6 +114,37 @@ class Ui_LuaConverter(object):
                     f"self.{name1}.clicked.connect(lambda: self.button_clicked({widget}, LuaConverter, script_settings, script_name, window_index))",
                     _locals,
                 )
+        all_zeros = np.zeros((max_row_col, max_row_col))
+        r_trim = 0
+        continue1 = True
+        while continue1:
+            if np.array_equal(widgets_map[r_trim:, :], all_zeros[r_trim:, :]):
+                continue1 = False
+            else:
+                r_trim += 1
+        c_trim = 0
+        continue1 = True
+        while continue1:
+            if np.array_equal(widgets_map[:, c_trim:], all_zeros[:, c_trim:]):
+                continue1 = False
+            else:
+                c_trim += 1
+        widgets_map = widgets_map[:r_trim, :c_trim]
+        empty_rows = np.where(np.sum(widgets_map, axis=1) == 0)[0]
+        spacer_counter = 0
+        for row_i in empty_rows:
+            spacer_counter += 1
+            name1 = f"spacerItem{spacer_counter}"
+            exec(f"self.{name1} = QSpacerItem(10, 20)")
+            exec(f"self.widgets_layout.addItem(self.{name1}, {row_i}, 0)")
+            widgets_map[row_i, 0] = 1
+        empty_cols = np.where(np.sum(widgets_map, axis=0) == 0)[0]
+        for col_i in empty_cols:
+            spacer_counter += 1
+            name1 = f"spacerItem{spacer_counter}"
+            exec(f"self.{name1} = QSpacerItem(20, 10)")
+            exec(f"self.widgets_layout.addItem(self.{name1}, 0, {col_i})")
+            widgets_map[col_i, 0] = 1
 
         self.window_layout.addLayout(self.widgets_layout, 0, 0)
 
