@@ -14,10 +14,13 @@ from PyQt6.QtGui import QMouseEvent, QMovie
 import os
 import json
 import sys
+import qdarktheme
+from settings import Ui_SettingsWindow
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
+settings_file_path = os.path.dirname(__file__) + "/settings.json"
 
 
 class QPushButton2(QPushButton):
@@ -59,6 +62,13 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
+        f = open(settings_file_path)
+        self.overall_settings = json.load(f)
+        f.close()
+        if self.overall_settings["Theme"] == "Dark":
+            MainWindow.setStyleSheet(qdarktheme.load_stylesheet())
+        elif self.overall_settings["Theme"] == "Pyegi":
+            MainWindow.setStyleSheet(self.overall_settings["Pyegi_specs"])
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QGridLayout(self.centralwidget)
@@ -105,6 +115,9 @@ class Ui_MainWindow(object):
         self.settings_pushButton = QPushButton2(self.centralwidget)
         self.settings_pushButton.setObjectName("settings_pushButton")
         self.widgets_layout.addWidget(self.settings_pushButton, 8, 1, 2, 1)
+        self.settings_pushButton.clicked.connect(
+            lambda: self.openSettingsWindow(MainWindow)
+        )
         self.next_pushButton = QPushButton2(self.centralwidget)
         self.next_pushButton.setObjectName("next_pushButton")
         self.widgets_layout.addWidget(self.next_pushButton, 8, 5, 2, 1)
@@ -148,6 +161,12 @@ class Ui_MainWindow(object):
             _translate("MainWindow", "selected line(s)")
         )
         self.AllLines_radioButton.setText(_translate("MainWindow", "all lines"))
+
+    def openSettingsWindow(self, MainWindow):
+        self.window = QtWidgets.QMainWindow()
+        self.ui = Ui_SettingsWindow()
+        self.ui.setupUi(self.window, MainWindow)
+        self.window.show()
 
     def writeMainWindowOutput(self):
         if self.selected_script == "":
