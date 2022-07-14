@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QColorDialog,
     QSpacerItem,
+    QSizePolicy,
 )
 from PyQt6.QtCore import QCoreApplication
 import os
@@ -18,11 +19,13 @@ from os.path import exists
 import json
 import sys
 import numpy as np
+import qdarktheme
 
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
+settings_file_path = os.path.dirname(__file__) + "/settings.json"
 
 
 def exec2(self, string):
@@ -35,6 +38,13 @@ def exec2(self, string):
 class Ui_LuaConverter(object):
     def setupUi(self, LuaConverter, script_name, window_name="main_window"):
         LuaConverter.setObjectName("LuaConverter")
+        f = open(settings_file_path)
+        self.overall_settings = json.load(f)
+        f.close()
+        if self.overall_settings["Theme"] == "Dark":
+            LuaConverter.setStyleSheet(qdarktheme.load_stylesheet())
+        elif self.overall_settings["Theme"] == "Pyegi":
+            LuaConverter.setStyleSheet(self.overall_settings["Pyegi_specs"])
 
         self.centralwidget = QtWidgets.QWidget(LuaConverter)
         self.centralwidget.setObjectName("centralwidget")
@@ -195,6 +205,7 @@ class Ui_LuaConverter(object):
                 exec(
                     f'self.{widget["name"]}.setPlainText(_translate("LuaConverter", {f"{widget[text2]}".encode(encoding="UTF-8")}))'
                 )
+                # exec(f'self.{widget["name"]}.setFixedHeight({80*widget["height"]})')
             if class1 == "dropdown":
                 exec2(self, f'self.{widget["name"]}.addItems({widget["items"]})')
                 exec(
