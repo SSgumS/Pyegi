@@ -1,0 +1,41 @@
+* {
+	color: white;
+	border: none;
+	padding: 3px;
+}
+QMainWindow {
+	background-color: rgb(30,37,47);
+}
+QPushButton {
+	background-color: rgb(41,55,66);
+}
+QPushButton:hover {
+	background-color: rgb(46,205,112);
+}
+QPushButton:pressed {
+	background-color: rgb(125,225,168);
+	border-style: inset;
+	border-width: 1px;
+}
+QTextEdit, QLineEdit, QSpinBox, QDoubleSpinBox {
+	color: rgb(100,162,131);
+	background-color: rgb(24,28,31);
+}
+QComboBox {
+	color: rgb(100,162,131);
+	background-color: rgb(24,28,31);
+}
+QComboBox QAbstractItemView {
+	color: white;
+	background-color: rgb(98,120,144);
+}
+QScrollBar, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical, QScrollBar::add-line, QScrollBar::sub-line {
+	background: rgb(53,62,68);
+}
+QScrollBar::handle {
+	background: rgb(98,120,144);
+}
+QScrollBar::up-arrow, QScrollBar::down-arrow {
+	width: 10px;
+	height: 10px;
+}
