@@ -25,7 +25,9 @@ import qdarktheme
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
-settings_file_path = os.path.dirname(__file__) + "/settings.json"
+utils_path = os.path.dirname(__file__)
+settings_file_path = utils_path + "/settings.json"
+themes_path = utils_path + "/Theme/"
 
 
 def exec2(self, string):
@@ -43,8 +45,15 @@ class Ui_LuaConverter(object):
         f.close()
         if self.overall_settings["Theme"] == "Dark":
             LuaConverter.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Pyegi":
-            LuaConverter.setStyleSheet(self.overall_settings["Pyegi_specs"])
+        elif self.overall_settings["Theme"] == "Light":
+            LuaConverter.setStyleSheet(qdarktheme.load_stylesheet("light"))
+        elif self.overall_settings["Theme"] == "Default":
+            LuaConverter.setStyleSheet("")
+        else:
+            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
+            theme_data = f.read()
+            f.close()
+            LuaConverter.setStyleSheet(theme_data)
 
         self.centralwidget = QtWidgets.QWidget(LuaConverter)
         self.centralwidget.setObjectName("centralwidget")

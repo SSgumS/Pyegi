@@ -4,7 +4,9 @@ import os
 import json
 import qdarktheme
 
-settings_file_path = os.path.dirname(__file__) + "/settings.json"
+utils_path = os.path.dirname(__file__)
+settings_file_path = utils_path + "/settings.json"
+themes_path = utils_path + "/Theme/"
 
 
 class Ui_SettingsWindow(object):
@@ -16,8 +18,15 @@ class Ui_SettingsWindow(object):
         f.close()
         if self.overall_settings["Theme"] == "Dark":
             SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Pyegi":
-            SettingsWindow.setStyleSheet(self.overall_settings["Pyegi_specs"])
+        elif self.overall_settings["Theme"] == "Light":
+            SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
+        elif self.overall_settings["Theme"] == "Default":
+            SettingsWindow.setStyleSheet("")
+        else:
+            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
+            theme_data = f.read()
+            f.close()
+            SettingsWindow.setStyleSheet(theme_data)
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QtWidgets.QGridLayout(self.centralwidget)
@@ -34,7 +43,12 @@ class Ui_SettingsWindow(object):
         self.widgets_layout.addWidget(self.theme_label, 0, 0, 1, 1)
         self.themes_combobox = QtWidgets.QComboBox(self.centralwidget)
         self.themes_combobox.setObjectName("themes_combobox")
-        self.themes_combobox.addItems(["Default", "Dark", "Pyegi"])
+        combobox_items = ["Default", "Dark", "Light"]
+        for f in os.listdir(themes_path):
+            whole_name = f.split(".")
+            filename = whole_name[0].split("/")[-1]
+            combobox_items.append(filename)
+        self.themes_combobox.addItems(combobox_items)
         self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 1)
         self.themes_combobox.setCurrentText(self.overall_settings["Theme"])
         self.themes_combobox.currentTextChanged.connect(
@@ -80,69 +94,30 @@ class Ui_SettingsWindow(object):
     def applyTheme(self, SettingsWindow):
         if self.themes_combobox.currentText() == "Dark":
             SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.themes_combobox.currentText() == "Pyegi":
-            SettingsWindow.setStyleSheet(self.overall_settings["Pyegi_specs"])
-        else:
+        elif self.themes_combobox.currentText() == "Light":
+            SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
+        elif self.themes_combobox.currentText() == "Default":
             SettingsWindow.setStyleSheet("")
+        else:
+            f = open(f"{themes_path}{self.themes_combobox.currentText()}.css", "r")
+            theme_data = f.read()
+            f.close()
+            SettingsWindow.setStyleSheet(theme_data)
 
     def writeSettings(self, SettingsWindow, MainWindow):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
-        dummy_var = """
-        * {
-            color: white;
-            border: none;
-            padding: 3px;
-        }
-        QMainWindow {
-            background-color: rgb(30,37,47);
-        }
-        QPushButton {
-            background-color: rgb(41,55,66);
-        }
-        QPushButton:hover {
-            background-color: rgb(46,205,112);
-        }
-        QPushButton:pressed {
-            background-color: rgb(125,225,168);
-            border-style: inset;
-            border-width: 1px;
-        }
-        QTextEdit, QLineEdit, QSpinBox, QDoubleSpinBox {
-            color: rgb(100,162,131);
-            background-color: rgb(24,28,31);
-        }
-        QComboBox {
-            color: rgb(100,162,131);
-            background-color: rgb(24,28,31);
-        }
-        QComboBox QAbstractItemView {
-            color: white;
-            background-color: rgb(98,120,144);
-        }
-        QScrollBar {
-            background: rgb(53,62,68);
-        }
-        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-            background: rgb(53,62,68);
-        }
-        QScrollBar::add-line, QScrollBar::sub-line {
-            background: rgb(53,62,68);
-        }
-        QScrollBar::handle {
-            background: rgb(98,120,144);
-        }
-        QScrollBar::up-arrow, QScrollBar::down-arrow {
-            width: 10px;
-            height: 10px;
-        }
-        """
         json.dump(self.overall_settings, open(settings_file_path, "w"))
         if self.overall_settings["Theme"] == "Dark":
             MainWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Pyegi":
-            MainWindow.setStyleSheet(self.overall_settings["Pyegi_specs"])
-        else:
+        elif self.overall_settings["Theme"] == "Light":
+            MainWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
+        elif self.overall_settings["Theme"] == "Default":
             MainWindow.setStyleSheet("")
+        else:
+            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
+            theme_data = f.read()
+            f.close()
+            MainWindow.setStyleSheet(theme_data)
         SettingsWindow.close()
 
 
