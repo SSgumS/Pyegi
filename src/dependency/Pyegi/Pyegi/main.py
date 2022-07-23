@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QRadioButton,
 )
 from PyQt6.QtCore import Qt, QCoreApplication
-from PyQt6.QtGui import QMouseEvent, QMovie
+from PyQt6.QtGui import QMouseEvent, QKeyEvent, QMovie
 import os
 import json
 import sys
@@ -22,7 +22,7 @@ scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
-themes_path = utils_path + "/Theme/"
+themes_path = utils_path + "/Themes/"
 
 
 class QPushButton2(QPushButton):
@@ -47,9 +47,10 @@ class ComboBoxLineEdit(QLineEdit):
             )
         else:
             completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+            completer.setCompletionPrefix(combobox.currentText())
         completer.complete()
 
-    def keyPressEvent(self, e: QtGui.QMouseEvent) -> None:
+    def keyPressEvent(self, e: QKeyEvent) -> None:
         super().keyPressEvent(e)
 
         combobox: QComboBox = self.parent()
