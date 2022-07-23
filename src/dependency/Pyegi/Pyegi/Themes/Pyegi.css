@@ -25,7 +25,7 @@ QComboBox {
 	color: rgb(100,162,131);
 	background-color: rgb(24,28,31);
 }
-QComboBox QAbstractItemView {
+QComboBox QAbstractItemView, QComboBox::QLineEdit {
 	color: white;
 	background-color: rgb(98,120,144);
 }
@@ -38,4 +38,8 @@ QScrollBar::handle {
 QScrollBar::up-arrow, QScrollBar::down-arrow {
 	width: 10px;
 	height: 10px;
+}
+QToolTip {
+	color: white;
+	background-color: rgb(98,120,144);
 }
