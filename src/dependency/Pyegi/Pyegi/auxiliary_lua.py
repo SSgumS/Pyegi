@@ -27,7 +27,7 @@ scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
-themes_path = utils_path + "/Theme/"
+themes_path = utils_path + "/Themes/"
 
 
 def exec2(self, string):

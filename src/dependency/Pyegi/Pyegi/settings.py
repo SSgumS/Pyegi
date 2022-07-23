@@ -6,7 +6,7 @@ import qdarktheme
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
-themes_path = utils_path + "/Theme/"
+themes_path = utils_path + "/Themes/"
 
 
 class Ui_SettingsWindow(object):
