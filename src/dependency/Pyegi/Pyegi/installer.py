@@ -5,6 +5,7 @@ import toml
 from datetime import datetime as dt1
 import shutil
 import csv
+import json
 
 start_time = dt1.now()
 print("\nStart time: " + str(start_time) + "\n")
@@ -22,7 +23,13 @@ scripts_names = [
 ]
 
 
-def install_pkgs(script):
+def create_dirs(path):
+    parent, _ = os.path.split(path)
+    if not exists(parent):
+        os.makedirs(parent)
+
+
+def install_pkg(script):
     print(f"Processing {script} dependencies...")
     script_path = scriptsPath + script + "/"
     if exists(script_path + "pyproject.toml"):
@@ -38,6 +45,21 @@ def install_pkgs(script):
         packages_to_move = []
         for package in packages:
             name_in_commons = f"{package['name']}-{package['version']}"
+            f = open(commons_dir + "lib_links.json")
+            lib_links = json.load(f)
+            f.close()
+            new_package = True
+            for pkg in lib_links["Packages"]:
+                if pkg["name"] == name_in_commons:
+                    if script not in pkg["scripts"]:
+                        pkg["scripts"].append(script)
+                    new_package = False
+            if new_package:
+                lib_link = {}
+                lib_link["name"] = name_in_commons
+                lib_link["scripts"] = [script]
+                lib_links["Packages"].append(lib_link)
+            json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
             isdir = os.path.isdir(commons_dir + name_in_commons)
             site_packages_dirs = []
             if isdir:
@@ -56,27 +78,19 @@ def install_pkgs(script):
                             path = path[3:]
                         src = commons_dir + name_in_commons + connection_path + path
                         dst = f"{temp_dir}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         os.symlink(src, dst)
                         dst = f"{script_path}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         os.symlink(src, dst)
                     elif path[:12] == "__pycache__/":
                         connection_path = "/Lib/site-packages/"
                         src = commons_dir + name_in_commons + connection_path + path
                         dst = f"{temp_dir}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         os.symlink(src, dst)
                         dst = f"{script_path}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         os.symlink(src, dst)
                     elif "/" in path:
                         while True:
@@ -125,31 +139,21 @@ def install_pkgs(script):
                             path = path[3:]
                         src = f"{temp_dir}.venv{connection_path + path}"
                         dst = commons_dir + name_in_commons + connection_path + path
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         shutil.move(src, dst)
                         dst2 = f"{script_path}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst2)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst2)
                         os.symlink(dst, dst2)
                     elif path[:12] == "__pycache__/":
                         connection_path = "/Lib/site-packages/"
                         src = f"{temp_dir}.venv{connection_path + path}"
                         dst = commons_dir + name_in_commons + connection_path + path
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         shutil.move(src, dst)
                         dst = f"{script_path}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         dst2 = f"{script_path}.venv{connection_path + path}"
-                        path2, _ = os.path.split(dst2)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst2)
                         os.symlink(dst, dst2)
                     elif "/" in path:
                         while True:
@@ -177,9 +181,7 @@ def install_pkgs(script):
                         connection_path = "/Lib/site-packages/"
                         src = f"{temp_dir}.venv{connection_path + path}"
                         dst = commons_dir + name_in_commons + connection_path + path
-                        path2, _ = os.path.split(dst)
-                        if not exists(path2):
-                            os.makedirs(path2)
+                        create_dirs(dst)
                         shutil.move(src, dst)
                         dst2 = f"{script_path}.venv{connection_path + path}"
                         os.symlink(dst, dst2)
@@ -193,11 +195,40 @@ def install_pkgs(script):
         print(f'The file "pyproject.toml" doesn\'t exist in {script} script directory.')
 
 
-"""
+def clean_lib_links(script):
+    f = open(commons_dir + "lib_links.json")
+    lib_links = json.load(f)
+    f.close()
+    pkgs = []
+    zero_pkgs = []
+    for package in lib_links["Packages"]:
+        if script in package["scripts"]:
+            package["scripts"].remove(script)
+            if len(package["scripts"]) == 0:
+                if exists(commons_dir + package["name"]):
+                    zero_pkgs.append(package["name"])
+            else:
+                pkgs.append(package)
+        else:
+            pkgs.append(package)
+    lib_links["Packages"] = pkgs
+    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
+    return zero_pkgs
+
+
+def uninstall_pkg(script):
+    print(f"Processing {script} dependencies...")
+    script_path = scriptsPath + script + "/"
+    shutil.rmtree(script_path)
+    zero_pkgs = clean_lib_links(script)
+    for zero_pkg in zero_pkgs:
+        shutil.rmtree(commons_dir + zero_pkg)
+
+
 for script in scripts_names:
-    install_pkgs(script)
-"""
-install_pkgs("[sample] ColorMania")
+    install_pkg(script)
+
+# install_pkg("[sample] ColorMania")
 
 
 end_time = dt1.now()

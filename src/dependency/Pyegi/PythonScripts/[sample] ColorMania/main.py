@@ -2,7 +2,7 @@
 """
 Created on Fri May 23 13:38:34 2021
 
-@author: saman
+@author: Drunk Simurgh
 """
 
 from pyonfx import *
@@ -22,6 +22,10 @@ for items in parameters_table["Windows"][0]["Controls"]:
         direction1 = items["value"]
     if items["name"] == "floatedit1":
         angle1 = items["value"] % 180
+    if items["name"] == "color1":
+        color1 = Convert.color(items["value"], ColorModel.RGB_STR, ColorModel.ASS)
+    if items["name"] == "color2":
+        color2 = Convert.color(items["value"], ColorModel.RGB_STR, ColorModel.ASS)
 if direction1 == "Slant":
     if angle1 == 0:
         direction1 = "Vertical"
@@ -72,7 +76,7 @@ def sub(line, l):
                 line.bottom,
             )
 
-            color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
+            color = Utils.interpolate(i / n, color1, color2, 1.4)
 
             l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\c%s}%s" % (
                 line.center,
@@ -93,7 +97,7 @@ def sub(line, l):
                 line.bottom - h1 * (i / n),
             )
 
-            color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
+            color = Utils.interpolate(i / n, color1, color2, 1.4)
 
             l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\c%s}%s" % (
                 line.center,
@@ -120,7 +124,7 @@ def sub(line, l):
                     line.bottom + w1 * sin1 * cos1 - h2 * ((i + 1) / n) * cos1 - eps1,
                 )
 
-                color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
+                color = Utils.interpolate(i / n, color1, color2, 1.4)
 
                 l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\bord0\\shad0\\c%s}%s" % (
                     line.center,
@@ -145,7 +149,7 @@ def sub(line, l):
                     line.top + h1 * sin1 ** 2 - h2 * ((i + 1) / n) * cos1 + eps1,
                 )
 
-                color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
+                color = Utils.interpolate(i / n, color1, color2, 1.4)
 
                 l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\bord0\\shad0\\c%s}%s" % (
                     line.center,
@@ -177,7 +181,7 @@ def sub(line, l):
                 line.top - os1 * h1 / 2 + (os1p * h1 / 2) * (i / n),
             )
 
-            color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
+            color = Utils.interpolate(i / n, color1, color2, 1.4)
 
             l.text = "{\\an5\\pos(%.2f,%.2f)\\clip(%s)\\bord0\\shad0\\c%s}%s" % (
                 line.center,

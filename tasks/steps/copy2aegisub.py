@@ -20,8 +20,5 @@ def run_step(context: dict):
 
     # Copy new files
     shutil.copytree("src", automation_path, dirs_exist_ok=True)
-    shutil.copytree(
-        ".venv", os.path.join(pyegi_dependency_path, ".venv"), dirs_exist_ok=True
-    )
     shutil.copy("poetry.toml", pyegi_dependency_path)
     shutil.copy("pyproject.toml", pyegi_dependency_path)
