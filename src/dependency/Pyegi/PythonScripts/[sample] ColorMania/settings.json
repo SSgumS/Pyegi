@@ -6,7 +6,7 @@
 	  "Controls": [
 		{
 		  "name": "label1",
-		  "x": 0,
+		  "x": 1,
 		  "label": "Direction:",
 		  "y": 0,
 		  "class": "label",
@@ -14,7 +14,7 @@
 		  "width": 1
 		},
 		{
-		  "x": 1,
+		  "x": 2,
 		  "y": 0,
 		  "class": "dropdown",
 		  "items": ["Horizontal", "Vertical", "Slant", "Oval"],
@@ -26,7 +26,7 @@
 		},
 		{
 		  "max": 1000000,
-		  "x": 2,
+		  "x": 3,
 		  "y": 0,
 		  "class": "floatedit",
 		  "min": -1000000,
@@ -38,6 +38,44 @@
 		  "height": 1
 		},
 		{
+		  "x": 0,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "label",
+		  "name": "label2",
+		  "label": "color 1"
+		},
+		{
+		  "x": 1,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "color",
+		  "name": "color1",
+		  "hint": "",
+		  "value": "#FFFF00"
+		},
+		{
+		  "x": 2,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "label",
+		  "name": "label3",
+		  "label": "color 2"
+		},
+		{
+		  "x": 3,
+		  "y": 1,
+		  "width": 1,
+		  "height": 1,
+		  "class": "color",
+		  "name": "color2",
+		  "hint": "",
+		  "value": "#FF0000"
+		},
+		{
 			"class": "Pyegi_button",
 			"name": "cancel_button",
 			"text": "Cancel",
@@ -45,7 +83,7 @@
 			"transition to": "",
 			"hint": "",
 			"x": 0,
-			"y": 3,
+			"y": 4,
 			"width": 1,
 			"height": 1
 		},
@@ -56,8 +94,8 @@
 			"action": "Apply",
 			"transition to": "",
 			"hint": "",
-			"x": 2,
-			"y": 3,
+			"x": 3,
+			"y": 4,
 			"width": 1,
 			"height": 1
 		}

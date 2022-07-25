@@ -262,13 +262,15 @@ class Ui_LuaConverter(object):
                 if class1 == "checkbox":
                     exec(f"widget['value'] = str(self.{name1}.isChecked())")
                 if class1 == "color":
-                    exec(
-                        f"widget['value'] = self.{name1}.palette().button().color().name()"
-                    )
+                    exec(f"color_temp = self.{name1}.palette().button().color().name()")
+                    exec("color_temp = color_temp.upper()")
+                    exec(f"widget['value'] = color_temp")
                 if class1 == "coloralpha":
                     color = eval(f"self.{name1}.palette().button().color()")
                     alpha = f"{(255 - color.alpha()):x}"
-                    widget["value"] = f"{color.name()}" + alpha.zfill(2)
+                    coloralpha_temp = f"{color.name()}" + alpha.zfill(2)
+                    coloralpha_temp = coloralpha_temp.upper()
+                    widget["value"] = coloralpha_temp
                 if class1 == "alpha":
                     exec(f"widget['value'] = self.{name1}.text()")
                 if name1[:2] == "G_":
@@ -303,16 +305,20 @@ class Ui_LuaConverter(object):
                                         )
                                     if class2 == "color":
                                         exec(
-                                            f"widget2['value'] = self.{name1}.palette().button().color().name()"
+                                            f"color_temp = self.{name1}.palette().button().color().name()"
                                         )
+                                        exec("color_temp = color_temp.upper()")
+                                        exec(f"widget2['value'] = color_temp")
                                     if class2 == "coloralpha":
                                         color = eval(
                                             f"self.{name1}.palette().button().color()"
                                         )
                                         alpha = f"{(255 - color.alpha()):x}"
-                                        widget2[
-                                            "value"
-                                        ] = f"{color.name()}" + alpha.zfill(2)
+                                        coloralpha_temp = (
+                                            f"{color.name()}" + alpha.zfill(2)
+                                        )
+                                        coloralpha_temp = coloralpha_temp.upper()
+                                        widget2["value"] = coloralpha_temp
                                     if class2 == "alpha":
                                         exec(f"widget2['value'] = self.{name1}.text()")
 
@@ -321,9 +327,17 @@ class Ui_LuaConverter(object):
                 json.dump(script_settings, outfile)
 
             if button["action"].lower() == "apply":
-                os.system(
-                    f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
-                )
+                if exists(f"{scriptsPath}{script_name}/.venv/Scripts/python.exe"):
+                    os.system(
+                        f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
+                    )
+                else:
+                    print(
+                        "There's something wrong with the script environment. Switching to Pyegi environment..."
+                    )
+                    os.system(
+                        f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
+                    )
                 sys.exit()
             else:
                 self.setupUi(LuaConverter, script_name, button["transition to"])
