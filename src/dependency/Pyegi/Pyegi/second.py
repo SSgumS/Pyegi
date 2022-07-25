@@ -3,6 +3,7 @@ import os
 import json
 import sys
 from auxiliary_lua import Ui_LuaConverter
+from os.path import exists
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
@@ -36,10 +37,19 @@ class Ui_EmptyWindow(object):
             self.ui.setupUi(self.window, script_name)
             self.window.show()
         else:
-            arguments = '"' + '" "'.join(system_inputs) + '"'
-            os.system(
-                f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" {arguments}"'
-            )
+            arguments = '"' + '" "'.join(system_inputs[1:]) + '"'
+            if exists(f"{scriptsPath}{script_name}/.venv/Scripts/python.exe"):
+                os.system(
+                    f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" {arguments}"'
+                )
+            else:
+                print(
+                    "There's something wrong with the script environment. Switching to Pyegi environment..."
+                )
+                os.system(
+                    f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" {arguments}"'
+                )
+            sys.exit()
 
         self.retranslateUi(EmptyWindow)
         QtCore.QMetaObject.connectSlotsByName(EmptyWindow)

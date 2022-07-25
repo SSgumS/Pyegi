@@ -41,7 +41,6 @@ def sub(line, l):
 
     Pyegi.SendLine(l)
 
-    l.style = "Main - dummy"
     # Main Effect
     l.layer = 1
 
