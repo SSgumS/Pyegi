@@ -43,6 +43,7 @@ def install_pkg(script):
         lock_content = toml.load("poetry.lock")
         packages = lock_content["package"]
         packages_to_move = []
+        phase1_start_time = dt1.now()
         for package in packages:
             name_in_commons = f"{package['name']}-{package['version']}"
             f = open(commons_dir + "lib_links.json")
@@ -61,7 +62,6 @@ def install_pkg(script):
                 lib_links["Packages"].append(lib_link)
             json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
             isdir = os.path.isdir(commons_dir + name_in_commons)
-            site_packages_dirs = []
             if isdir:
                 filename = f"{commons_dir + name_in_commons}/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
                 paths = []
@@ -70,57 +70,28 @@ def install_pkg(script):
                     for row in csvreader:
                         paths.append(row[0])
                 for path in paths:
+                    connection_path = "/Lib/site-packages/"
                     if path[:3] == "../":
                         connection_path = "/Lib/"
                         path = path[3:]
                         if path[:3] == "../":
                             connection_path = "/"
                             path = path[3:]
-                        src = commons_dir + name_in_commons + connection_path + path
-                        dst = f"{temp_dir}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        os.symlink(src, dst)
-                        dst = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        os.symlink(src, dst)
-                    elif path[:12] == "__pycache__/":
-                        connection_path = "/Lib/site-packages/"
-                        src = commons_dir + name_in_commons + connection_path + path
-                        dst = f"{temp_dir}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        os.symlink(src, dst)
-                        dst = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        os.symlink(src, dst)
-                    elif "/" in path:
-                        while True:
-                            parent = path
-                            path, _ = os.path.split(path)
-                            if path == "":
-                                break
-                        connection_path = "/Lib/site-packages/"
-                        if parent not in site_packages_dirs:
-                            site_packages_dirs.append(parent)
-                            src = (
-                                commons_dir + name_in_commons + connection_path + parent
-                            )
-                            dst = f"{temp_dir}.venv{connection_path + parent}"
-                            os.symlink(src, dst)
-                            dst = f"{script_path}.venv{connection_path + parent}"
-                            os.symlink(src, dst)
-                    else:
-                        connection_path = "/Lib/site-packages/"
-                        src = commons_dir + name_in_commons + connection_path + path
-                        dst = f"{temp_dir}.venv{connection_path + path}"
-                        os.symlink(src, dst)
-                        dst = f"{script_path}.venv{connection_path + path}"
-                        os.symlink(src, dst)
+                    src = commons_dir + name_in_commons + connection_path + path
+                    dst = f"{temp_dir}.venv{connection_path + path}"
+                    create_dirs(dst)
+                    os.symlink(src, dst)
+                    dst = f"{script_path}.venv{connection_path + path}"
+                    create_dirs(dst)
+                    os.symlink(src, dst)
             else:
                 packages_to_move.append(name_in_commons)
+        phase1_end_time = dt1.now()
+        print("Total phase 1 time: " + str(phase1_end_time - phase1_start_time))
 
         os.system("poetry install")
+        phase2_start_time = dt1.now()
         for name_in_commons in packages_to_move:
-            site_packages_dirs = []
             filename = (
                 f"{temp_dir}.venv/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
             )
@@ -131,60 +102,22 @@ def install_pkg(script):
                     for row in csvreader:
                         paths.append(row[0])
                 for path in paths:
+                    connection_path = "/Lib/site-packages/"
                     if path[:3] == "../":
                         connection_path = "/Lib/"
                         path = path[3:]
                         if path[:3] == "../":
                             connection_path = "/"
                             path = path[3:]
-                        src = f"{temp_dir}.venv{connection_path + path}"
-                        dst = commons_dir + name_in_commons + connection_path + path
-                        create_dirs(dst)
-                        shutil.move(src, dst)
-                        dst2 = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst2)
-                        os.symlink(dst, dst2)
-                    elif path[:12] == "__pycache__/":
-                        connection_path = "/Lib/site-packages/"
-                        src = f"{temp_dir}.venv{connection_path + path}"
-                        dst = commons_dir + name_in_commons + connection_path + path
-                        create_dirs(dst)
-                        shutil.move(src, dst)
-                        dst = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        dst2 = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst2)
-                        os.symlink(dst, dst2)
-                    elif "/" in path:
-                        while True:
-                            parent = path
-                            path, _ = os.path.split(path)
-                            if path == "":
-                                break
-                        connection_path = "/Lib/site-packages/"
-                        if parent not in site_packages_dirs:
-                            site_packages_dirs.append(parent)
-                            src = f"{temp_dir}.venv{connection_path + parent}"
-                            dst = (
-                                commons_dir + name_in_commons + connection_path + parent
-                            )
-                            if not exists(
-                                commons_dir + name_in_commons + connection_path
-                            ):
-                                os.makedirs(
-                                    commons_dir + name_in_commons + connection_path
-                                )
-                            shutil.move(src, dst)
-                            dst2 = f"{script_path}.venv{connection_path + parent}"
-                            os.symlink(dst, dst2)
-                    else:
-                        connection_path = "/Lib/site-packages/"
-                        src = f"{temp_dir}.venv{connection_path + path}"
-                        dst = commons_dir + name_in_commons + connection_path + path
-                        create_dirs(dst)
-                        shutil.move(src, dst)
-                        dst2 = f"{script_path}.venv{connection_path + path}"
-                        os.symlink(dst, dst2)
+                    src = f"{temp_dir}.venv{connection_path + path}"
+                    dst = commons_dir + name_in_commons + connection_path + path
+                    create_dirs(dst)
+                    shutil.move(src, dst)
+                    dst2 = f"{script_path}.venv{connection_path + path}"
+                    create_dirs(dst2)
+                    os.symlink(dst, dst2)
+        phase2_end_time = dt1.now()
+        print("Total phase 2 time: " + str(phase2_end_time - phase2_start_time))
         os.chdir(os.path.dirname(__file__))
         shutil.rmtree(temp_dir)
         os.mkdir("temp")
@@ -228,7 +161,7 @@ def uninstall_pkg(script):
 for script in scripts_names:
     install_pkg(script)
 
-# install_pkg("[sample] ColorMania")
+# install_pkg("[sample] Disintegration")
 
 
 end_time = dt1.now()
