@@ -64,7 +64,7 @@ class ComboBoxLineEdit(QLineEdit):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(825, 600)
         f = open(settings_file_path)
         self.overall_settings = json.load(f)
         f.close()
@@ -173,10 +173,10 @@ class Ui_MainWindow(object):
         self.AllLines_radioButton.setText(_translate("MainWindow", "all lines"))
 
     def openSettingsWindow(self, MainWindow):
-        self.window = QtWidgets.QMainWindow()
-        self.ui = Ui_SettingsWindow()
-        self.ui.setupUi(self.window, MainWindow)
-        self.window.show()
+        window = QtWidgets.QMainWindow()
+        ui = Ui_SettingsWindow()
+        ui.setupUi(window, MainWindow)
+        window.show()
 
     def writeMainWindowOutput(self):
         if self.selected_script == "":
