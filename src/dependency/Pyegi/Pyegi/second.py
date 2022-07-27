@@ -13,7 +13,7 @@ system_inputs = sys.argv
 class Ui_EmptyWindow(object):
     def setupUi(self, EmptyWindow):
         EmptyWindow.setObjectName("EmptyWindow")
-        EmptyWindow.resize(800, 600)
+        EmptyWindow.resize(825, 600)
         self.centralwidget = QtWidgets.QWidget(EmptyWindow)
         self.centralwidget.setObjectName("centralwidget")
         EmptyWindow.setCentralWidget(self.centralwidget)

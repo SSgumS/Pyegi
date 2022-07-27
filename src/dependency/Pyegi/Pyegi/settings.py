@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
 import qdarktheme
@@ -49,7 +49,7 @@ class Ui_SettingsWindow(object):
             filename = whole_name[0].split("/")[-1]
             combobox_items.append(filename)
         self.themes_combobox.addItems(combobox_items)
-        self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 1)
+        self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 5)
         self.themes_combobox.setCurrentText(self.overall_settings["Theme"])
         self.themes_combobox.currentTextChanged.connect(
             lambda: self.applyTheme(SettingsWindow)
@@ -67,7 +67,7 @@ class Ui_SettingsWindow(object):
         self.cancel_pushButton.clicked.connect(lambda: SettingsWindow.close())
         self.ok_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.ok_pushButton.setObjectName("ok_pushButton")
-        self.widgets_layout.addWidget(self.ok_pushButton, 2, 1, 1, 1)
+        self.widgets_layout.addWidget(self.ok_pushButton, 2, 5, 1, 1)
         self.ok_pushButton.clicked.connect(
             lambda: self.writeSettings(SettingsWindow, MainWindow)
         )
