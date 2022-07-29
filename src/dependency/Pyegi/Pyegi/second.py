@@ -13,12 +13,12 @@ system_inputs = sys.argv
 class Ui_EmptyWindow(object):
     def setupUi(self, EmptyWindow):
         EmptyWindow.setObjectName("EmptyWindow")
-        EmptyWindow.resize(800, 600)
+        EmptyWindow.resize(825, 600)
         self.centralwidget = QtWidgets.QWidget(EmptyWindow)
         self.centralwidget.setObjectName("centralwidget")
         EmptyWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(EmptyWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 825, 26))
         self.menubar.setObjectName("menubar")
         EmptyWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(EmptyWindow)

@@ -40,7 +40,7 @@ def exec2(self, string):
 class Ui_LuaConverter(object):
     def setupUi(self, LuaConverter, script_name, window_name="main_window"):
         LuaConverter.setObjectName("LuaConverter")
-        self = set_style(self, LuaConverter)
+        set_style(LuaConverter)
 
         self.centralwidget = QtWidgets.QWidget(LuaConverter)
         self.centralwidget.setObjectName("centralwidget")
