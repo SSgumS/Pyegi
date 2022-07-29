@@ -6,21 +6,17 @@ from datetime import datetime as dt1
 import shutil
 import csv
 import json
+import warnings
 
-start_time = dt1.now()
-print("\nStart time: " + str(start_time) + "\n")
 
 temp_dir = os.path.dirname(__file__) + "/temp/"
 commons_dir = os.path.dirname(__file__) + "/commons/"
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 # system_inputs = sys.argv
-
-scripts_names = [
-    name
-    for name in os.listdir(scriptsPath)
-    if os.path.isdir(os.path.join(scriptsPath, name))
-]
+pyproject_file = "pyproject.toml"
+poetry_lock_file = "poetry.lock"
+poetry_toml_file = "poetry.toml"
 
 
 def create_dirs(path):
@@ -29,101 +25,104 @@ def create_dirs(path):
         os.makedirs(parent)
 
 
+def path_process(path):
+    connection_path = "/Lib/site-packages/"
+    if path[:3] == "../":
+        connection_path = "/Lib/"
+        path = path[3:]
+        if path[:3] == "../":
+            connection_path = "/"
+            path = path[3:]
+    return path, connection_path
+
+
 def install_pkg(script):
     print(f"Processing {script} dependencies...")
     script_path = scriptsPath + script + "/"
-    if exists(script_path + "pyproject.toml"):
+    if exists(script_path + pyproject_file):
         os.chdir(script_path)
+        if exists(script_path + poetry_lock_file):
+            os.remove(script_path + poetry_lock_file)
+        if exists(script_path + ".venv"):
+            shutil.rmtree(script_path + ".venv")
         os.system("poetry lock")
-        src = script_path + "pyproject.toml"
-        dst = temp_dir + "pyproject.toml"
+        src = script_path + pyproject_file
+        if not exists(temp_dir + poetry_toml_file):
+            if not exists(temp_dir):
+                os.mkdir(temp_dir)
+            toml_file = open(temp_dir + poetry_toml_file, "w")
+            toml_file.write("[virtualenvs]\nin-project = true\n")
+            toml_file.close()
+        dst = temp_dir + pyproject_file
+        shutil.copyfile(src, dst)
+        src = script_path + poetry_lock_file
+        dst = temp_dir + poetry_lock_file
         shutil.copyfile(src, dst)
         os.chdir(temp_dir)
-        os.system("poetry lock")
-        lock_content = toml.load("poetry.lock")
+        os.system("poetry lock --no-update")
+        lock_content = toml.load(poetry_lock_file)
         packages = lock_content["package"]
-        packages_to_move = []
-        phase1_start_time = dt1.now()
+        new_packages = []
         for package in packages:
-            name_in_commons = f"{package['name']}-{package['version']}"
-            f = open(commons_dir + "lib_links.json")
-            lib_links = json.load(f)
-            f.close()
-            new_package = True
-            for pkg in lib_links["Packages"]:
-                if pkg["name"] == name_in_commons:
-                    if script not in pkg["scripts"]:
-                        pkg["scripts"].append(script)
-                    new_package = False
-            if new_package:
-                lib_link = {}
-                lib_link["name"] = name_in_commons
-                lib_link["scripts"] = [script]
-                lib_links["Packages"].append(lib_link)
-            json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
-            isdir = os.path.isdir(commons_dir + name_in_commons)
-            if isdir:
-                filename = f"{commons_dir + name_in_commons}/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
-                paths = []
-                with open(filename, "r") as csvfile:
-                    csvreader = csv.reader(csvfile)
-                    for row in csvreader:
-                        paths.append(row[0])
-                for path in paths:
-                    connection_path = "/Lib/site-packages/"
-                    if path[:3] == "../":
-                        connection_path = "/Lib/"
-                        path = path[3:]
-                        if path[:3] == "../":
-                            connection_path = "/"
-                            path = path[3:]
-                    src = commons_dir + name_in_commons + connection_path + path
-                    dst = f"{temp_dir}.venv{connection_path + path}"
-                    create_dirs(dst)
-                    os.symlink(src, dst)
-                    dst = f"{script_path}.venv{connection_path + path}"
-                    create_dirs(dst)
-                    os.symlink(src, dst)
-            else:
-                packages_to_move.append(name_in_commons)
-        phase1_end_time = dt1.now()
-        print("Total phase 1 time: " + str(phase1_end_time - phase1_start_time))
+            if package["category"] == "main":
+                name_in_commons = f"{package['name']}-{package['version']}"
+                f = open(commons_dir + "lib_links.json")
+                lib_links = json.load(f)
+                f.close()
+                is_new_package = True
+                for pkg in lib_links["Packages"]:
+                    if pkg["Name"] == name_in_commons:
+                        if script not in pkg["Scripts"]:
+                            pkg["Scripts"].append(script)
+                        is_new_package = False
+                if is_new_package:
+                    lib_link = {}
+                    lib_link["Name"] = name_in_commons
+                    lib_link["Scripts"] = [script]
+                    lib_links["Packages"].append(lib_link)
+                json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
+                # check if the package is already in commons
+                isdir = os.path.isdir(commons_dir + name_in_commons)
+                if isdir:
+                    filename = f"{commons_dir + name_in_commons}/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
+                    with open(filename, "r") as csvfile:
+                        csvreader = csv.reader(csvfile)
+                        for row in csvreader:
+                            path = row[0]
+                            path, connection_path = path_process(path)
+                            src = commons_dir + name_in_commons + connection_path + path
+                            dst = f"{temp_dir}.venv{connection_path + path}"
+                            create_dirs(dst)
+                            os.symlink(src, dst)
+                            dst = f"{script_path}.venv{connection_path + path}"
+                            create_dirs(dst)
+                            os.symlink(src, dst)
+                else:
+                    new_packages.append(name_in_commons)
 
-        os.system("poetry install")
-        phase2_start_time = dt1.now()
-        for name_in_commons in packages_to_move:
+        os.system("poetry install --no-dev")
+        for name_in_commons in new_packages:
             filename = (
                 f"{temp_dir}.venv/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
             )
             if exists(filename):
-                paths = []
                 with open(filename, "r") as csvfile:
                     csvreader = csv.reader(csvfile)
                     for row in csvreader:
-                        paths.append(row[0])
-                for path in paths:
-                    connection_path = "/Lib/site-packages/"
-                    if path[:3] == "../":
-                        connection_path = "/Lib/"
-                        path = path[3:]
-                        if path[:3] == "../":
-                            connection_path = "/"
-                            path = path[3:]
-                    src = f"{temp_dir}.venv{connection_path + path}"
-                    dst = commons_dir + name_in_commons + connection_path + path
-                    create_dirs(dst)
-                    shutil.move(src, dst)
-                    dst2 = f"{script_path}.venv{connection_path + path}"
-                    create_dirs(dst2)
-                    os.symlink(dst, dst2)
-        phase2_end_time = dt1.now()
-        print("Total phase 2 time: " + str(phase2_end_time - phase2_start_time))
+                        path = row[0]
+                        path, connection_path = path_process(path)
+                        src = f"{temp_dir}.venv{connection_path + path}"
+                        dst = commons_dir + name_in_commons + connection_path + path
+                        create_dirs(dst)
+                        shutil.move(src, dst)
+                        dst2 = f"{script_path}.venv{connection_path + path}"
+                        create_dirs(dst2)
+                        os.symlink(dst, dst2)
+            else:
+                warnings.warn(f"Package {name_in_commons} didn't have any RECORD file.")
         os.chdir(os.path.dirname(__file__))
+        # removing temp dir
         shutil.rmtree(temp_dir)
-        os.mkdir("temp")
-        toml_file = open(temp_dir + "poetry.toml", "w")
-        toml_file.write("[virtualenvs]\nin-project = true")
-        toml_file.close()
     else:
         print(f'The file "pyproject.toml" doesn\'t exist in {script} script directory.')
 
@@ -135,11 +134,11 @@ def clean_lib_links(script):
     pkgs = []
     zero_pkgs = []
     for package in lib_links["Packages"]:
-        if script in package["scripts"]:
-            package["scripts"].remove(script)
-            if len(package["scripts"]) == 0:
-                if exists(commons_dir + package["name"]):
-                    zero_pkgs.append(package["name"])
+        if script in package["Scripts"]:
+            package["Scripts"].remove(script)
+            if len(package["Scripts"]) == 0:
+                if exists(commons_dir + package["Name"]):
+                    zero_pkgs.append(package["Name"])
             else:
                 pkgs.append(package)
         else:
@@ -158,12 +157,12 @@ def uninstall_pkg(script):
         shutil.rmtree(commons_dir + zero_pkg)
 
 
-for script in scripts_names:
-    install_pkg(script)
-
-# install_pkg("[sample] Disintegration")
-
-
-end_time = dt1.now()
-print("\n\nEnd time: " + str(end_time) + "\n")
-print("Total run time: " + str(end_time - start_time))
+if __name__ == "__main__":
+    scripts_names = [
+        name
+        for name in os.listdir(scriptsPath)
+        if os.path.isdir(os.path.join(scriptsPath, name))
+    ]
+    for script in scripts_names:
+        install_pkg(script)
+    # install_pkg("[sample] Disintegration")

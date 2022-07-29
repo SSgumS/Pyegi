@@ -3,6 +3,7 @@ from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
 import qdarktheme
+from utils import set_style
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
@@ -10,23 +11,10 @@ themes_path = utils_path + "/Themes/"
 
 
 class Ui_SettingsWindow(object):
-    def setupUi(self, SettingsWindow, MainWindow):
+    def setupUi(self, SettingsWindow, MainWindow=None):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 151)
-        f = open(settings_file_path)
-        self.overall_settings = json.load(f)
-        f.close()
-        if self.overall_settings["Theme"] == "Dark":
-            SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Light":
-            SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
-        elif self.overall_settings["Theme"] == "Default":
-            SettingsWindow.setStyleSheet("")
-        else:
-            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
-            theme_data = f.read()
-            f.close()
-            SettingsWindow.setStyleSheet(theme_data)
+        self = set_style(self, SettingsWindow)
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QtWidgets.QGridLayout(self.centralwidget)
@@ -52,7 +40,7 @@ class Ui_SettingsWindow(object):
         self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 5)
         self.themes_combobox.setCurrentText(self.overall_settings["Theme"])
         self.themes_combobox.currentTextChanged.connect(
-            lambda: self.applyTheme(SettingsWindow)
+            lambda: set_style(self, SettingsWindow, origin="combobox")
         )
         spacerItem = QtWidgets.QSpacerItem(
             20,
@@ -91,33 +79,11 @@ class Ui_SettingsWindow(object):
         self.cancel_pushButton.setText(_translate("SettingsWindow", "Cancel"))
         self.ok_pushButton.setText(_translate("SettingsWindow", "OK"))
 
-    def applyTheme(self, SettingsWindow):
-        if self.themes_combobox.currentText() == "Dark":
-            SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.themes_combobox.currentText() == "Light":
-            SettingsWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
-        elif self.themes_combobox.currentText() == "Default":
-            SettingsWindow.setStyleSheet("")
-        else:
-            f = open(f"{themes_path}{self.themes_combobox.currentText()}.css", "r")
-            theme_data = f.read()
-            f.close()
-            SettingsWindow.setStyleSheet(theme_data)
-
     def writeSettings(self, SettingsWindow, MainWindow):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         json.dump(self.overall_settings, open(settings_file_path, "w"))
-        if self.overall_settings["Theme"] == "Dark":
-            MainWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Light":
-            MainWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
-        elif self.overall_settings["Theme"] == "Default":
-            MainWindow.setStyleSheet("")
-        else:
-            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
-            theme_data = f.read()
-            f.close()
-            MainWindow.setStyleSheet(theme_data)
+        if MainWindow:
+            set_style(self, MainWindow, origin="combobox")
         SettingsWindow.close()
 
 

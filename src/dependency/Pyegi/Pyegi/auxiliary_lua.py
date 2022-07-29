@@ -19,7 +19,7 @@ from os.path import exists
 import json
 import sys
 import numpy as np
-import qdarktheme
+from utils import set_style
 
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
@@ -40,20 +40,7 @@ def exec2(self, string):
 class Ui_LuaConverter(object):
     def setupUi(self, LuaConverter, script_name, window_name="main_window"):
         LuaConverter.setObjectName("LuaConverter")
-        f = open(settings_file_path)
-        self.overall_settings = json.load(f)
-        f.close()
-        if self.overall_settings["Theme"] == "Dark":
-            LuaConverter.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Light":
-            LuaConverter.setStyleSheet(qdarktheme.load_stylesheet("light"))
-        elif self.overall_settings["Theme"] == "Default":
-            LuaConverter.setStyleSheet("")
-        else:
-            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
-            theme_data = f.read()
-            f.close()
-            LuaConverter.setStyleSheet(theme_data)
+        self = set_style(self, LuaConverter)
 
         self.centralwidget = QtWidgets.QWidget(LuaConverter)
         self.centralwidget.setObjectName("centralwidget")

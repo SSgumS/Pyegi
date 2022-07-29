@@ -6,6 +6,7 @@
 --include('karaskel.lua')
 local json = require 'Pyegi.json'
 local re = require 'aegisub.re'
+-- local petzku = require 'petzku.util'
 
 ----- Script Info -----
 script_name = "Pyegi"
@@ -47,14 +48,6 @@ local function scandir(directory, filter_term)
 	end
 	pfile:close()
 	return t
-end
-
--- Source (with modification): https://stackoverflow.com/a/11204889
--- see if the file exists
-local function file_exists(file_path)
-	local f = io.open(file_path, "rb")
-	if f then f:close() end
-	return f ~= nil
 end
 
 -- get all lines from a file, returns an empty
@@ -132,7 +125,7 @@ local function post_init(sub, sel)
 	APT("Waiting for user to select a python script...")
 	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
 
-	if file_exists(main_py_parameters_file_path) then
+	if file_exists(main_py_parameters_file_path) then --TODO: address the scenarios in which this could happen
 		-- Processing the selected parameters from the python main GUI
 		APT("Preparing the data...")
 		local main_py_parameters = json.decode(read_all_file_as_string(main_py_parameters_file_path))
@@ -303,6 +296,7 @@ local function post_init(sub, sel)
 				end
 			end
 		else
+			aegisub.log(5, "Received no output from the script!\n")
 			goto MainGUI
 		end
 	end
