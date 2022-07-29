@@ -13,15 +13,20 @@ class Theme(Enum):
     PYEGI = "Pyegi"
     DARK = "Dark"
     LIGHT = "Light"
-    SYSTEM = "System"
+    SYSTEM = "System Default"
+
+
+def open_settings():
+    f = open(settings_file_path)
+    overall_settings = json.load(f)
+    f.close()
+    return overall_settings
 
 
 def set_style(window: QWidget, theme: str = None):
     if not theme:
         # load theme
-        f = open(settings_file_path)
-        overall_settings = json.load(f)
-        f.close()
+        overall_settings = open_settings()
         theme = overall_settings["Theme"]
     theme: Theme = Theme(theme)
     # set theme

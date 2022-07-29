@@ -2,8 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
-import qdarktheme
-from utils import set_style, Theme
+from utils import set_style, Theme, open_settings
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
@@ -14,9 +13,7 @@ class Ui_SettingsWindow(object):
     def setupUi(self, SettingsWindow, MainWindow=None):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 151)
-        f = open(settings_file_path)
-        self.overall_settings = json.load(f)
-        f.close()
+        self.overall_settings = open_settings()
         set_style(SettingsWindow, self.overall_settings["Theme"])
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")

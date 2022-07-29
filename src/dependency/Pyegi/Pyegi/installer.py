@@ -2,7 +2,6 @@ import os
 from os.path import exists
 import sys
 import toml
-from datetime import datetime as dt1
 import shutil
 import csv
 import json
@@ -36,22 +35,51 @@ def path_process(path):
     return path, connection_path
 
 
+def create_poetry_toml(dir):
+    if not exists(dir + poetry_toml_file):
+        if not exists(dir):
+            os.mkdir(dir)
+        toml_file = open(dir + poetry_toml_file, "w")
+        toml_file.write("[virtualenvs]\nin-project = true\n")
+        toml_file.close()
+
+
+def clean_lib_links(script):
+    f = open(commons_dir + "lib_links.json")
+    lib_links = json.load(f)
+    f.close()
+    pkgs = []
+    zero_pkgs = []
+    for package in lib_links["Packages"]:
+        if script in package["Scripts"]:
+            package["Scripts"].remove(script)
+            if len(package["Scripts"]) == 0:
+                if exists(commons_dir + package["Name"]):
+                    zero_pkgs.append(package["Name"])
+            else:
+                pkgs.append(package)
+        else:
+            pkgs.append(package)
+    lib_links["Packages"] = pkgs
+    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
+    return zero_pkgs
+
+
 def install_pkg(script):
     print(f"Processing {script} dependencies...")
     script_path = scriptsPath + script + "/"
     if exists(script_path + pyproject_file):
         # renew temp folder
-        if exists(temp_dir):
-            shutil.rmtree(temp_dir)
-        os.mkdir(temp_dir)
-        toml_file = open(temp_dir + poetry_toml_file, "w")
-        toml_file.write("[virtualenvs]\nin-project = true\n")
-        toml_file.close()
+        create_poetry_toml(temp_dir)
         # cleanup script path
         if exists(script_path + poetry_lock_file):
             os.remove(script_path + poetry_lock_file)
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
+            zero_pkgs = clean_lib_links(script)
+            for zero_pkg in zero_pkgs:
+                shutil.rmtree(commons_dir + zero_pkg)
+        create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
         os.system("poetry lock")
@@ -128,27 +156,6 @@ def install_pkg(script):
         shutil.rmtree(temp_dir)
     else:
         print(f'The file "pyproject.toml" doesn\'t exist in {script} script directory.')
-
-
-def clean_lib_links(script):
-    f = open(commons_dir + "lib_links.json")
-    lib_links = json.load(f)
-    f.close()
-    pkgs = []
-    zero_pkgs = []
-    for package in lib_links["Packages"]:
-        if script in package["Scripts"]:
-            package["Scripts"].remove(script)
-            if len(package["Scripts"]) == 0:
-                if exists(commons_dir + package["Name"]):
-                    zero_pkgs.append(package["Name"])
-            else:
-                pkgs.append(package)
-        else:
-            pkgs.append(package)
-    lib_links["Packages"] = pkgs
-    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
-    return zero_pkgs
 
 
 def uninstall_pkg(script):
