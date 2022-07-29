@@ -296,7 +296,6 @@ local function post_init(sub, sel)
 				end
 			end
 		else
-			aegisub.log(3, "Received no output from the script!\n")
 			goto MainGUI
 		end
 	end
