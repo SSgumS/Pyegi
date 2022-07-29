@@ -1,0 +1,53 @@
+{
+  "Format": "lua",
+  "Windows": [
+	{
+	  "name": "main_window",
+	  "Controls": [
+		{
+			"class": "label",
+			"name": "label1",
+			"label": "This script only adds the text {Pyegi} to the beginning of each line (applies twice for all the lines except line 1 and last line).",
+			"x": 0,
+			"y": 0,
+			"width": 7,
+			"height": 1
+		},
+		{
+			"class": "label",
+			"name": "label2",
+			"label": "With this script you may test the speed of the code. Just open a subtitle file with many lines and apply the script.",
+			"x": 0,
+			"y": 1,
+			"width": 7,
+			"height": 1
+		},
+
+		{
+			"class": "Pyegi_button",
+			"name": "cancel_button",
+			"text": "Cancel",
+			"action": "Cancel",
+			"transition to": "",
+			"hint": "",
+			"x": 0,
+			"y": 3,
+			"width": 1,
+			"height": 1
+		},
+		{
+			"class": "Pyegi_button",
+			"name": "apply_button",
+			"text": "Apply",
+			"action": "Apply",
+			"transition to": "",
+			"hint": "",
+			"x": 6,
+			"y": 3,
+			"width": 1,
+			"height": 1
+		}
+	  ]
+	}
+  ]
+}

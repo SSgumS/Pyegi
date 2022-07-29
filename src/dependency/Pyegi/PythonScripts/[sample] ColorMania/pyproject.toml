@@ -3,8 +3,8 @@ authors = [
   "DrunkSimurgh <saman.9267@gmail.com>",
   "SSgumS <sssafais@hotmail.com>",
 ]
-description = "Python + Aegisub"
-name = "Pyegi"
+description = "Does some types of color gradients on the lines."
+name = "ColorMania"
 version = "0.0.1"
 
 [tool.poetry.dependencies]

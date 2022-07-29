@@ -14,8 +14,8 @@ from PyQt6.QtGui import QMouseEvent, QKeyEvent, QMovie
 import os
 import json
 import sys
-import qdarktheme
 from settings import Ui_SettingsWindow
+from utils import set_style
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
@@ -54,9 +54,9 @@ class ComboBoxLineEdit(QLineEdit):
         super().keyPressEvent(e)
 
         combobox: QComboBox = self.parent()
-        completer = combobox.completer()
         if combobox.currentText() != "":
             return
+        completer = combobox.completer()
         completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
         completer.complete()
 
@@ -65,20 +65,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(825, 600)
-        f = open(settings_file_path)
-        self.overall_settings = json.load(f)
-        f.close()
-        if self.overall_settings["Theme"] == "Dark":
-            MainWindow.setStyleSheet(qdarktheme.load_stylesheet())
-        elif self.overall_settings["Theme"] == "Light":
-            MainWindow.setStyleSheet(qdarktheme.load_stylesheet("light"))
-        elif self.overall_settings["Theme"] == "Default":
-            MainWindow.setStyleSheet("")
-        else:
-            f = open(f"{themes_path}{self.overall_settings['Theme']}.css", "r")
-            theme_data = f.read()
-            f.close()
-            MainWindow.setStyleSheet(theme_data)
+        self = set_style(self, MainWindow)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QGridLayout(self.centralwidget)
@@ -146,7 +133,7 @@ class Ui_MainWindow(object):
         self.window_layout.addLayout(self.widgets_layout, 0, 0)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 825, 26))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
