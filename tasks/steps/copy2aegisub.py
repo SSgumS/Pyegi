@@ -1,3 +1,4 @@
+from genericpath import exists
 import logging
 import os
 import shutil
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_last_modified(path: str, in_float: bool = False) -> Union[str, float]:
-    last_modified = max(os.path.getmtime(root) for root, _, _ in os.walk(".venv"))
+    last_modified = max(os.path.getmtime(root) for root, _, _ in os.walk(path))
     if in_float:
         return last_modified
     else:
@@ -36,6 +37,8 @@ def run_step(context: dict):
 
     # Copy .venv
     target_venv_path = os.path.join(pyegi_dependency_path, ".venv")
-    if get_last_modified(".venv", True) != get_last_modified(target_venv_path, True):
+    if (not exists(target_venv_path)) or (
+        get_last_modified(".venv", True) != get_last_modified(target_venv_path, True)
+    ):
         shutil.rmtree(target_venv_path, ignore_errors=True)
         shutil.copytree(".venv", target_venv_path, dirs_exist_ok=True)

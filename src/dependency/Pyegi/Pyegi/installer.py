@@ -40,19 +40,22 @@ def install_pkg(script):
     print(f"Processing {script} dependencies...")
     script_path = scriptsPath + script + "/"
     if exists(script_path + pyproject_file):
-        os.chdir(script_path)
+        # renew temp folder
+        if exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        os.mkdir(temp_dir)
+        toml_file = open(temp_dir + poetry_toml_file, "w")
+        toml_file.write("[virtualenvs]\nin-project = true\n")
+        toml_file.close()
+        # cleanup script path
         if exists(script_path + poetry_lock_file):
             os.remove(script_path + poetry_lock_file)
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
+        # start installing process
+        os.chdir(script_path)
         os.system("poetry lock")
         src = script_path + pyproject_file
-        if not exists(temp_dir + poetry_toml_file):
-            if not exists(temp_dir):
-                os.mkdir(temp_dir)
-            toml_file = open(temp_dir + poetry_toml_file, "w")
-            toml_file.write("[virtualenvs]\nin-project = true\n")
-            toml_file.close()
         dst = temp_dir + pyproject_file
         shutil.copyfile(src, dst)
         src = script_path + poetry_lock_file
