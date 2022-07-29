@@ -3,7 +3,7 @@ from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
 import qdarktheme
-from utils import set_style
+from utils import set_style, Theme
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
@@ -14,7 +14,10 @@ class Ui_SettingsWindow(object):
     def setupUi(self, SettingsWindow, MainWindow=None):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 151)
-        self = set_style(self, SettingsWindow)
+        f = open(settings_file_path)
+        self.overall_settings = json.load(f)
+        f.close()
+        set_style(SettingsWindow, self.overall_settings["Theme"])
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QtWidgets.QGridLayout(self.centralwidget)
@@ -31,7 +34,7 @@ class Ui_SettingsWindow(object):
         self.widgets_layout.addWidget(self.theme_label, 0, 0, 1, 1)
         self.themes_combobox = QtWidgets.QComboBox(self.centralwidget)
         self.themes_combobox.setObjectName("themes_combobox")
-        combobox_items = ["Default", "Dark", "Light"]
+        combobox_items = [Theme.SYSTEM.value, Theme.DARK.value, Theme.LIGHT.value]
         for f in os.listdir(themes_path):
             whole_name = f.split(".")
             filename = whole_name[0].split("/")[-1]
@@ -40,7 +43,7 @@ class Ui_SettingsWindow(object):
         self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 5)
         self.themes_combobox.setCurrentText(self.overall_settings["Theme"])
         self.themes_combobox.currentTextChanged.connect(
-            lambda: set_style(self, SettingsWindow, origin="combobox")
+            lambda: set_style(SettingsWindow, self.themes_combobox.currentText())
         )
         spacerItem = QtWidgets.QSpacerItem(
             20,
@@ -83,7 +86,7 @@ class Ui_SettingsWindow(object):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         json.dump(self.overall_settings, open(settings_file_path, "w"))
         if MainWindow:
-            set_style(self, MainWindow, origin="combobox")
+            set_style(MainWindow, self.overall_settings["Theme"])
         SettingsWindow.close()
 
 

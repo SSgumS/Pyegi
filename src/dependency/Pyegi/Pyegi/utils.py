@@ -1,29 +1,38 @@
 import os
 import json
 import qdarktheme
+from PyQt6.QtWidgets import QWidget
+from enum import Enum
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
 
 
-def set_style(self, Window, origin="settings file"):
-    if origin == "settings file":
+class Theme(Enum):
+    PYEGI = "Pyegi"
+    DARK = "Dark"
+    LIGHT = "Light"
+    SYSTEM = "System"
+
+
+def set_style(window: QWidget, theme: str = None):
+    if not theme:
+        # load theme
         f = open(settings_file_path)
-        self.overall_settings = json.load(f)
+        overall_settings = json.load(f)
         f.close()
-        theme_name = self.overall_settings["Theme"]
-    elif origin == "combobox":
-        theme_name = self.themes_combobox.currentText()
-    if theme_name == "Dark":
-        Window.setStyleSheet(qdarktheme.load_stylesheet())
-    elif theme_name == "Light":
-        Window.setStyleSheet(qdarktheme.load_stylesheet("light"))
-    elif theme_name == "Default":
-        Window.setStyleSheet("")
+        theme = overall_settings["Theme"]
+    theme: Theme = Theme(theme)
+    # set theme
+    if theme == Theme.DARK:
+        window.setStyleSheet(qdarktheme.load_stylesheet())
+    elif theme == Theme.LIGHT:
+        window.setStyleSheet(qdarktheme.load_stylesheet("light"))
+    elif theme == Theme.SYSTEM:
+        window.setStyleSheet("")
     else:
-        f = open(f"{themes_path}{theme_name}.css", "r")
+        f = open(f"{themes_path}{theme.value}.css", "r")
         theme_data = f.read()
         f.close()
-        Window.setStyleSheet(theme_data)
-    return self
+        window.setStyleSheet(theme_data)
