@@ -2,7 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
-from utils import set_style, Theme, open_settings
+from utils import set_style, Theme, get_settings
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
@@ -13,7 +13,7 @@ class Ui_SettingsWindow(object):
     def setupUi(self, SettingsWindow, MainWindow=None):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 151)
-        self.overall_settings = open_settings()
+        self.overall_settings = get_settings()
         set_style(SettingsWindow, self.overall_settings["Theme"])
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")
