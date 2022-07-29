@@ -76,9 +76,6 @@ def install_pkg(script):
             os.remove(script_path + poetry_lock_file)
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
-            zero_pkgs = clean_lib_links(script)
-            for zero_pkg in zero_pkgs:
-                shutil.rmtree(commons_dir + zero_pkg)
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
@@ -154,6 +151,10 @@ def install_pkg(script):
         os.chdir(os.path.dirname(__file__))
         # removing temp dir
         shutil.rmtree(temp_dir)
+        # removing unused libraries
+        zero_pkgs = clean_lib_links(script)
+        for zero_pkg in zero_pkgs:
+            shutil.rmtree(commons_dir + zero_pkg)
     else:
         print(f'The file "pyproject.toml" doesn\'t exist in {script} script directory.')
 

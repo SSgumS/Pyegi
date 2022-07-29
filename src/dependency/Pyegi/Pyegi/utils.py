@@ -16,7 +16,7 @@ class Theme(Enum):
     SYSTEM = "System Default"
 
 
-def open_settings():
+def get_settings():
     f = open(settings_file_path)
     overall_settings = json.load(f)
     f.close()
@@ -26,7 +26,7 @@ def open_settings():
 def set_style(window: QWidget, theme: str = None):
     if not theme:
         # load theme
-        overall_settings = open_settings()
+        overall_settings = get_settings()
         theme = overall_settings["Theme"]
     theme: Theme = Theme(theme)
     # set theme
