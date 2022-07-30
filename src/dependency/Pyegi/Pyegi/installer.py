@@ -76,6 +76,8 @@ def install_pkg(script):
             os.remove(script_path + poetry_lock_file)
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
+            # removing script from lib_links
+            zero_pkgs = clean_lib_links(script)
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
@@ -92,41 +94,46 @@ def install_pkg(script):
         packages = lock_content["package"]
         new_packages = []
         for package in packages:
-            if package["category"] == "main":
-                name_in_commons = f"{package['name']}-{package['version']}"
-                f = open(commons_dir + "lib_links.json")
-                lib_links = json.load(f)
-                f.close()
-                is_new_package = True
-                for pkg in lib_links["Packages"]:
-                    if pkg["Name"] == name_in_commons:
-                        if script not in pkg["Scripts"]:
-                            pkg["Scripts"].append(script)
-                        is_new_package = False
-                if is_new_package:
-                    lib_link = {}
-                    lib_link["Name"] = name_in_commons
-                    lib_link["Scripts"] = [script]
-                    lib_links["Packages"].append(lib_link)
-                json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
-                # check if the package is already in commons
-                isdir = os.path.isdir(commons_dir + name_in_commons)
-                if isdir:
-                    filename = f"{commons_dir + name_in_commons}/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
-                    with open(filename, "r") as csvfile:
-                        csvreader = csv.reader(csvfile)
-                        for row in csvreader:
-                            path = row[0]
-                            path, connection_path = path_process(path)
-                            src = commons_dir + name_in_commons + connection_path + path
-                            dst = f"{temp_dir}.venv{connection_path + path}"
-                            create_dirs(dst)
-                            os.symlink(src, dst)
-                            dst = f"{script_path}.venv{connection_path + path}"
-                            create_dirs(dst)
-                            os.symlink(src, dst)
-                else:
-                    new_packages.append(name_in_commons)
+            if package["category"] != "main":
+                continue
+            name_in_commons = f"{package['name']}-{package['version']}"
+            try:
+                zero_pkgs.remove(name_in_commons)
+            except ValueError:
+                pass
+            # update lib_links
+            f = open(commons_dir + "lib_links.json")
+            lib_links = json.load(f)
+            f.close()
+            is_new_package = True
+            for pkg in lib_links["Packages"]:
+                if pkg["Name"] == name_in_commons:
+                    pkg["Scripts"].append(script)
+                    is_new_package = False
+            if is_new_package:
+                lib_link = {}
+                lib_link["Name"] = name_in_commons
+                lib_link["Scripts"] = [script]
+                lib_links["Packages"].append(lib_link)
+            json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
+            # check if the package is already in commons
+            dir_exist = os.path.isdir(commons_dir + name_in_commons)
+            if dir_exist:
+                filename = f"{commons_dir + name_in_commons}/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
+                with open(filename, "r") as csvfile:
+                    csvreader = csv.reader(csvfile)
+                    for row in csvreader:
+                        path = row[0]
+                        path, connection_path = path_process(path)
+                        src = commons_dir + name_in_commons + connection_path + path
+                        dst = f"{temp_dir}.venv{connection_path + path}"
+                        create_dirs(dst)
+                        os.symlink(src, dst)
+                        dst = f"{script_path}.venv{connection_path + path}"
+                        create_dirs(dst)
+                        os.symlink(src, dst)
+            else:
+                new_packages.append(name_in_commons)
 
         os.system("poetry install --no-dev")
         for name_in_commons in new_packages:
@@ -151,8 +158,7 @@ def install_pkg(script):
         os.chdir(os.path.dirname(__file__))
         # removing temp dir
         shutil.rmtree(temp_dir)
-        # removing unused libraries
-        zero_pkgs = clean_lib_links(script)
+        # remove unused packages from commons
         for zero_pkg in zero_pkgs:
             shutil.rmtree(commons_dir + zero_pkg)
     else:
