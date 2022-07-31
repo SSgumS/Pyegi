@@ -56,9 +56,15 @@ QTabBar::tab:selected {
 	color: white;
 	background-color: rgb(98,120,144);
 }
+QTabBar::tab:hover {
+	background-color: rgb(78,100,124);
+}
 QMenu {
 	background-color: rgb(48,59,71);
 }
 QMenu::item:selected {
 	background-color: rgb(98,120,144);
+}
+QMenu::item:disabled {
+	color: rgb(100,100,100);
 }
