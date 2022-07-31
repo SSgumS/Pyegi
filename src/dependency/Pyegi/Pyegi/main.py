@@ -8,12 +8,16 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QLabel,
     QRadioButton,
+    QTextBrowser,
 )
 from PyQt6.QtCore import Qt, QCoreApplication
 from PyQt6.QtGui import QMouseEvent, QKeyEvent, QMovie
 import os
+from os.path import exists
 import json
 import sys
+import toml
+import re
 from settings import Ui_SettingsWindow
 from utils import set_style
 
@@ -23,6 +27,56 @@ system_inputs = sys.argv
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
+
+
+def try_except(data, attr):
+    try:
+        output = data[attr]
+    except:
+        output = ""
+    return output
+
+
+def get_description_value(poetry_data, pyegi_data, attr):
+    try:
+        output = pyegi_data[attr]
+    except:
+        output = try_except(poetry_data, attr)
+    if attr == "authors":
+        try:
+            for i, str in enumerate(output):
+                output[i] = re.sub("(.*) \<(.*)>", '<a href="\\2">\\1</a>', str)
+        except:
+            pass
+    return output
+
+
+def convert_to_header(str):
+    return f"<html><b>{str}:</b></html>"
+
+
+def get_description(script_name):
+    pyproject_file_path = f"{scriptsPath}{script_name}/pyproject.toml"
+    script_description = ""
+    if exists(pyproject_file_path):
+        pyproject_data = toml.load(pyproject_file_path)
+        poetry_data = try_except(pyproject_data["tool"], "poetry")
+        pyegi_data = try_except(pyproject_data["tool"], "pyegi")
+        desired_attributes = [
+            "name",
+            "description",
+            "version",
+            "version-description",
+            "authors",
+        ]
+        description_values = []
+        for attr in desired_attributes:
+            description_value = get_description_value(poetry_data, pyegi_data, attr)
+            description_values.append(description_value)
+        headers = [convert_to_header(str) for str in desired_attributes]
+        for header, description_value in zip(headers, description_values):
+            script_description += f"{header}<br>{description_value}<br><br>"
+    return script_description
 
 
 class QPushButton2(QPushButton):
@@ -59,6 +113,39 @@ class ComboBoxLineEdit(QLineEdit):
         completer = combobox.completer()
         completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
         completer.complete()
+
+
+class TabBar(QtWidgets.QTabBar):
+    def tabSizeHint(self, index):
+        s = QtWidgets.QTabBar.tabSizeHint(self, index)
+        s.transpose()
+        return s
+
+    def paintEvent(self, event):
+        painter = QtWidgets.QStylePainter(self)
+        opt = QtWidgets.QStyleOptionTab()
+
+        for i in range(self.count()):
+            self.initStyleOption(opt, i)
+            painter.drawControl(QtWidgets.QStyle.ControlElement.CE_TabBarTabShape, opt)
+            painter.save()
+
+            s = opt.rect.size()
+            s.transpose()
+
+            c = self.tabRect(i).center()
+            painter.translate(c)
+            painter.rotate(90)
+            painter.translate(-c)
+            painter.drawControl(QtWidgets.QStyle.ControlElement.CE_TabBarTabLabel, opt)
+            painter.restore()
+
+
+class WestTabWidget(QtWidgets.QTabWidget):
+    def __init__(self, *args, **kwargs):
+        QtWidgets.QTabWidget.__init__(self, *args, **kwargs)
+        self.setTabBar(TabBar(self))
+        self.setTabPosition(QtWidgets.QTabWidget.TabPosition.West)
 
 
 class Ui_MainWindow(object):
@@ -98,13 +185,31 @@ class Ui_MainWindow(object):
         self.combobox.currentIndexChanged.connect(self.preview)
         self.combobox.currentTextChanged.connect(self.textChangedHandler)
 
-        self.preview_label = QLabel(self.centralwidget)
+        self.scriptSpecs_tabs = WestTabWidget(self.centralwidget)
+        self.scriptSpecs_tabs.setObjectName("scriptSpecs_tab")
+        QtWidgets.QTabBar.setFixedHeight(self.scriptSpecs_tabs.tabBar(), 200)
+        self.preview_tab = QtWidgets.QWidget()
+        self.preview_tab.setObjectName("preview_tab")
+        self.preview_Layout = QtWidgets.QGridLayout(self.preview_tab)
+        self.preview_Layout.setObjectName("preview_Layout")
+        self.preview_label = QLabel(self.preview_tab)
+        self.preview_Layout.addWidget(self.preview_label, 0, 0, 1, 1)
+        self.scriptSpecs_tabs.addTab(self.preview_tab, "")
         font = QtGui.QFont()
         font.setPointSize(14)
         self.preview_label.setFont(font)
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setObjectName("preview_label")
-        self.widgets_layout.addWidget(self.preview_label, 1, 0, 7, 6)
+        self.description_tab = QtWidgets.QWidget()
+        self.description_tab.setObjectName("description_tab")
+        self.description_Layout = QtWidgets.QGridLayout(self.description_tab)
+        self.description_Layout.setObjectName("description_Layout")
+        self.description_textedit = QTextBrowser(self.description_tab)
+        self.description_Layout.addWidget(self.description_textedit, 0, 0, 1, 1)
+        self.description_textedit.setObjectName("description_textedit")
+        self.description_textedit.setReadOnly(True)
+        self.scriptSpecs_tabs.addTab(self.description_tab, "")
+        self.widgets_layout.addWidget(self.scriptSpecs_tabs, 1, 0, 7, 6)
         self.cancel_pushButton = QPushButton2(self.centralwidget)
         self.cancel_pushButton.setObjectName("cancel_pushButton")
         self.widgets_layout.addWidget(self.cancel_pushButton, 8, 0, 2, 1)
@@ -158,6 +263,14 @@ class Ui_MainWindow(object):
             _translate("MainWindow", "selected line(s)")
         )
         self.AllLines_radioButton.setText(_translate("MainWindow", "all lines"))
+        self.scriptSpecs_tabs.setTabText(
+            self.scriptSpecs_tabs.indexOf(self.preview_tab),
+            _translate("MainWindow", "Preview"),
+        )
+        self.scriptSpecs_tabs.setTabText(
+            self.scriptSpecs_tabs.indexOf(self.description_tab),
+            _translate("MainWindow", "Details"),
+        )
 
     def openSettingsWindow(self, MainWindow):
         window = QtWidgets.QMainWindow()
@@ -183,6 +296,10 @@ class Ui_MainWindow(object):
             self.selected_script = ""
         else:
             self.selected_script = self.combobox.itemText(self.combobox.currentIndex())
+            self.description_textedit.setText(get_description(self.selected_script))
+            # self.description_textedit.setText(
+            #    "<html><b>Hello</b</html><br><br>hi there"
+            # )
         main_gif_path = ""
         scriptFolder = self.selected_script
         for file in os.listdir(scriptsPath + scriptFolder):
