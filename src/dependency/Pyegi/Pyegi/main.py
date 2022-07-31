@@ -45,7 +45,9 @@ def get_description_value(poetry_data, pyegi_data, attr):
     if attr == "authors":
         try:
             for i, str in enumerate(output):
-                output[i] = re.sub("(.*) \<(.*)>", '<a href="\\2">\\1</a>', str)
+                output[i] = re.sub(
+                    "(.+) ?\<(.+)>", '<a href="mailto: \\2">\\1</a>', str
+                )
         except:
             pass
     return output
@@ -204,10 +206,11 @@ class Ui_MainWindow(object):
         self.description_tab.setObjectName("description_tab")
         self.description_Layout = QtWidgets.QGridLayout(self.description_tab)
         self.description_Layout.setObjectName("description_Layout")
-        self.description_textedit = QTextBrowser(self.description_tab)
-        self.description_Layout.addWidget(self.description_textedit, 0, 0, 1, 1)
-        self.description_textedit.setObjectName("description_textedit")
-        self.description_textedit.setReadOnly(True)
+        self.description_textbrowser = QTextBrowser(self.description_tab)
+        self.description_Layout.addWidget(self.description_textbrowser, 0, 0, 1, 1)
+        self.description_textbrowser.setObjectName("description_textbrowser")
+        self.description_textbrowser.setReadOnly(True)
+        self.description_textbrowser.setOpenExternalLinks(True)
         self.scriptSpecs_tabs.addTab(self.description_tab, "")
         self.widgets_layout.addWidget(self.scriptSpecs_tabs, 1, 0, 7, 6)
         self.cancel_pushButton = QPushButton2(self.centralwidget)
@@ -296,10 +299,7 @@ class Ui_MainWindow(object):
             self.selected_script = ""
         else:
             self.selected_script = self.combobox.itemText(self.combobox.currentIndex())
-            self.description_textedit.setText(get_description(self.selected_script))
-            # self.description_textedit.setText(
-            #    "<html><b>Hello</b</html><br><br>hi there"
-            # )
+            self.description_textbrowser.setText(get_description(self.selected_script))
         main_gif_path = ""
         scriptFolder = self.selected_script
         for file in os.listdir(scriptsPath + scriptFolder):
