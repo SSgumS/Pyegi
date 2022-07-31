@@ -43,3 +43,22 @@ QToolTip {
 	color: white;
 	background-color: rgb(98,120,144);
 }
+QTabWidget::pane {
+  border: none;
+  top:-1px; 
+  background: rgb(98,120,144);
+} 
+QTabBar::tab {
+	color: white;
+	background-color: rgb(48,59,71);
+}
+QTabBar::tab:selected {
+	color: white;
+	background-color: rgb(98,120,144);
+}
+QMenu {
+	background-color: rgb(48,59,71);
+}
+QMenu::item:selected {
+	background-color: rgb(98,120,144);
+}

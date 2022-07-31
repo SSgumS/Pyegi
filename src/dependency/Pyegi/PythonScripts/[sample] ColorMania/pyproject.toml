@@ -13,6 +13,23 @@ python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
 
+[tool.pyegi]
+describer-version = "0.1.0"
+name = "ColorMania"
+description = "Does some types of color gradients on the lines."
+version = "0.0.1"
+version-description = "v0.0.1 Horizon"
+authors = [
+  "DrunkSimurgh <saman.9267@gmail.com>",
+  "SSgumS <sssafais@hotmail.com>",
+]
+discoverable = true
+known-feeds = [
+  "https://github.com/SSgumS/A",
+  "https://github.com/SSgumS/X/tree/main/",
+  "https://github.com/SSgumS/Y/tree/main/Z",
+]
+
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0"]
