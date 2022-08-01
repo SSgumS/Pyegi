@@ -6,6 +6,9 @@ import shutil
 import csv
 import json
 import warnings
+from github import Github
+import urllib.request
+from urllib.parse import unquote
 
 
 temp_dir = os.path.dirname(__file__) + "/temp/"
@@ -63,6 +66,41 @@ def clean_lib_links(script):
     lib_links["Packages"] = pkgs
     json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
     return zero_pkgs
+
+
+def download_script(url):
+    url_split = url.split("/")
+    script_name = unquote(url_split[-1])
+    script_path = scriptsPath + script_name + "/"
+    repo_name = "/".join(url_split[3:5])
+    prefix = unquote("/".join(url_split[7:]))
+    if prefix == "":
+        file_name_marker = 0
+    else:
+        file_name_marker = len(prefix) + 1
+
+    g = Github("X")
+
+    repo = g.get_repo(repo_name)
+
+    try:
+        branch_name = url_split[6]
+    except:
+        branch_name = repo.default_branch
+
+    contents = repo.get_contents(prefix, ref=branch_name)
+
+    while len(contents) > 1:
+        file_content = contents.pop(0)
+        if file_content.type == "dir":
+            contents.extend(repo.get_contents(file_content.path, ref=branch_name))
+            dir_name = f"{script_path}{file_content.path[file_name_marker:]}"
+            os.makedirs(dir_name)
+        else:
+            file_download_url = file_content.download_url
+            file_name = f"{script_path}{file_content.path[file_name_marker:]}"
+            create_dirs(file_name)
+            urllib.request.urlretrieve(file_download_url, file_name)
 
 
 def install_pkg(script):
@@ -180,6 +218,8 @@ if __name__ == "__main__":
         for name in os.listdir(scriptsPath)
         if os.path.isdir(os.path.join(scriptsPath, name))
     ]
-    for script in scripts_names:
-        install_pkg(script)
+    url = "https://github.com/SSgumS/Pyegi/tree/load_script_details"
+    download_script(url)
+    # for script in scripts_names:
+    #     install_pkg(script)
     # install_pkg("[sample] Disintegration")
