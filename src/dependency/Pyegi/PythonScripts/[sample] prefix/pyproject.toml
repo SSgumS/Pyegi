@@ -4,7 +4,7 @@ authors = [
   "SSgumS <sssafais@hotmail.com>",
 ]
 description = "Adds {Pyegi} to the beginning of desired lines."
-name = "prefix"
+name = "[sample] prefix"
 version = "0.0.1"
 
 [tool.poetry.dependencies]

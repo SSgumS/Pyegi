@@ -4,7 +4,7 @@ authors = [
   "SSgumS <sssafais@hotmail.com>",
 ]
 description = "Converts line to pixels and moves the pixels."
-name = "Disintegration"
+name = "[sample] Disintegration"
 version = "0.0.1"
 
 [tool.poetry.dependencies]

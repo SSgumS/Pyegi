@@ -14,6 +14,7 @@ pyonfx = "^0.9.13"
 python = ">=3.9,<3.10"
 pyqtdarktheme = "^1.1.0"
 toml = "^0.10.2"
+bs4 = "^0.0.1"
 
 [tool.poetry.dev-dependencies]
 PyQt5Designer = "^5.14.1"
