@@ -4,7 +4,7 @@ authors = [
   "SSgumS <sssafais@hotmail.com>",
 ]
 description = "Does some types of color gradients on the lines."
-name = "ColorMania"
+name = "[sample] ColorMania"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
@@ -15,7 +15,7 @@ python = ">=3.9,<3.10"
 
 [tool.pyegi]
 describer-version = "0.1.0"
-name = "ColorMania"
+name = "[sample] ColorMania"
 description = "Does some types of color gradients on the lines."
 version = "0.0.1"
 version-description = "v0.0.1 Horizon"

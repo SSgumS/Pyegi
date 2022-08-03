@@ -19,7 +19,7 @@ import sys
 import toml
 import re
 from settings import Ui_SettingsWindow
-from utils import set_style
+from utils import set_style, try_except
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
@@ -27,14 +27,6 @@ system_inputs = sys.argv
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
-
-
-def try_except(data, attr):
-    try:
-        output = data[attr]
-    except:
-        output = ""
-    return output
 
 
 def get_description_value(poetry_data, pyegi_data, attr):

@@ -6,9 +6,8 @@ import shutil
 import csv
 import json
 import warnings
-from github import Github
 import urllib.request
-from urllib.parse import unquote
+from utils import github_decode, create_dirs
 
 
 temp_dir = os.path.dirname(__file__) + "/temp/"
@@ -19,12 +18,6 @@ scriptsPath = dependency_dir + "PythonScripts/"
 pyproject_file = "pyproject.toml"
 poetry_lock_file = "poetry.lock"
 poetry_toml_file = "poetry.toml"
-
-
-def create_dirs(path):
-    parent, _ = os.path.split(path)
-    if not exists(parent):
-        os.makedirs(parent)
 
 
 def path_process(path):
@@ -69,38 +62,23 @@ def clean_lib_links(script):
 
 
 def download_script(url):
-    url_split = url.split("/")
-    script_name = unquote(url_split[-1])
-    script_path = scriptsPath + script_name + "/"
-    repo_name = "/".join(url_split[3:5])
-    prefix = unquote("/".join(url_split[7:]))
-    if prefix == "":
-        file_name_marker = 0
-    else:
-        file_name_marker = len(prefix) + 1
+    g = github_decode(url)
 
-    g = Github("X")
+    files, folders = g.get_files_and_folders()
 
-    repo = g.get_repo(repo_name)
+    script_path = scriptsPath + g.script_name + "/"
+    for folder in folders:
+        path = script_path + folder
+        if not exists(path):
+            os.makedirs(path)
 
-    try:
-        branch_name = url_split[6]
-    except:
-        branch_name = repo.default_branch
+    if not exists(script_path):
+        os.makedirs(script_path)
 
-    contents = repo.get_contents(prefix, ref=branch_name)
-
-    while len(contents) > 1:
-        file_content = contents.pop(0)
-        if file_content.type == "dir":
-            contents.extend(repo.get_contents(file_content.path, ref=branch_name))
-            dir_name = f"{script_path}{file_content.path[file_name_marker:]}"
-            os.makedirs(dir_name)
-        else:
-            file_download_url = file_content.download_url
-            file_name = f"{script_path}{file_content.path[file_name_marker:]}"
-            create_dirs(file_name)
-            urllib.request.urlretrieve(file_download_url, file_name)
+    for file in files:
+        file_download_url = g.get_download_url(file, g.prefix)
+        file_name = f"{script_path}{file}"
+        urllib.request.urlretrieve(file_download_url, file_name)
 
 
 def install_pkg(script):
@@ -218,7 +196,13 @@ if __name__ == "__main__":
         for name in os.listdir(scriptsPath)
         if os.path.isdir(os.path.join(scriptsPath, name))
     ]
-    url = "https://github.com/SSgumS/Pyegi/tree/load_script_details"
+    # url = "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania"
+    # url = "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20Disintegration"
+    # url = "https://github.com/SSgumS/Pyegi/tree/load_script_details"
+    # url = "https://github.com/python-poetry/poetry-core/tree/1.1.0a6"
+    # url = "https://github.com/mzn928/Aegisub_Persian-Toolkit"
+    url = "https://github.com/python-poetry/poetry-core"
+    # url = "https://github.com/TypesettingTools/DependencyControl"
     download_script(url)
     # for script in scripts_names:
     #     install_pkg(script)
