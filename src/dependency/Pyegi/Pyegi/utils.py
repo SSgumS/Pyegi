@@ -10,7 +10,6 @@ from urllib.parse import quote, unquote
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
-import shutil
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
@@ -75,7 +74,7 @@ def get_description(poetry_data, pyegi_data, attr, default_out=""):
 
 
 class script_pyegi_connection(object):
-    def __init__(self, pyproject_file_path) -> None:
+    def __init__(self, pyproject_file_path, datetime, is_dir=True) -> None:
         self.describer_version = ""
         self.name = ""
         self.description = ""
@@ -84,42 +83,45 @@ class script_pyegi_connection(object):
         self.authors = []
         self.discoverable = True
         self.known_feeds = []
-        if exists(pyproject_file_path):
+        self.datetime = datetime
+        if is_dir:
+            if not exists(pyproject_file_path):
+                return
             pyproject_data = toml.load(pyproject_file_path)
-            poetry_data = try_except(pyproject_data["tool"], "poetry")
-            pyegi_data = try_except(pyproject_data["tool"], "pyegi")
-            self.describer_version = try_except(pyegi_data, "describer-version")
-            self.name = get_description(poetry_data, pyegi_data, "name")
-            self.description = get_description(poetry_data, pyegi_data, "description")
-            self.version = get_description(poetry_data, pyegi_data, "version")
-            self.version_description = try_except(pyegi_data, "version-description")
-            self.authors = get_description(poetry_data, pyegi_data, "authors", [])
-            self.discoverable = try_except(pyegi_data, "discoverable", True)
-            self.known_feeds = try_except(pyegi_data, "known-feeds", [])
+        else:
+            try:
+                pyproject_data = toml.loads(pyproject_file_path)
+            except:
+                return
+        poetry_data = try_except(pyproject_data["tool"], "poetry")
+        pyegi_data = try_except(pyproject_data["tool"], "pyegi")
+        self.describer_version = try_except(pyegi_data, "describer-version")
+        self.name = get_description(poetry_data, pyegi_data, "name")
+        self.description = get_description(poetry_data, pyegi_data, "description")
+        self.version = get_description(poetry_data, pyegi_data, "version")
+        self.version_description = try_except(pyegi_data, "version-description")
+        self.authors = get_description(poetry_data, pyegi_data, "authors", [])
+        self.discoverable = try_except(pyegi_data, "discoverable", True)
+        self.known_feeds = try_except(pyegi_data, "known-feeds", [])
 
 
 class github_decode(object):
     def __init__(self, url) -> None:
+        self.url = url
+        url_split = url.split("/")
+        self.repo_name = "/".join(url_split[3:5])
+        self.tags = []
+
+    def start(self):
+        url = self.url
         url_split = url.split("/")
         script_name = unquote(url_split[-1])
         self.repo_name = "/".join(url_split[3:5])
+        self.default_branch = self.main_branch_name()
         try:
             self.branch_name = url_split[6]
         except:
-            tree_indicator = (
-                f"/{self.repo_name}/hovercards/citation/sidebar_partial?tree_name="
-            )
-            tree_indicator_len = len(tree_indicator)
-            reqs = requests.get(url)
-            soup = BeautifulSoup(reqs.text, "html.parser")
-            for link in soup.find_all("include-fragment"):
-                url_temp = link.get("src")
-                try:
-                    if url_temp[:tree_indicator_len] == tree_indicator:
-                        self.branch_name = url_temp[tree_indicator_len:]
-                        break
-                except:
-                    pass
+            self.branch_name = self.default_branch
             url_split.append("tree")
             url_split.append(self.branch_name)
 
@@ -129,27 +131,73 @@ class github_decode(object):
             self.prefix = ""
 
         try:
-            pyproject_toml_path = "pyproject.toml"
-            pyproject_toml_url = self.get_download_url(pyproject_toml_path, self.prefix)
-            pyproject_toml_dir = temp_dir + "pyproject.toml"
-            if exists(temp_dir):
-                shutil.rmtree(temp_dir)
-            os.makedirs(temp_dir)
-            urllib.request.urlretrieve(pyproject_toml_url, pyproject_toml_dir)
-            script_info = script_pyegi_connection(pyproject_toml_dir)
-            self.script_name = script_info.name
+            self.script_info = self.get_script_info()
+            self.script_name = self.script_info.name
         except:
             self.script_name = script_name
-        if exists(temp_dir):
-            shutil.rmtree(temp_dir)
+            self.script_info = ""
 
         self.main_prefix_len = len("/" + "/".join(url_split[3:]))
-        self.url = url
+        self.ID = self.repo_name + "/" + self.script_name
+
+    def resolve_url(self):
+        self.get_all_tags()
+        if self.tags:
+            url = self.url
+            url_split = url.split("/")
+            if len(url_split) == 5:
+                url_split.append("tree")
+                url_split.append(self.tags[0])
+            else:
+                url_split[6] = self.tags[0]
+            url = "/".join(url_split)
+            if self.is_url(url):
+                self.url = url
+
+    def is_url(self, url):
+        try:
+            urllib.request.urlopen(url)
+            return True
+        except:
+            try:
+                url = "https://www.google.com/"
+                urllib.request.urlopen(url)
+                return False
+            except:
+                raise ValueError("You are not connected to the internet!")
+
+    def main_branch_name(self):
+        url = self.url
+        url_split = url.split("/")
+        url = "/".join(url_split[:5])
+        tree_indicator = (
+            f"/{self.repo_name}/hovercards/citation/sidebar_partial?tree_name="
+        )
+        tree_indicator_len = len(tree_indicator)
+        reqs = requests.get(url)
+        soup = BeautifulSoup(reqs.text, "html.parser")
+        for link in soup.find_all("include-fragment"):
+            url_temp = link.get("src")
+            try:
+                if url_temp[:tree_indicator_len] == tree_indicator:
+                    branch_name = url_temp[tree_indicator_len:]
+                    break
+            except:
+                pass
+        return branch_name
+
+    def get_script_info(self):
+        pyproject_toml_path = "pyproject.toml"
+        pyproject_toml_url = self.get_download_url(pyproject_toml_path, self.prefix)
+        reqs = requests.get(pyproject_toml_url)
+        datetime = self.get_pyproject_datetime(self.url)
+        script_info = script_pyegi_connection(reqs.text, datetime, False)
+        return script_info
 
     def get_links(self, main_url):
         url_split = main_url.split("/")
 
-        if len(url_split) <= 5:
+        if len(url_split) == 5:
             url_split.append("tree")
             url_split.append(self.branch_name)
         prefix = "/" + "/".join(url_split[3:])
@@ -159,13 +207,16 @@ class github_decode(object):
         prefix_blob = "/" + "/".join(url_blob[3:])
         prefix_blob_len = len(prefix_blob)
 
+        url_split[5] = "file-list"
+        main_url = "/".join(url_split)
+
         reqs = requests.get(main_url)
         soup = BeautifulSoup(reqs.text, "html.parser")
 
         dirs = []
         files = []
         links = []
-        for link in soup.find_all("a"):
+        for link in soup.find_all("a", class_="js-navigation-open Link--primary"):
             url = link.get("href")
             if url[:prefix_blob_len] == prefix_blob:
                 files.append(unquote(url[self.main_prefix_len + 1 :]))
@@ -178,7 +229,7 @@ class github_decode(object):
         urls = [self.url]
         folders = []
         files = []
-        while len(urls) > 0:
+        while urls:
             current_url = urls[0]
             dirs, filenames, links = self.get_links(current_url)
             folders += dirs
@@ -205,3 +256,52 @@ class github_decode(object):
 
     def get_download_url(self, file, prefix=""):
         return f"https://raw.githubusercontent.com/{self.repo_name}/{self.branch_name}{prefix}/{quote(file)}"
+
+    def get_tags(self, url):
+        reqs = requests.get(url)
+        soup = BeautifulSoup(reqs.text, "html.parser")
+        tags = []
+        for div in soup.find_all("div", class_="commit js-details-container Details"):
+            sub_div = div.find("div", class_="d-flex")
+            link_section = sub_div.find("a")
+            link = link_section.get("href")
+            url_split = link.split("/")
+            tag = url_split[-1]
+            tags.append(tag)
+        return tags
+
+    def get_all_tags(self):
+        url = self.url
+        url_split = url.split("/")
+        url = "/".join(url_split[:5]) + "/tags"
+
+        tags = []
+        more_tags = True
+        url2 = url
+        while more_tags:
+            tags_temp = self.get_tags(url2)
+            if tags_temp:
+                tags += tags_temp
+                url2 = url + "?after=" + tags_temp[-1]
+            else:
+                more_tags = False
+
+        self.tags = tags
+
+    def get_pyproject_datetime(self, url):
+        url_split = url.split("/")
+        if len(url_split) == 5:
+            url_split.append("tree")
+            url_split.append(self.default_branch)
+        url_split[5] = "file-list"
+        url = "/".join(url_split)
+        reqs = requests.get(url)
+        soup = BeautifulSoup(reqs.text, "html.parser")
+        for div in soup.find_all(
+            "div",
+            class_="Box-row Box-row--focus-gray py-2 d-flex position-relative js-navigation-item",
+        ):
+            subdiv = div.find("a", title="pyproject.toml")
+            if subdiv:
+                time_div = div.find("time-ago")
+                return time_div.get("datetime")
