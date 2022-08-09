@@ -15,12 +15,35 @@ python = ">=3.9,<3.10"
 pyqtdarktheme = "^1.1.0"
 toml = "^0.10.2"
 bs4 = "^0.0.1"
+requests = "^2.28.1"
 
 [tool.poetry.dev-dependencies]
 PyQt5Designer = "^5.14.1"
 appdirs = "^1.4.4"
 pypyr = "^5.1.0"
 black = {version = "^22.6.0", allow-prereleases = true}
+
+[tool.pyegi]
+describer-version = "0.1.0"
+name = "Pyegi"
+description = "Python + Aegisub"
+version = "0.0.1"
+version-description = ""
+authors = [
+  "DrunkSimurgh <saman.9267@gmail.com>",
+  "SSgumS <sssafais@hotmail.com>",
+]
+discoverable = true
+known-feeds = [
+  "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania",
+  "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20Disintegration",
+  "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20prefix",
+]
+known-feeds-IDs = [
+  "SSgumS/Pyegi/[sample] ColorMania",
+  "SSgumS/Pyegi/[sample] Disintegration",
+  "SSgumS/Pyegi/[sample] prefix",
+]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

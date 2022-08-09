@@ -8,12 +8,15 @@ import json
 import warnings
 import urllib.request
 from utils import github_decode, create_dirs
+from datetime import datetime
 
 
 temp_dir = os.path.dirname(__file__) + "/temp/"
 commons_dir = os.path.dirname(__file__) + "/commons/"
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
+feed_file_path = os.path.dirname(__file__) + "/scripts_feed.json"
+pyproject_file_path = dependency_dir + "pyproject.toml"
 # system_inputs = sys.argv
 pyproject_file = "pyproject.toml"
 poetry_lock_file = "poetry.lock"
@@ -63,6 +66,7 @@ def clean_lib_links(script):
 
 def download_script(url):
     g = github_decode(url)
+    g.start()
 
     files, folders = g.get_files_and_folders()
 
@@ -79,6 +83,94 @@ def download_script(url):
         file_download_url = g.get_download_url(file, g.prefix)
         file_name = f"{script_path}{file}"
         urllib.request.urlretrieve(file_download_url, file_name)
+
+
+def resolve_main_known_feeds_IDs():
+    pyproject_contents = toml.load(pyproject_file_path)
+    main_known_feeds = pyproject_contents["tool"]["pyegi"]["known-feeds"]
+    IDs = []
+    for url in main_known_feeds:
+        g = github_decode(url)
+        g.start()
+        IDs.append(g.ID)
+    pyproject_contents["tool"]["pyegi"]["known-feeds-IDs"] = IDs
+    with open(pyproject_file_path, "w") as f:
+        toml.dump(pyproject_contents, f)
+
+
+def feed_details(g):
+    url = g.url
+    script_info = g.script_info
+    is_main_brabch = g.branch_name == g.default_branch
+    g.get_all_tags()
+    return {
+        "url": url,
+        "name": script_info.name,
+        "description": script_info.description,
+        "version": script_info.version,
+        "version_description": script_info.version_description,
+        "authors": script_info.authors,
+        "tags": g.tags,
+        "is_main_branch": is_main_brabch,
+    }
+
+
+def add_to_feed(url, pyegi_info):
+    main_known_feeds = pyegi_info["known-feeds"]
+    main_known_feeds_IDs = pyegi_info["known-feeds-IDs"]
+    if exists(feed_file_path):
+        f = open(feed_file_path)
+        feed_file = json.load(f)
+        f.close()
+    else:
+        feed_file = {}
+    g = github_decode(url)
+    g.start()
+    script_info = g.script_info
+    if script_info == "":
+        return []
+    if script_info.discoverable == True:
+        if g.tags:
+            feed_file[g.ID] = feed_details(g)
+        else:
+            if g.ID in main_known_feeds_IDs:
+                idx = main_known_feeds_IDs.index(g.ID)
+                if main_known_feeds[idx] == url:
+                    feed_file[g.ID] = feed_details(g)
+            else:
+                if (g.ID not in feed_file) or (g.branch_name == g.default_branch):
+                    feed_file[g.ID] = feed_details(g)
+                else:
+                    if not feed_file[g.ID]["is_main_branch"]:
+                        date_time = datetime.strptime(
+                            script_info.datetime, "%Y-%m-%dT%H:%M:%SZ"
+                        )
+                        local_date_time = datetime.strptime(
+                            g.get_pyproject_datetime(feed_file[g.ID]["url"]),
+                            "%Y-%m-%dT%H:%M:%SZ",
+                        )
+                        if date_time > local_date_time:
+                            feed_file[g.ID] = feed_details(g)
+    json.dump(feed_file, open(feed_file_path, "w"))
+    return script_info.known_feeds
+
+
+def update_feeds():
+    pyproject_contents = toml.load(pyproject_file_path)
+    pyegi_info = pyproject_contents["tool"]["pyegi"]
+    checked_urls = []
+    urls = pyegi_info["known-feeds"]
+    while urls:
+        url = urls[0]
+        checked_urls.append(url)
+        g = github_decode(url)
+        g.resolve_url()
+        url = g.url
+        known_feeds = add_to_feed(url, pyegi_info)
+        for known_feed in known_feeds:
+            if (known_feed not in checked_urls) and g.is_url(known_feed):
+                urls.append(known_feed)
+        urls = urls[1:]
 
 
 def install_pkg(script):
@@ -115,7 +207,7 @@ def install_pkg(script):
             name_in_commons = f"{package['name']}-{package['version']}"
             try:
                 zero_pkgs.remove(name_in_commons)
-            except ValueError:
+            except:
                 pass
             # update lib_links
             f = open(commons_dir + "lib_links.json")
@@ -196,14 +288,7 @@ if __name__ == "__main__":
         for name in os.listdir(scriptsPath)
         if os.path.isdir(os.path.join(scriptsPath, name))
     ]
-    # url = "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania"
-    # url = "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20Disintegration"
-    # url = "https://github.com/SSgumS/Pyegi/tree/load_script_details"
-    # url = "https://github.com/python-poetry/poetry-core/tree/1.1.0a6"
-    # url = "https://github.com/mzn928/Aegisub_Persian-Toolkit"
-    url = "https://github.com/python-poetry/poetry-core"
-    # url = "https://github.com/TypesettingTools/DependencyControl"
-    download_script(url)
+    # download_script(url)
     # for script in scripts_names:
     #     install_pkg(script)
-    # install_pkg("[sample] Disintegration")
+    update_feeds()
