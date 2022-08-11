@@ -1,7 +1,5 @@
 import sys
-from os.path import exists
 import json
-import numpy as np
 from pyonfx import Line
 
 output_data = [0]

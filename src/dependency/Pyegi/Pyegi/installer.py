@@ -1,185 +1,118 @@
 import os
 from os.path import exists
-import sys
 import toml
 import shutil
-import csv
-import json
 import warnings
+from minimal_installer import *
+from utils import (
+    normalize_dir_path,
+    GLOBAL_PATHS,
+)
 
 
-temp_dir = os.path.dirname(__file__) + "/temp/"
-commons_dir = os.path.dirname(__file__) + "/commons/"
-dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
-scriptsPath = dependency_dir + "PythonScripts/"
-# system_inputs = sys.argv
-pyproject_file = "pyproject.toml"
-poetry_lock_file = "poetry.lock"
-poetry_toml_file = "poetry.toml"
-
-
-def create_dirs(path):
-    parent, _ = os.path.split(path)
-    if not exists(parent):
-        os.makedirs(parent)
-
-
-def path_process(path):
-    connection_path = "/Lib/site-packages/"
-    if path[:3] == "../":
-        connection_path = "/Lib/"
-        path = path[3:]
-        if path[:3] == "../":
-            connection_path = "/"
-            path = path[3:]
-    return path, connection_path
-
-
-def create_poetry_toml(dir):
-    if not exists(dir + poetry_toml_file):
-        if not exists(dir):
-            os.mkdir(dir)
-        toml_file = open(dir + poetry_toml_file, "w")
+def _initialize_script_dir(dir):
+    poetry_toml_path = dir + poetry_toml_file
+    if not exists(poetry_toml_path):
+        ensure_dir_tree(poetry_toml_path)
+        toml_file = open(poetry_toml_path, "w")
         toml_file.write("[virtualenvs]\nin-project = true\n")
         toml_file.close()
 
 
-def clean_lib_links(script):
-    f = open(commons_dir + "lib_links.json")
-    lib_links = json.load(f)
-    f.close()
-    pkgs = []
-    zero_pkgs = []
-    for package in lib_links["Packages"]:
-        if script in package["Scripts"]:
-            package["Scripts"].remove(script)
-            if len(package["Scripts"]) == 0:
-                if exists(commons_dir + package["Name"]):
-                    zero_pkgs.append(package["Name"])
-            else:
-                pkgs.append(package)
-        else:
-            pkgs.append(package)
-    lib_links["Packages"] = pkgs
-    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
-    return zero_pkgs
-
-
-def install_pkg(script):
-    print(f"Processing {script} dependencies...")
-    script_path = scriptsPath + script + "/"
-    if exists(script_path + pyproject_file):
-        # renew temp folder
-        create_poetry_toml(temp_dir)
-        # cleanup script path
-        if exists(script_path + poetry_lock_file):
-            os.remove(script_path + poetry_lock_file)
-        if exists(script_path + ".venv"):
-            shutil.rmtree(script_path + ".venv")
-            # removing script from lib_links
-            zero_pkgs = clean_lib_links(script)
-        create_poetry_toml(script_path)
-        # start installing process
-        os.chdir(script_path)
-        os.system("poetry lock")
-        src = script_path + pyproject_file
-        dst = temp_dir + pyproject_file
-        shutil.copyfile(src, dst)
-        src = script_path + poetry_lock_file
-        dst = temp_dir + poetry_lock_file
-        shutil.copyfile(src, dst)
-        os.chdir(temp_dir)
-        os.system("poetry lock --no-update")
-        lock_content = toml.load(poetry_lock_file)
-        packages = lock_content["package"]
-        new_packages = []
-        for package in packages:
-            if package["category"] != "main":
-                continue
-            name_in_commons = f"{package['name']}-{package['version']}"
-            try:
-                zero_pkgs.remove(name_in_commons)
-            except ValueError:
-                pass
-            # update lib_links
-            f = open(commons_dir + "lib_links.json")
-            lib_links = json.load(f)
-            f.close()
-            is_new_package = True
-            for pkg in lib_links["Packages"]:
-                if pkg["Name"] == name_in_commons:
-                    pkg["Scripts"].append(script)
-                    is_new_package = False
-            if is_new_package:
-                lib_link = {}
-                lib_link["Name"] = name_in_commons
-                lib_link["Scripts"] = [script]
-                lib_links["Packages"].append(lib_link)
-            json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
-            # check if the package is already in commons
-            dir_exist = os.path.isdir(commons_dir + name_in_commons)
-            if dir_exist:
-                filename = f"{commons_dir + name_in_commons}/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
-                with open(filename, "r") as csvfile:
-                    csvreader = csv.reader(csvfile)
-                    for row in csvreader:
-                        path = row[0]
-                        path, connection_path = path_process(path)
-                        src = commons_dir + name_in_commons + connection_path + path
-                        dst = f"{temp_dir}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        os.symlink(src, dst)
-                        dst = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst)
-                        os.symlink(src, dst)
-            else:
-                new_packages.append(name_in_commons)
-
-        os.system("poetry install --no-dev")
-        for name_in_commons in new_packages:
-            filename = (
-                f"{temp_dir}.venv/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
+def install_pkgs(script_path):
+    print(f"Processing {script_path} dependencies...")
+    # normalize dir path
+    script_path = normalize_dir_path(script_path)
+    # create poetry.toml
+    _initialize_script_dir(GLOBAL_PATHS.temp_dir)
+    _initialize_script_dir(script_path)
+    # infer python
+    py_version = infer_python_version(script_path + pyproject_file).python_version
+    com_dir = py_version.common_dir
+    # removing script from lib_links
+    zero_pkgs = clean_lib_links(script_path, com_dir)
+    # renew venvs
+    py_version.create_env(script_path)
+    py_version.create_env(GLOBAL_PATHS.temp_dir)
+    # start installing process
+    # create lock file
+    os.chdir(script_path)
+    py_version.run_module(["poetry", "lock"])
+    # copy pyproject and lock file to temp
+    src = script_path + pyproject_file
+    dst = GLOBAL_PATHS.temp_dir + pyproject_file
+    shutil.copyfile(src, dst)
+    src = script_path + poetry_lock_file
+    dst = GLOBAL_PATHS.temp_dir + poetry_lock_file
+    shutil.copyfile(src, dst)
+    # analyse lock file
+    lock_content = toml.load(poetry_lock_file)
+    packages = lock_content["package"]
+    new_packages = []
+    for package in packages:
+        if package["category"] != "main":
+            continue
+        name_in_commons = f"{package['name']}-{package['version']}"
+        try:
+            zero_pkgs.remove(name_in_commons)
+        except ValueError:
+            pass
+        # update lib_links
+        update_lib_links(script_path, name_in_commons, com_dir)
+        # check if the package is already in commons
+        dir_exist = os.path.isdir(com_dir + name_in_commons)
+        if dir_exist:
+            # create symlinks for existing packages
+            commonize_pkg(
+                com_dir, name_in_commons, [GLOBAL_PATHS.temp_dir, script_path]
             )
-            if exists(filename):
-                with open(filename, "r") as csvfile:
-                    csvreader = csv.reader(csvfile)
-                    for row in csvreader:
-                        path = row[0]
-                        path, connection_path = path_process(path)
-                        src = f"{temp_dir}.venv{connection_path + path}"
-                        dst = commons_dir + name_in_commons + connection_path + path
-                        create_dirs(dst)
-                        shutil.move(src, dst)
-                        dst2 = f"{script_path}.venv{connection_path + path}"
-                        create_dirs(dst2)
-                        os.symlink(dst, dst2)
-            else:
-                warnings.warn(f"Package {name_in_commons} didn't have any RECORD file.")
-        os.chdir(os.path.dirname(__file__))
-        # removing temp dir
-        shutil.rmtree(temp_dir)
-        # remove unused packages from commons
-        for zero_pkg in zero_pkgs:
-            shutil.rmtree(commons_dir + zero_pkg)
-    else:
-        print(f'The file "pyproject.toml" doesn\'t exist in {script} script directory.')
-
-
-def uninstall_pkg(script):
-    print(f"Processing {script} dependencies...")
-    script_path = scriptsPath + script + "/"
-    shutil.rmtree(script_path)
-    zero_pkgs = clean_lib_links(script)
+        else:
+            new_packages.append(name_in_commons)
+    # install new packages
+    os.chdir(GLOBAL_PATHS.temp_dir)
+    py_version.run_module(["poetry", "install", "--no-dev"])
+    # update common-packages and create symlinks
+    for name_in_commons in new_packages:
+        try:
+            commonize_pkg(
+                com_dir,
+                name_in_commons,
+                [script_path],
+                src=GLOBAL_PATHS.temp_dir,
+                is_new=True,
+            )
+        except FileNotFoundError as e:
+            warnings.warn(e)
+    # revert current location
+    os.chdir(os.path.dirname(__file__))
+    # removing temp dir
+    shutil.rmtree(GLOBAL_PATHS.temp_dir)
+    # remove unused packages from commons
     for zero_pkg in zero_pkgs:
-        shutil.rmtree(commons_dir + zero_pkg)
+        shutil.rmtree(com_dir + zero_pkg)
+
+
+def uninstall_script(script_path):
+    # normalize dir path
+    script_path = normalize_dir_path(script_path)
+    # infer python
+    pyproject_file_path = script_path + pyproject_file
+    py_result = infer_python_version(toml.load(pyproject_file_path))
+    # remove dirs
+    shutil.rmtree(script_path)
+    # clean common-packages
+    com_dir = GLOBAL_PATHS.commons_dir + py_result.python_version.folder_name + "/"
+    zero_pkgs = clean_lib_links(script_path, com_dir)
+    for zero_pkg in zero_pkgs:
+        shutil.rmtree(com_dir + zero_pkg)
 
 
 if __name__ == "__main__":
     scripts_names = [
         name
-        for name in os.listdir(scriptsPath)
-        if os.path.isdir(os.path.join(scriptsPath, name))
+        for name in os.listdir(GLOBAL_PATHS.scripts_dir)
+        if os.path.isdir(os.path.join(GLOBAL_PATHS.scripts_dir, name))
     ]
     for script in scripts_names:
-        install_pkg(script)
-    # install_pkg("[sample] Disintegration")
+        install_pkgs(script)
+    # install_pkgs("[sample] Disintegration")

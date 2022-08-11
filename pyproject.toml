@@ -10,14 +10,15 @@ version = "0.0.1"
 [tool.poetry.dependencies]
 Pillow = "^9.0.1"
 PyQt6 = "^6.2.3"
-pyonfx = "^0.9.13"
+pyonfx = "~0.9.13"
 python = ">=3.9,<3.10"
 pyqtdarktheme = "^1.1.0"
-toml = "^0.10.2"
 
 [tool.poetry.dev-dependencies]
+poetry = "~1.1.14" # installed on embedded pythons
+appdirs = "^1.4.4" # installed on embedded pythons
+toml = "^0.10.2" # installed on embedded pythons
 PyQt5Designer = "^5.14.1"
-appdirs = "^1.4.4"
 pypyr = "^5.1.0"
 black = {version = "^22.6.0", allow-prereleases = true}
 

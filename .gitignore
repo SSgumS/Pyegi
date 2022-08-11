@@ -1,5 +1,6 @@
 ### Custom
 settings.override.json
+Pythons/
 
 ### Lua
 # Compiled Lua sources
