@@ -4,6 +4,7 @@ import json
 import sys
 from auxiliary_lua import Ui_LuaConverter
 from os.path import exists
+import warnings
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
@@ -38,17 +39,20 @@ class Ui_EmptyWindow(object):
             self.window.show()
         else:
             arguments = '"' + '" "'.join(system_inputs[1:]) + '"'
+            old_cwd = os.getcwd()
+            os.chdir(f"{scriptsPath}{script_name}")
             if exists(f"{scriptsPath}{script_name}/.venv/Scripts/python.exe"):
                 os.system(
-                    f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" {arguments}"'
+                    f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" -s -m main {arguments}"'
                 )
             else:
-                print(
+                warnings.warn(
                     "There's something wrong with the script environment. Switching to Pyegi environment..."
                 )
                 os.system(
-                    f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" {arguments}"'
+                    f'""{dependency_dir}.venv/Scripts/python.exe" -s -m main {arguments}"'
                 )
+            os.chdir(old_cwd)
             sys.exit()
 
         self.retranslateUi(EmptyWindow)
