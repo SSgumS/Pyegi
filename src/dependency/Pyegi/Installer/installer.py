@@ -1,12 +1,17 @@
 import argparse
 import os
+import sys
 import shutil
-from ..Pyegi.minimal_utils import (
+
+sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+
+from Pyegi.minimals.minimal_utils import (
     rmtree,
+    normal_path_join,
     AEGISUB_USER_DIR,
     VenvEnvBuilder,
 )
-from ..Pyegi.minimal_installer import (
+from Pyegi.minimals.minimal_installer import (
     commonize_venv,
     infer_python_version,
     pyproject_file,
@@ -15,10 +20,8 @@ from ..Pyegi.minimal_installer import (
 
 
 def _create_env(parent_path, update=False):
-    builder = VenvEnvBuilder(
-        clear=(not update), symlinks=True, upgrade=update, with_pip=True
-    )
-    builder.create(os.path.join(parent_path, ".venv"))
+    builder = VenvEnvBuilder(clear=(not update), symlinks=True, upgrade=update)
+    builder.create(normal_path_join(parent_path, ".venv"))
 
 
 if __name__ == "__main__":
@@ -31,15 +34,15 @@ if __name__ == "__main__":
     if args.install:
         # renew files
         os.chdir("../../../../")  # go to base folder of project
-        automation_path = os.path.join(
+        automation_path = normal_path_join(
             AEGISUB_USER_DIR,
             "automation/",
         )
-        dependency_dir = os.path.join(automation_path, "dependency", "Pyegi/")
-        pyegi_dir = os.path.join(dependency_dir, "Pyegi/")
+        dependency_dir = normal_path_join(automation_path, "dependency", "Pyegi/")
+        pyegi_dir = normal_path_join(dependency_dir, "Pyegi/")
         # remove previous files
         shutil.rmtree(
-            os.path.join(automation_path, "include", "Pyegi"), ignore_errors=True
+            normal_path_join(automation_path, "include", "Pyegi"), ignore_errors=True
         )
         rmtree(dependency_dir, ["Pyegi/settings.json", "Pythons/common-packages"])
         # copy new files
@@ -52,7 +55,7 @@ if __name__ == "__main__":
         py_version = infer_python_version(pyegi_dir + pyproject_file).python_version
         py_version.create_env(pyegi_dir)
         # NOTICE: scripts' binaries are broken because of the static linking
-        py_version.run_module(["poetry", "install", "--no-dev"])
+        result = py_version.run_module(["poetry", "install", "--no-dev"])
         commonize_venv(pyegi_dir)
     elif args.venv != None:
         if len(args.venv) == 0:

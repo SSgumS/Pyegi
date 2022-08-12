@@ -51,13 +51,13 @@ try {
         }
         Move-Item $initialFolder $targetFolder
         # install poetry
-        Invoke-Expression "./$initialFolder/python.exe -m pip install -U poetry~=1.1.14 appdirs toml"
+        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.1.14 appdirs toml"
     }
     Set-Location ".."
 
     # run installer
     Set-Location "Installer"
-    ../Pythons/python39/python.exe -m ./installer.py --install
+    ../Pythons/python39/python.exe -s ./installer.py --install
 }
 finally {
     # set location back to the initial one

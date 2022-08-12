@@ -5,10 +5,11 @@ import csv
 import toml
 import json
 import warnings
-from minimal_utils import (
+from .minimal_utils import (
     PYTHON_VERSIONS,
     PythonVersion,
-    normalize_dir_path,
+    normalize_path,
+    normal_path_join,
     GLOBAL_PATHS,
     LIB_RELATIVE_DIR,
 )
@@ -51,7 +52,7 @@ def get_lib_links(lib_links_path: str):
 
 
 def clean_lib_links(script, lib_links_dir):
-    lib_links_path = os.path.join(lib_links_dir, lib_links_file)
+    lib_links_path = normal_path_join(lib_links_dir, lib_links_file)
     lib_links = get_lib_links(lib_links_path)
     pkgs = []
     zero_pkgs = []
@@ -72,7 +73,7 @@ def clean_lib_links(script, lib_links_dir):
 
 
 def update_lib_links(script, pkg_name, lib_links_dir):
-    lib_links_path = os.path.join(lib_links_dir, lib_links_file)
+    lib_links_path = normal_path_join(lib_links_dir, lib_links_file)
     lib_links = get_lib_links(lib_links_path)
     is_new_package = True
     for pkg in lib_links["Packages"]:
@@ -149,7 +150,7 @@ def commonize_pkg(
         targets.append(src)
     if src == None:
         raise Exception("src is not provided!")
-    file_path = os.path.join(
+    file_path = normal_path_join(
         src, pkg_name, LIB_RELATIVE_DIR, f"{pkg_name}.dist-info", "RECORD"
     )
     if is_new and not exists(file_path):
@@ -163,7 +164,7 @@ def commonize_pkg(
             while relative_path[:3] == "../":
                 connection_path, _ = os.path.split(connection_path)
                 relative_path = relative_path[3:]
-            relative_path = os.path.join(connection_path, relative_path)
+            relative_path = normal_path_join(connection_path, relative_path)
             # move if necessary
             path_in_common = f"{common_dir}{pkg_name}/{relative_path}"
             if is_new:
@@ -179,7 +180,7 @@ def commonize_pkg(
 
 def commonize_venv(script_path):
     # normalize dir path
-    script_path = normalize_dir_path(script_path)
+    script_path = normalize_path(script_path, True)
     # infer python
     py_result = infer_python_version(script_path + pyproject_file)
     com_dir = py_result.python_version.common_dir

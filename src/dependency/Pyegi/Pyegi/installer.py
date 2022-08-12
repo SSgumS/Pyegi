@@ -3,9 +3,10 @@ from os.path import exists
 import toml
 import shutil
 import warnings
-from minimal_installer import *
+from minimals.minimal_installer import *
 from utils import (
-    normalize_dir_path,
+    normalize_path,
+    normal_path_join,
     GLOBAL_PATHS,
 )
 
@@ -22,7 +23,7 @@ def _initialize_script_dir(dir):
 def install_pkgs(script_path):
     print(f"Processing {script_path} dependencies...")
     # normalize dir path
-    script_path = normalize_dir_path(script_path)
+    script_path = normalize_path(script_path, True)
     # create poetry.toml
     _initialize_script_dir(GLOBAL_PATHS.temp_dir)
     _initialize_script_dir(script_path)
@@ -94,7 +95,7 @@ def install_pkgs(script_path):
 
 def uninstall_script(script_path):
     # normalize dir path
-    script_path = normalize_dir_path(script_path)
+    script_path = normalize_path(script_path, True)
     # infer python
     pyproject_file_path = script_path + pyproject_file
     py_result = infer_python_version(toml.load(pyproject_file_path))
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     scripts_names = [
         name
         for name in os.listdir(GLOBAL_PATHS.scripts_dir)
-        if os.path.isdir(os.path.join(GLOBAL_PATHS.scripts_dir, name))
+        if os.path.isdir(normal_path_join(GLOBAL_PATHS.scripts_dir, name))
     ]
     for script in scripts_names:
         install_pkgs(script)

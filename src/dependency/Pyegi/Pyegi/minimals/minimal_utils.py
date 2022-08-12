@@ -11,15 +11,20 @@ from venv import EnvBuilder
 from poetry.core.semver import Version
 
 
-def normalize_dir_path(dir_path: str) -> str:
-    if not dir_path.endswith(("/", "\\")):
-        dir_path = dir_path + "/"
-    return dir_path
+def normalize_path(path: str, is_dir=False) -> str:
+    path = path.replace("\\", "/")
+    if is_dir and not path.endswith(("/")):
+        path = path + "/"
+    return path
+
+
+def normal_path_join(*paths, is_dir=False) -> str:
+    return normalize_path(os.path.join(*paths), is_dir)
 
 
 class GlobalPaths:
     def __init__(self, dep_dir: str):
-        self.dependency_dir = normalize_dir_path(dep_dir)
+        self.dependency_dir = normalize_path(dep_dir, True)
         self.pythons_dir = self.dependency_dir + "Pythons/"
         self.installer_dir = self.dependency_dir + "Installer/"
         self.temp_dir = self.pythons_dir + "temp/"
@@ -53,25 +58,25 @@ def _get_aegisub_user_dir():
     if PLATFORM == Platform.LIN:
         path = os.path.expanduser("~/.aegisub")
     else:
-        path = normalize_dir_path(
+        path = normalize_path(
             appdirs.user_data_dir(
                 "Aegisub",
                 "",
                 roaming=True,
             )
         )
-    return normalize_dir_path(path)
+    return normalize_path(path, True)
 
 
 def _get_lib_relative_dir():
     path: str
     if PLATFORM == Platform.WIN:
-        path = os.path.join("Lib", "site-packages")
+        path = normal_path_join("Lib", "site-packages")
     else:
-        path = os.path.join(
+        path = normal_path_join(
             "lib", "python%d.%d" % sys.version_info[:2], "site-packages"
         )
-    return normalize_dir_path(path)
+    return normalize_path(path, True)
 
 
 def _get_bin_relative_dir():
@@ -80,7 +85,7 @@ def _get_bin_relative_dir():
         path = "Scripts"
     else:
         path = "bin"
-    return normalize_dir_path(path)
+    return normalize_path(path, True)
 
 
 def normalize_binary_path(path: str, is_basename=False) -> str:
@@ -109,13 +114,13 @@ class VenvEnvBuilder(EnvBuilder):
         :param context: The information for the environment creation request
                         being processed.
         """
-        context.cfg_path = path = os.path.join(context.env_dir, "pyvenv.cfg")
+        context.cfg_path = path = normal_path_join(context.env_dir, "pyvenv.cfg")
 
         # this part is different from the superclass
         try:
             # we want the correct home python rather than the one from within a potential virtual environment
             with open(
-                os.path.join(os.path.dirname(context.python_dir), "pyvenv.cfg"),
+                normal_path_join(os.path.dirname(context.python_dir), "pyvenv.cfg"),
                 "r",
                 encoding="utf-8",
             ) as f:
@@ -137,16 +142,26 @@ class VenvEnvBuilder(EnvBuilder):
                 f.write(f"prompt = {self.prompt!r}\n")
 
     def post_setup(self, context):
-        env_lib_path = os.path.join(context.env_dir, LIB_RELATIVE_DIR)
-        base_lib_path = os.path.join(context.python_dir, LIB_RELATIVE_DIR).rstrip("/")
-        with open(os.path.join(env_lib_path, "pyegi.pth"), "w", encoding="utf-8") as f:
+        env_lib_path = normal_path_join(context.env_dir, LIB_RELATIVE_DIR)
+        base_lib_path = normal_path_join(context.python_dir, LIB_RELATIVE_DIR).rstrip(
+            "/"
+        )
+        with open(
+            normal_path_join(env_lib_path, "pyegi.pth"), "w", encoding="utf-8"
+        ) as f:
             f.write("%s\n" % base_lib_path)
 
 
 def run_command(args: List, normalize=False):
     if normalize:
         args[0] = normalize_binary_path(args[0])
-    return subprocess.run(args, check=True, capture_output=True)
+    try:
+        result = subprocess.run(args, check=True, capture_output=True, text=True)
+    except:
+        print(result.stderr)
+        raise
+    finally:
+        return result
 
 
 def rmtree(path: str, exclude: List[str] = []):
@@ -160,19 +175,20 @@ def rmtree(path: str, exclude: List[str] = []):
     # remove files respecting exclude
     root_string_len = len(path)
     for parent, dirs, files in os.walk(path):
-        head = parent[root_string_len + 1 :]
+        parent = normalize_path(parent)
+        head = parent[root_string_len:]
         while head != "" and head not in exclude:
             head, _ = os.path.split(head)
         if head != "":
             continue
         for name in files:
-            target = os.path.join(parent, name)
-            target_without_root = target[root_string_len + 1 :]
+            target = normal_path_join(parent, name)
+            target_without_root = target[root_string_len:]
             if target_without_root not in exclude:
                 os.remove(target)
         for name in dirs:
-            target = os.path.join(parent, name)
-            target_without_root = target[root_string_len + 1 :]
+            target = normal_path_join(parent, name)
+            target_without_root = target[root_string_len:]
             if target_without_root not in expanded_exclude:
                 shutil.rmtree(target, ignore_errors=True)
 
@@ -181,27 +197,28 @@ class PythonVersion:
     def __init__(self, Version):
         self.version = Version
         self.folder_name = f"python{self.version.major}{self.version.minor}"
-        self.py_binary_path = os.path.join(
+        self.py_binary_path = normal_path_join(
             GLOBAL_PATHS.pythons_dir, self.folder_name, PY_RELATIVE_PATH
         )
-        self.common_dir = normalize_dir_path(
-            GLOBAL_PATHS.commons_dir + self.folder_name
+        self.common_dir = normalize_path(
+            GLOBAL_PATHS.commons_dir + self.folder_name, True
         )
 
+    def run_command(self, args: List):
+        return run_command([self.py_binary_path, "-s"] + args)
+
     def run_module(self, args: List):
-        return run_command([self.py_binary_path, "-m"] + args)
+        return self.run_command(["-m"] + args)
 
     def create_env(self, parent_path, update=False):
         args = [
-            self.py_binary_path,
-            "-m",
             f"{GLOBAL_PATHS.installer_dir}installer.py",
             "--venv",
             parent_path,
         ]
         if update:
             args.append("--update")
-        run_command(args)
+        self.run_command(args)
 
 
 PLATFORM = _get_platform()
@@ -210,7 +227,7 @@ LIB_RELATIVE_DIR = _get_lib_relative_dir()
 BIN_RELATIVE_DIR = _get_bin_relative_dir()
 PY_RELATIVE_PATH = _get_py_relative_path()
 GLOBAL_PATHS = GlobalPaths(
-    os.path.join(AEGISUB_USER_DIR, "automation", "dependency", "Pyegi/")
+    normal_path_join(AEGISUB_USER_DIR, "automation", "dependency", "Pyegi/")
 )
 # the order is important; should be descending
 PYTHON_VERSIONS = [

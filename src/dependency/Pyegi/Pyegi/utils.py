@@ -3,7 +3,7 @@ import json
 import qdarktheme
 from PyQt6.QtWidgets import QWidget
 from enum import Enum
-from minimal_utils import *
+from minimals.minimal_utils import *
 
 
 class Theme(Enum):
