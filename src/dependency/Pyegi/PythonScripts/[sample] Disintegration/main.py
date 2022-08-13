@@ -5,12 +5,8 @@
 from pyonfx import *
 import math
 import random
-import sys
+import Pyegi
 
-from pathlib import Path
-file = Path(__file__).resolve()
-sys.path.append(str(file.parents[2]) + "/Pyegi")
-import Pyegi  # TODO: I don't know shit about python packages; but this library should convert to an installable one. These path-play must not exist
 
 io = Ass(Pyegi.GetInputFilePath(), extended=True)
 meta, styles, lines = io.get_data()

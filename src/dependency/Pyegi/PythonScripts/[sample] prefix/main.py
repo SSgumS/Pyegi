@@ -6,13 +6,6 @@ Created on Fri May 23 13:38:34 2021
 """
 
 from pyonfx import *
-import sys
-
-from pathlib import Path
-
-file = Path(__file__).resolve()
-sys.path.append(str(file.parents[2]) + "/Pyegi")
-# TODO: I don't know shit about python packages; but this library should convert to an installable one. These path-play must not exist
 import Pyegi
 
 

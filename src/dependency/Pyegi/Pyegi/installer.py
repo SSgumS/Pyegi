@@ -20,6 +20,28 @@ def _initialize_script_dir(dir):
         toml_file.close()
 
 
+def ensure_init_file(script_path):
+    init_path = normal_path_join(script_path, "__init__.py")
+    code_section = (
+        "import os\n"
+        "import sys\n"
+        "import pathlib\n"
+        "file = pathlib.Path(__file__).resolve()\n"
+        'sys.path.append(os.path.join(str(file.parents[2]), "Pyegi"))\n'
+    )
+    if os.path.exists(init_path):
+        # insert the code section at the beginning
+        with open(init_path, "r") as f:
+            lines = f.readlines()
+        with open(init_path, "w") as f:
+            f.write(code_section)
+            for line in lines:
+                f.write(line)
+    else:
+        with open(init_path, "w") as f:
+            f.write(code_section)
+
+
 def install_pkgs(script_path):
     print(f"Processing {script_path} dependencies...")
     # normalize dir path
