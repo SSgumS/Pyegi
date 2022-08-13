@@ -123,7 +123,7 @@ local function post_init(sub, sel)
 	local command_parameters_string = ' "' .. main_py_script_path .. '" "' .. main_py_parameters_file_path .. '"'
 	-- aegisub.log(5, serialize(command_parameters_string) .. "\n")
 	APT("Waiting for user to select a python script...")
-	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
+	assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" -s ' .. command_parameters_string .. '"'))
 
 	if file_exists(main_py_parameters_file_path) then --TODO: address the scenarios in which this could happen
 		-- Processing the selected parameters from the python main GUI
@@ -227,7 +227,7 @@ local function post_init(sub, sel)
 			'" "' .. lines_parameters_file_path .. '"'
 		-- aegisub.log(5, serialize(command_parameters_string) .. "\n")
 		APT("Waiting for python results...")
-		assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" ' .. command_parameters_string .. '"'))
+		assert(os.execute('""' .. dependency_dir .. '.venv/Scripts/python.exe" -s ' .. command_parameters_string .. '"'))
 
 		if file_exists(py_out_file_path) then
 			-- Converting the result to ass lines.

@@ -314,17 +314,20 @@ class Ui_LuaConverter(object):
                 json.dump(script_settings, outfile)
 
             if button["action"].lower() == "apply":
+                old_cwd = os.getcwd()
+                os.chdir(f"{scriptsPath}{script_name}")
                 if exists(f"{scriptsPath}{script_name}/.venv/Scripts/python.exe"):
                     os.system(
-                        f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
+                        f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" -s -m main "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
                     )
                 else:
                     print(
                         "There's something wrong with the script environment. Switching to Pyegi environment..."
                     )
                     os.system(
-                        f'""{dependency_dir}.venv/Scripts/python.exe" "{scriptsPath}{script_name}/main.py" "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
+                        f'""{dependency_dir}.venv/Scripts/python.exe" -s -m main "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
                     )
+                os.chdir(old_cwd)
                 sys.exit()
             else:
                 self.setupUi(LuaConverter, script_name, button["transition to"])
