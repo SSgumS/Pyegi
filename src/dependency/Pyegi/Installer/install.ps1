@@ -8,6 +8,39 @@ function Expand-Archive($tarFile, $dest) {
     Expand-7Zip $tarFile $dest
 }
 
+function Remove-Target-Dir($target) {
+    if (-not (Test-Path -Path $target)) {
+        return
+    }
+    $targetObj = Get-Item $target
+    if ($targetObj.LinkType -eq "SymbolicLink") {
+        $targetObj.Delete()
+    }
+    else {
+        Remove-Item $target -Recurse
+    }
+}
+
+function Update-Python($version, $targetFolder) {
+    # download
+    $fileName = "cpython-$pyVer+$packageVersion-$arch-pc-windows-msvc-shared-install_only.tar.gz"
+    $url = "https://github.com/indygreg/python-build-standalone/releases/download/$packageVersion/$fileName"
+    if (-not (Test-Path -Path $fileName)) {
+        Invoke-WebRequest -OutFile $fileName $url
+    }
+    # extract
+    $initialFolder = "python"
+    Remove-Target-Dir $initialFolder
+    Expand-Archive $fileName "."
+    Remove-Item $fileName
+    $tarFile = $fileName.TrimEnd(".gz")
+    Expand-Archive $tarFile "."
+    Remove-Item $tarFile
+    # rename folder
+    Remove-Target-Dir $targetFolder
+    Move-Item $initialFolder $targetFolder
+}
+
 # set location to script's location
 $prevPwd = $PWD
 Set-Location -LiteralPath $PSScriptRoot
@@ -21,35 +54,35 @@ try {
     }
     $packageVersion = "20220802"
     $pythonVersions = "3.8.13", "3.9.13", "3.10.6"
+    $pyegiPythonsDir = "$($env:APPDATA -replace "\\", "/")/Aegisub/automation/dependency/Pyegi/Pythons/"
     # prepare environments
-    Set-Location "../Pythons"
+    Set-Location "../Pythons/"
     for ($i = 0; $i -lt $pythonVersions.Count; $i++) {
         $pyVer = $pythonVersions[$i]
-        # download
-        $fileName = "cpython-$pyVer+$packageVersion-$arch-pc-windows-msvc-shared-install_only.tar.gz"
-        $url = "https://github.com/indygreg/python-build-standalone/releases/download/$packageVersion/$fileName"
-        if (!(Test-Path -Path $fileName)) {
-            Invoke-WebRequest -OutFile $fileName $url
-        }
-        # extract
-        $initialFolder = "python"
-        if (Test-Path -Path $initialFolder) {
-            Remove-Item $initialFolder -Recurse
-        }
-        Expand-Archive $fileName "."
-        Remove-Item $fileName
-        $tarFile = $fileName.TrimEnd(".gz")
-        Expand-Archive $tarFile "."
-        Remove-Item $tarFile
-        # rename folder
-        if (!($pyVer -match '^(?<major>\d+)\.(?<minor>\d+)')) {
+        # determine folder name
+        if (-not ($pyVer -match '^(?<major>\d+)\.(?<minor>\d+)')) {
             throw "Python version `"$pyVer`" is in incorrect format!"
         }
         $targetFolder = "python$($Matches.major)$($Matches.minor)"
-        if (Test-Path -Path $targetFolder) {
-            Remove-Item $targetFolder -Recurse
+        # provide pythons
+        $pyegiPyDir = "$pyegiPythonsDir$targetFolder/"
+        if (
+            (-not (Test-Path -Path $pyegiPyDir)) -or
+            ($Args[0] -eq "--update-pythons" -and
+            (Get-ChildItem "$($pyegiPyDir)python.exe").VersionInfo.ProductVersion -ne $pyVer)
+        ) {
+            # update pythons
+            Update-Python $pyVer $targetFolder
+            $parameter = "--update-pythons"
+            $shouldUpdate = $true
         }
-        Move-Item $initialFolder $targetFolder
+        else {
+            # copy from pyegi
+            Remove-Target-Dir $targetFolder
+            New-Item -ItemType SymbolicLink -Path $targetFolder -Target $pyegiPyDir
+            $parameter = ""
+            $shouldUpdate = $false
+        }
         # install poetry
         Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.1.14 appdirs toml"
     }
@@ -57,7 +90,7 @@ try {
 
     # run installer
     Set-Location "Installer"
-    ../Pythons/python39/python.exe -s ./installer.py --install
+    ../Pythons/python39/python.exe -s ./installer.py --install $parameter
 }
 finally {
     # set location back to the initial one

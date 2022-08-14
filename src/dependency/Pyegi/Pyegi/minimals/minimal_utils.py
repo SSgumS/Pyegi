@@ -165,8 +165,11 @@ def run_command(args: List, normalize=False):
 
 
 def rmtree(path: str, exclude: List[str] = []):
-    expanded_exclude = set(exclude)
+    # normalize exclude
+    for i in range(len(exclude)):
+        exclude[i] = normalize_path(exclude[i]).rstrip("/")
     # expand exclude
+    expanded_exclude = set(exclude)
     for item in exclude:
         head, _ = os.path.split(item)
         while head:

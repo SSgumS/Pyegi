@@ -1,6 +1,4 @@
-set LOGFILE=install.bat.log
-call :LOG > %LOGFILE% 2>&1
-exit /B
+@echo off
 
-:LOG
-powershell -ExecutionPolicy Bypass -File "./src/dependency/Pyegi/Installer/install.ps1"
+powershell -Command " Start-Process PowerShell -Verb RunAs \""-Command `\""cd '%cd%'; powershell -NoExit -ExecutionPolicy Bypass -File './src/dependency/Pyegi/Installer/install.ps1' %~1;`\""\"" "
+exit /b

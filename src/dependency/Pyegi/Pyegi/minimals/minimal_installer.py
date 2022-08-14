@@ -171,52 +171,90 @@ def commonize_pkg(
                 org_file = f"{src}.venv/{relative_path}"
                 ensure_dir_tree(path_in_common)
                 shutil.move(org_file, path_in_common)
-            # create symlink
+            # create link
             for target in targets:
                 dst = f"{target}.venv/{relative_path}"
                 ensure_dir_tree(dst)
-                os.symlink(path_in_common, dst)
+                os.link(path_in_common, dst)
 
 
-def commonize_venv(script_path):
+def _initialize_script_dir(dir):
+    poetry_toml_path = dir + poetry_toml_file
+    if not exists(poetry_toml_path):
+        ensure_dir_tree(poetry_toml_path)
+        toml_file = open(poetry_toml_path, "w")
+        toml_file.write("[virtualenvs]\nin-project = true\n")
+        toml_file.close()
+
+
+def install_pkgs(script_path):
+    print(f"Processing {script_path} dependencies...")
     # normalize dir path
     script_path = normalize_path(script_path, True)
+    # create poetry.toml
+    _initialize_script_dir(GLOBAL_PATHS.temp_dir)
+    _initialize_script_dir(script_path)
     # infer python
-    py_result = infer_python_version(script_path + pyproject_file)
-    com_dir = py_result.python_version.common_dir
+    py_version = infer_python_version(script_path + pyproject_file).python_version
+    com_dir = py_version.common_dir
     # removing script from lib_links
     zero_pkgs = clean_lib_links(script_path, com_dir)
+    # renew venvs
+    py_version.create_env(script_path)
+    py_version.create_env(GLOBAL_PATHS.temp_dir)
+    # start installing process
+    # create lock file
+    os.chdir(script_path)
+    py_version.run_module(["poetry", "lock"])
+    # copy pyproject and lock file to temp
+    src = script_path + pyproject_file
+    dst = GLOBAL_PATHS.temp_dir + pyproject_file
+    shutil.copyfile(src, dst)
+    src = script_path + poetry_lock_file
+    dst = GLOBAL_PATHS.temp_dir + poetry_lock_file
+    shutil.copyfile(src, dst)
     # analyse lock file
     lock_content = toml.load(poetry_lock_file)
     packages = lock_content["package"]
+    new_packages = []
     for package in packages:
         if package["category"] != "main":
             continue
         name_in_commons = f"{package['name']}-{package['version']}"
-        # remove from zero_pkgs if exists
         try:
             zero_pkgs.remove(name_in_commons)
         except ValueError:
             pass
         # update lib_links
         update_lib_links(script_path, name_in_commons, com_dir)
-        # update common-packages if necessary and create symlinks
+        # check if the package is already in commons
         dir_exist = os.path.isdir(com_dir + name_in_commons)
         if dir_exist:
+            # create symlinks for existing packages
             commonize_pkg(
                 com_dir, name_in_commons, [GLOBAL_PATHS.temp_dir, script_path]
             )
         else:
-            try:
-                commonize_pkg(
-                    com_dir,
-                    name_in_commons,
-                    [script_path],
-                    src=GLOBAL_PATHS.temp_dir,
-                    is_new=True,
-                )
-            except FileNotFoundError as e:
-                warnings.warn(e)
+            new_packages.append(name_in_commons)
+    # install new packages
+    os.chdir(GLOBAL_PATHS.temp_dir)
+    py_version.run_module(["poetry", "install", "--no-dev"])
+    # update common-packages and create symlinks
+    for name_in_commons in new_packages:
+        try:
+            commonize_pkg(
+                com_dir,
+                name_in_commons,
+                [script_path],
+                src=GLOBAL_PATHS.temp_dir,
+                is_new=True,
+            )
+        except FileNotFoundError as e:
+            warnings.warn(e)
+    # revert current location
+    os.chdir(os.path.dirname(__file__))
+    # removing temp dir
+    shutil.rmtree(GLOBAL_PATHS.temp_dir)
     # remove unused packages from commons
     for zero_pkg in zero_pkgs:
         shutil.rmtree(com_dir + zero_pkg)
