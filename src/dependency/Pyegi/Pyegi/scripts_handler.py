@@ -111,6 +111,7 @@ class Ui_ScriptsHandlerWindow(object):
         self.install_pushButton.clicked.connect(
             lambda: self.install_checked_scripts(MainWindow)
         )
+        self.install_pushButton.setEnabled(False)
 
         self.uninstall_pushButton = QPushButton(self.centralwidget)
         self.uninstall_pushButton.setObjectName("uninstall_pushButton")
@@ -118,6 +119,7 @@ class Ui_ScriptsHandlerWindow(object):
         self.uninstall_pushButton.clicked.connect(
             lambda: self.uninstall_checked_scripts(MainWindow)
         )
+        self.uninstall_pushButton.setEnabled(False)
 
         self.close_pushButton = QPushButton(self.centralwidget)
         self.close_pushButton.setObjectName("close_pushButton")
@@ -252,8 +254,23 @@ class Ui_ScriptsHandlerWindow(object):
                 self.scripts_treeWidget.setColumnWidth(i, 200)
                 continue
             self.scripts_treeWidget.resizeColumnToContents(i)
+        self.scripts_treeWidget_checked = []
+        self.scripts_treeWidget.itemChanged.connect(self.treeWidgetItemChangeHandler)
         self.scripts_treeWidget.setSortingEnabled(True)
         self.manage_hidden_scripts()
+
+    def treeWidgetItemChangeHandler(self, item, column_number):
+        if column_number == 0:
+            if item in self.scripts_treeWidget_checked:
+                self.scripts_treeWidget_checked.remove(item)
+                if not self.scripts_treeWidget_checked:
+                    self.install_pushButton.setEnabled(False)
+                    self.uninstall_pushButton.setEnabled(False)
+            else:
+                if not self.scripts_treeWidget_checked:
+                    self.install_pushButton.setEnabled(True)
+                    self.uninstall_pushButton.setEnabled(True)
+                self.scripts_treeWidget_checked.append(item)
 
     def manage_hidden_scripts(self):
         hidden_state = self.manage_hidden_scripts_combobox.currentText()
