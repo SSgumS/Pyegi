@@ -1,3 +1,4 @@
+from multiprocessing.util import is_exiting
 import os
 from os.path import exists
 import sys
@@ -11,16 +12,27 @@ from utils import github_decode, create_dirs
 from datetime import datetime
 
 
+pyproject_file = "pyproject.toml"
+poetry_lock_file = "poetry.lock"
+poetry_toml_file = "poetry.toml"
 temp_dir = os.path.dirname(__file__) + "/temp/"
 commons_dir = os.path.dirname(__file__) + "/commons/"
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
 feed_file_path = os.path.dirname(__file__) + "/scripts_feed.json"
-pyproject_file_path = dependency_dir + "pyproject.toml"
+pyproject_file_path = dependency_dir + pyproject_file
 # system_inputs = sys.argv
-pyproject_file = "pyproject.toml"
-poetry_lock_file = "poetry.lock"
-poetry_toml_file = "poetry.toml"
+development_check_file_path = (
+    os.path.dirname(__file__) + "/kl342klfdsf.3244dsffger+_Fwr_@2dsa2@.k3f"
+)
+if exists(development_check_file_path):
+    development_mode = True
+else:
+    development_mode = False
+pyproject_file_url = (
+    "https://raw.githubusercontent.com/SSgumS/Pyegi/main/pyproject.toml"
+)
+python_path = "C:/Python39/python.exe"
 
 
 def path_process(path):
@@ -64,27 +76,6 @@ def clean_lib_links(script):
     return zero_pkgs
 
 
-def download_script(url):
-    g = github_decode(url)
-    g.start()
-
-    files, folders = g.get_files_and_folders()
-
-    script_path = scriptsPath + g.script_name + "/"
-    for folder in folders:
-        path = script_path + folder
-        if not exists(path):
-            os.makedirs(path)
-
-    if not exists(script_path):
-        os.makedirs(script_path)
-
-    for file in files:
-        file_download_url = g.get_download_url(file, g.prefix)
-        file_name = f"{script_path}{file}"
-        urllib.request.urlretrieve(file_download_url, file_name)
-
-
 def resolve_main_known_feeds_IDs():
     pyproject_contents = toml.load(pyproject_file_path)
     main_known_feeds = pyproject_contents["tool"]["pyegi"]["known-feeds"]
@@ -107,12 +98,19 @@ def feed_details(g):
         "url": url,
         "name": script_info.name,
         "description": script_info.description,
-        "version": script_info.version,
+        "latest version": script_info.version,
         "version_description": script_info.version_description,
         "authors": script_info.authors,
         "tags": g.tags,
         "is_main_branch": is_main_brabch,
     }
+
+
+def assign_feed(feed_file, g, folder_name, version, installation_status):
+    feed_file[g.ID] = feed_details(g)
+    feed_file[g.ID]["folder name"] = folder_name
+    feed_file[g.ID]["installed version"] = version
+    feed_file[g.ID]["installation status"] = installation_status
 
 
 def add_to_feed(url, pyegi_info):
@@ -130,16 +128,24 @@ def add_to_feed(url, pyegi_info):
     if script_info == "":
         return []
     if script_info.discoverable == True:
+        try:
+            folder_name = feed_file[g.ID]["folder name"]
+            version = feed_file[g.ID]["installed version"]
+            installation_status = feed_file[g.ID]["installation status"]
+        except:
+            folder_name = ""
+            version = ""
+            installation_status = ""
         if g.tags:
-            feed_file[g.ID] = feed_details(g)
+            assign_feed(feed_file, g, folder_name, version, installation_status)
         else:
             if g.ID in main_known_feeds_IDs:
                 idx = main_known_feeds_IDs.index(g.ID)
                 if main_known_feeds[idx] == url:
-                    feed_file[g.ID] = feed_details(g)
+                    assign_feed(feed_file, g, folder_name, version, installation_status)
             else:
                 if (g.ID not in feed_file) or (g.branch_name == g.default_branch):
-                    feed_file[g.ID] = feed_details(g)
+                    assign_feed(feed_file, g, folder_name, version, installation_status)
                 else:
                     if not feed_file[g.ID]["is_main_branch"]:
                         date_time = datetime.strptime(
@@ -150,13 +156,18 @@ def add_to_feed(url, pyegi_info):
                             "%Y-%m-%dT%H:%M:%SZ",
                         )
                         if date_time > local_date_time:
-                            feed_file[g.ID] = feed_details(g)
+                            assign_feed(
+                                feed_file, g, folder_name, version, installation_status
+                            )
     json.dump(feed_file, open(feed_file_path, "w"))
     return script_info.known_feeds
 
 
 def update_feeds():
-    pyproject_contents = toml.load(pyproject_file_path)
+    if development_mode:
+        pyproject_contents = toml.load(pyproject_file_path)
+    else:
+        pyproject_contents = toml.loads(pyproject_file_url)
     pyegi_info = pyproject_contents["tool"]["pyegi"]
     checked_urls = []
     urls = pyegi_info["known-feeds"]
@@ -173,9 +184,62 @@ def update_feeds():
         urls = urls[1:]
 
 
-def install_pkg(script):
+def download_script(g):
+    script = g.script_name
+    print(f"Preparing {script} links...")
+    files, folders = g.get_files_and_folders()
+    f = open(feed_file_path)
+    feed_file = json.load(f)
+    f.close()
+    initial_folder_name = feed_file[g.ID]["folder name"]
+    if initial_folder_name == "":
+        initial_folder_name = script
+        folder_name = initial_folder_name
+        new_folder_name = folder_name
+        i = 2
+        is_exiting_name = True
+        while is_exiting_name:
+            for feed in feed_file:
+                if folder_name.lower() == feed_file[feed]["folder name"].lower():
+                    new_folder_name = initial_folder_name + f"_{i}"
+                    continue
+            if new_folder_name == folder_name:
+                is_exiting_name = False
+            else:
+                folder_name = new_folder_name
+            i += 1
+        feed_file[g.ID]["folder name"] = folder_name
+    else:
+        folder_name = initial_folder_name
+    feed_file[g.ID]["installed version"] = g.script_info.version
+    script_path = scriptsPath + folder_name + "/"
+    for folder in folders:
+        path = script_path + folder
+        if not exists(path):
+            os.makedirs(path)
+
+    if not exists(script_path):
+        os.makedirs(script_path)
+
+    print(f"Downloading {script}...")
+    for file in files:
+        file_download_url = g.get_download_url(file, g.prefix)
+        file_name = f"{script_path}{file}"
+        if (file not in g.script_info.keep_files) or (not exists(file_name)):
+            urllib.request.urlretrieve(file_download_url, file_name)
+    feed_file[g.ID]["installation status"] = "downloaded"
+    json.dump(feed_file, open(feed_file_path, "w"))
+
+
+def install_pkgs(g):
+    script = g.script_name
     print(f"Processing {script} dependencies...")
-    script_path = scriptsPath + script + "/"
+    f = open(feed_file_path)
+    feed_file = json.load(f)
+    f.close()
+    folder_name = feed_file[g.ID]["folder name"]
+    script_path = scriptsPath + folder_name + "/"
+    zero_pkgs = []
     if exists(script_path + pyproject_file):
         # renew temp folder
         create_poetry_toml(temp_dir)
@@ -189,7 +253,7 @@ def install_pkg(script):
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
-        os.system("poetry lock")
+        os.system(f"{python_path} -m poetry lock")
         src = script_path + pyproject_file
         dst = temp_dir + pyproject_file
         shutil.copyfile(src, dst)
@@ -197,7 +261,7 @@ def install_pkg(script):
         dst = temp_dir + poetry_lock_file
         shutil.copyfile(src, dst)
         os.chdir(temp_dir)
-        os.system("poetry lock --no-update")
+        os.system(f"{python_path} -m poetry lock --no-update")
         lock_content = toml.load(poetry_lock_file)
         packages = lock_content["package"]
         new_packages = []
@@ -236,14 +300,15 @@ def install_pkg(script):
                         src = commons_dir + name_in_commons + connection_path + path
                         dst = f"{temp_dir}.venv{connection_path + path}"
                         create_dirs(dst)
-                        os.symlink(src, dst)
+                        os.link(src, dst)
                         dst = f"{script_path}.venv{connection_path + path}"
                         create_dirs(dst)
-                        os.symlink(src, dst)
+                        os.link(src, dst)
             else:
                 new_packages.append(name_in_commons)
 
-        os.system("poetry install --no-dev")
+        os.chdir(temp_dir)
+        os.system(f"{python_path} -m poetry install --no-dev")
         for name_in_commons in new_packages:
             filename = (
                 f"{temp_dir}.venv/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
@@ -257,10 +322,13 @@ def install_pkg(script):
                         src = f"{temp_dir}.venv{connection_path + path}"
                         dst = commons_dir + name_in_commons + connection_path + path
                         create_dirs(dst)
-                        shutil.move(src, dst)
+                        if filename == src:
+                            shutil.copy(src, dst)
+                        else:
+                            shutil.move(src, dst)
                         dst2 = f"{script_path}.venv{connection_path + path}"
                         create_dirs(dst2)
-                        os.symlink(dst, dst2)
+                        os.link(dst, dst2)
             else:
                 warnings.warn(f"Package {name_in_commons} didn't have any RECORD file.")
         os.chdir(os.path.dirname(__file__))
@@ -269,17 +337,34 @@ def install_pkg(script):
         # remove unused packages from commons
         for zero_pkg in zero_pkgs:
             shutil.rmtree(commons_dir + zero_pkg)
+        feed_file[g.ID]["installation status"] = "completed"
     else:
-        print(f'The file "pyproject.toml" doesn\'t exist in {script} script directory.')
+        print(
+            f'The file "{pyproject_file}" doesn\'t exist in {script} script directory.'
+        )
+        feed_file[g.ID]["installation status"] = "not installed"
+    json.dump(feed_file, open(feed_file_path, "w"))
 
 
-def uninstall_pkg(script):
+def install_script(g):
+    download_script(g)
+    install_pkgs(g)
+
+
+def uninstall_script(script, ID):
     print(f"Processing {script} dependencies...")
-    script_path = scriptsPath + script + "/"
+    f = open(feed_file_path)
+    feed_file = json.load(f)
+    f.close()
+    folder_name = feed_file[ID]["folder name"]
+    script_path = scriptsPath + folder_name + "/"
     shutil.rmtree(script_path)
     zero_pkgs = clean_lib_links(script)
     for zero_pkg in zero_pkgs:
         shutil.rmtree(commons_dir + zero_pkg)
+    feed_file[ID]["folder name"] = ""
+    feed_file[ID]["installed version"] = ""
+    json.dump(feed_file, open(feed_file_path, "w"))
 
 
 if __name__ == "__main__":
@@ -288,7 +373,12 @@ if __name__ == "__main__":
         for name in os.listdir(scriptsPath)
         if os.path.isdir(os.path.join(scriptsPath, name))
     ]
-    # download_script(url)
+    # url = "https://github.com/python-poetry/poetry-core/tree/1.1.0a6"
+    url = "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania"
+    g = github_decode(url)
+    g.start()
+    install_script(g)
+    # download_script(g)
     # for script in scripts_names:
-    #     install_pkg(script)
-    update_feeds()
+    #     install_pkgs(script)
+    # update_feeds()

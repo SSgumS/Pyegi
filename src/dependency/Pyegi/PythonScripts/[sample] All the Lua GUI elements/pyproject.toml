@@ -3,22 +3,20 @@ authors = [
   "DrunkSimurgh <saman.9267@gmail.com>",
   "SSgumS <sssafais@hotmail.com>",
 ]
-description = "Does some types of color gradients on the lines."
-name = "[sample] ColorMania"
+description = "There is no code for this one. It only shows all the elements of a Lua GUI available in Aegisub."
+name = "[sample] All the Lua GUI elements"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
-pyonfx = "^0.9.13"
-python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
 
 [tool.pyegi]
 describer-version = "0.1.0"
-name = "[sample] ColorMania"
-description = "Does some types of color gradients on the lines."
+name = "[sample] All the Lua GUI elements"
+description = "There is no code for this one. It only shows all the elements of a Lua GUI available in Aegisub."
 version = "0.0.1"
-version-description = "v0.0.1 Horizon"
+version-description = ""
 authors = [
   "DrunkSimurgh <saman.9267@gmail.com>",
   "SSgumS <sssafais@hotmail.com>",
@@ -26,13 +24,6 @@ authors = [
 discoverable = true
 known-feeds = [
   "https://github.com/SSgumS/A",
-  "https://github.com/SSgumS/X/tree/main/",
-  "https://github.com/SSgumS/Y/tree/main/Z",
-]
-
-[tool.pyegi.files]
-keep = [
-  "poetry.toml"
 ]
 
 [build-system]

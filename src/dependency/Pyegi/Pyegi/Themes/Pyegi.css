@@ -6,6 +6,9 @@
 QMainWindow {
 	background-color: rgb(30,37,47);
 }
+QWidget:disabled {
+    color: rgb(100,110,120);
+}
 QPushButton {
 	background-color: rgb(41,55,66);
 }
@@ -28,6 +31,9 @@ QComboBox {
 QComboBox QAbstractItemView, QComboBox::QLineEdit {
 	color: white;
 	background-color: rgb(98,120,144);
+}
+QCheckBox, QRadioButton {
+    spacing: 8px;
 }
 QScrollBar, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical, QScrollBar::add-line, QScrollBar::sub-line {
 	background: rgb(53,62,68);
@@ -67,4 +73,18 @@ QMenu::item:selected {
 }
 QMenu::item:disabled {
 	color: rgb(100,100,100);
+}
+QTreeWidget {
+	background-color: rgb(24,28,31);
+	alternate-background-color: rgb(48,59,71);
+}
+QHeaderView, QHeaderView::section {
+	background-color: rgb(78,100,124);
+	padding: 0px;
+}
+QDialogButtonBox QPushButton {
+    min-width: 65px;
+}
+QMessageBox {
+	background-color: rgb(30,37,47);
 }
