@@ -1,7 +1,8 @@
 import os
 import json
 import qdarktheme
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget, QLineEdit, QComboBox, QCompleter
+from PyQt6.QtGui import QMouseEvent, QKeyEvent
 from enum import Enum
 import toml
 from os.path import exists
@@ -73,6 +74,32 @@ def get_description(poetry_data, pyegi_data, attr, default_out=""):
     return output
 
 
+class ComboBoxLineEdit(QLineEdit):
+    def mousePressEvent(self, e: QMouseEvent) -> None:
+        super().mousePressEvent(e)
+
+        combobox: QComboBox = self.parent()
+        completer = combobox.completer()
+        if combobox.currentText() == "":
+            completer.setCompletionMode(
+                QCompleter.CompletionMode.UnfilteredPopupCompletion
+            )
+        else:
+            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+            completer.setCompletionPrefix(combobox.currentText())
+        completer.complete()
+
+    def keyPressEvent(self, e: QKeyEvent) -> None:
+        super().keyPressEvent(e)
+
+        combobox: QComboBox = self.parent()
+        if combobox.currentText() != "":
+            return
+        completer = combobox.completer()
+        completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
+        completer.complete()
+
+
 class script_pyegi_connection(object):
     def __init__(self, pyproject_file_path, datetime, is_dir=True) -> None:
         self.describer_version = ""
@@ -83,6 +110,7 @@ class script_pyegi_connection(object):
         self.authors = []
         self.discoverable = True
         self.known_feeds = []
+        self.keep_files = []
         self.datetime = datetime
         if is_dir:
             if not exists(pyproject_file_path):
@@ -103,6 +131,8 @@ class script_pyegi_connection(object):
         self.authors = get_description(poetry_data, pyegi_data, "authors", [])
         self.discoverable = try_except(pyegi_data, "discoverable", True)
         self.known_feeds = try_except(pyegi_data, "known-feeds", [])
+        pyegi_data_files = try_except(pyegi_data, "files")
+        self.keep_files = try_except(pyegi_data_files, "keep", [])
 
 
 class github_decode(object):

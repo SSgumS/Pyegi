@@ -19,7 +19,13 @@ import sys
 import toml
 import re
 from settings import Ui_SettingsWindow
-from utils import set_style, try_except
+from scripts_handler import Ui_ScriptsHandlerWindow
+from utils import set_style, try_except, get_settings, ComboBoxLineEdit
+from installer import development_mode
+from datetime import datetime
+
+if development_mode:
+    print(">>>>>>>>>>  Development mode  <<<<<<<<<<")
 
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
 scriptsPath = dependency_dir + "PythonScripts/"
@@ -81,32 +87,6 @@ class QPushButton2(QPushButton):
             QSizePolicy.Policy.Preferred,
             QSizePolicy.Policy.Expanding,
         )
-
-
-class ComboBoxLineEdit(QLineEdit):
-    def mousePressEvent(self, e: QMouseEvent) -> None:
-        super().mousePressEvent(e)
-
-        combobox: QComboBox = self.parent()
-        completer = combobox.completer()
-        if combobox.currentText() == "":
-            completer.setCompletionMode(
-                QCompleter.CompletionMode.UnfilteredPopupCompletion
-            )
-        else:
-            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-            completer.setCompletionPrefix(combobox.currentText())
-        completer.complete()
-
-    def keyPressEvent(self, e: QKeyEvent) -> None:
-        super().keyPressEvent(e)
-
-        combobox: QComboBox = self.parent()
-        if combobox.currentText() != "":
-            return
-        completer = combobox.completer()
-        completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
-        completer.complete()
 
 
 class TabBar(QtWidgets.QTabBar):
@@ -171,11 +151,11 @@ class Ui_MainWindow(object):
         self.combobox.setLineEdit(ComboBoxLineEdit(self.combobox))
         self.combobox.lineEdit().setPlaceholderText("Please select a script.")
         self.combobox.setCurrentIndex(-1)
-        completer = QCompleter(combobox_items)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        self.combobox.setCompleter(completer)
+        self.completer = QCompleter(combobox_items)
+        self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.combobox.setCompleter(self.completer)
         self.combobox.currentIndexChanged.connect(self.preview)
         self.combobox.currentTextChanged.connect(self.textChangedHandler)
 
@@ -205,6 +185,7 @@ class Ui_MainWindow(object):
         self.description_textbrowser.setOpenExternalLinks(True)
         self.scriptSpecs_tabs.addTab(self.description_tab, "")
         self.widgets_layout.addWidget(self.scriptSpecs_tabs, 1, 0, 7, 6)
+
         self.cancel_pushButton = QPushButton2(self.centralwidget)
         self.cancel_pushButton.setObjectName("cancel_pushButton")
         self.widgets_layout.addWidget(self.cancel_pushButton, 8, 0, 2, 1)
@@ -214,6 +195,12 @@ class Ui_MainWindow(object):
         self.widgets_layout.addWidget(self.settings_pushButton, 8, 1, 2, 1)
         self.settings_pushButton.clicked.connect(
             lambda: self.openSettingsWindow(MainWindow)
+        )
+        self.scripts_handler_pushButton = QPushButton2(self.centralwidget)
+        self.scripts_handler_pushButton.setObjectName("scripts_handler_pushButton")
+        self.widgets_layout.addWidget(self.scripts_handler_pushButton, 8, 2, 2, 1)
+        self.scripts_handler_pushButton.clicked.connect(
+            lambda: self.openScriptsHandlerWindow(self)
         )
         self.next_pushButton = QPushButton2(self.centralwidget)
         self.next_pushButton.setObjectName("next_pushButton")
@@ -243,6 +230,25 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.overall_settings = get_settings()
+        do_feeds_update = False
+        last_check_str = self.overall_settings["Last feeds update"]
+        if last_check_str != "":
+            last_check = datetime.strptime(
+                self.overall_settings["Last feeds update"], "%Y-%m-%d %H:%M:%S.%f"
+            )
+            now = datetime.now()
+            time_difference = now - last_check
+            if time_difference.days >= self.overall_settings["Automatic feeds update"]:
+                do_feeds_update = True
+        else:
+            do_feeds_update = True
+        if do_feeds_update:
+            self.time_window = QtWidgets.QMainWindow()
+            self.time_ui = Ui_ScriptsHandlerWindow()
+            self.time_ui.setupUi(self.time_window, MainWindow)
+            self.time_ui.update_feeds_process(self)
+
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
@@ -252,6 +258,9 @@ class Ui_MainWindow(object):
         )
         self.cancel_pushButton.setText(_translate("MainWindow", "Cancel"))
         self.settings_pushButton.setText(_translate("MainWindow", "Settings"))
+        self.scripts_handler_pushButton.setText(
+            _translate("MainWindow", "Handle Scripts")
+        )
         self.next_pushButton.setText(_translate("MainWindow", "Next"))
         self.LinesSelection_label.setText(_translate("MainWindow", "Apply script on:"))
         self.SelectedLines_radioButton.setText(
@@ -272,6 +281,12 @@ class Ui_MainWindow(object):
         ui = Ui_SettingsWindow()
         ui.setupUi(window, MainWindow)
         window.show()
+
+    def openScriptsHandlerWindow(self, MainWindow):
+        self.window = QtWidgets.QMainWindow()
+        self.ui = Ui_ScriptsHandlerWindow()
+        self.ui.setupUi(self.window, MainWindow)
+        self.window.show()
 
     def writeMainWindowOutput(self):
         if self.selected_script == "":
