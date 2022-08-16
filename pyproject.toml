@@ -40,11 +40,6 @@ known-feeds = [
   "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20Disintegration",
   "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20prefix",
 ]
-known-feeds-IDs = [
-  "SSgumS/Pyegi/[sample] ColorMania",
-  "SSgumS/Pyegi/[sample] Disintegration",
-  "SSgumS/Pyegi/[sample] prefix",
-]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
