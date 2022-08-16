@@ -168,7 +168,7 @@ class github_decode(object):
             self.script_info = ""
 
         self.main_prefix_len = len("/" + "/".join(url_split[3:]))
-        self.ID = self.repo_name + "/" + self.script_name
+        self.ID = self.repo_name + self.prefix
 
     def resolve_url(self):
         self.get_all_tags()

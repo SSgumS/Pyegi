@@ -76,19 +76,6 @@ def clean_lib_links(script):
     return zero_pkgs
 
 
-def resolve_main_known_feeds_IDs():
-    pyproject_contents = toml.load(pyproject_file_path)
-    main_known_feeds = pyproject_contents["tool"]["pyegi"]["known-feeds"]
-    IDs = []
-    for url in main_known_feeds:
-        g = github_decode(url)
-        g.start()
-        IDs.append(g.ID)
-    pyproject_contents["tool"]["pyegi"]["known-feeds-IDs"] = IDs
-    with open(pyproject_file_path, "w") as f:
-        toml.dump(pyproject_contents, f)
-
-
 def feed_details(g):
     url = g.url
     script_info = g.script_info
@@ -113,9 +100,21 @@ def assign_feed(feed_file, g, folder_name, version, installation_status):
     feed_file[g.ID]["installation status"] = installation_status
 
 
+def get_IDs(urls):
+    IDs = []
+    for url in urls:
+        url_split = url.split("/")
+        try:
+            ID = "/".join(url_split[3:5]) + "/" + "/".join(url_split[7:])
+        except:
+            ID = "/".join(url_split[3:5])
+        IDs.append(ID)
+    return IDs
+
+
 def add_to_feed(url, pyegi_info):
     main_known_feeds = pyegi_info["known-feeds"]
-    main_known_feeds_IDs = pyegi_info["known-feeds-IDs"]
+    main_known_feeds_IDs = get_IDs(main_known_feeds)
     if exists(feed_file_path):
         f = open(feed_file_path)
         feed_file = json.load(f)
@@ -377,7 +376,7 @@ if __name__ == "__main__":
     url = "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania"
     g = github_decode(url)
     g.start()
-    install_script(g)
+    # install_script(g)
     # download_script(g)
     # for script in scripts_names:
     #     install_pkgs(script)
