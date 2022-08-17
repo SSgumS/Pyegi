@@ -111,7 +111,6 @@ class Ui_ScriptsHandlerWindow(object):
         self.install_pushButton.clicked.connect(
             lambda: self.install_checked_scripts(MainWindow)
         )
-        self.install_pushButton.setEnabled(False)
 
         self.uninstall_pushButton = QPushButton(self.centralwidget)
         self.uninstall_pushButton.setObjectName("uninstall_pushButton")
@@ -119,7 +118,6 @@ class Ui_ScriptsHandlerWindow(object):
         self.uninstall_pushButton.clicked.connect(
             lambda: self.uninstall_checked_scripts(MainWindow)
         )
-        self.uninstall_pushButton.setEnabled(False)
 
         self.close_pushButton = QPushButton(self.centralwidget)
         self.close_pushButton.setObjectName("close_pushButton")
@@ -189,10 +187,6 @@ class Ui_ScriptsHandlerWindow(object):
         self.scripts_treeWidget.headerItem().setText(
             4, _translate("ScriptsHandlerWindow", "Available Tags")
         )
-        self.scripts_treeWidget.headerItem().setText(
-            5, _translate("ScriptsHandlerWindow", "ID")
-        )
-        self.scripts_treeWidget.hideColumn(5)
 
         try:
             f = open(feed_file_path)
@@ -200,24 +194,17 @@ class Ui_ScriptsHandlerWindow(object):
             f.close()
         except:
             self.feed_file = {}
-        self.IDs = []
-        for i, feed in enumerate(self.feed_file):
-            QTreeWidgetItem(self.scripts_treeWidget)
-            feed_split = feed.split("/")
-            script_ID = "_".join(feed_split)
-            script_ID = re.sub(r"\W+", "", script_ID)
-            while [script_ID, feed] in self.IDs:
-                script_ID += "_2"
-            self.IDs.append([script_ID, feed])
-            self.scripts_treeWidget.topLevelItem(i).setText(
+        for feed in self.feed_file:
+            treeWidgetItem = QTreeWidgetItem(self.scripts_treeWidget)
+            treeWidgetItem.setText(
                 0, _translate("ScriptsHandlerWindow", self.feed_file[feed]["name"])
             )
-            self.scripts_treeWidget.topLevelItem(i).setText(
+            treeWidgetItem.setText(
                 1,
                 _translate("ScriptsHandlerWindow", self.feed_file[feed]["description"]),
             )
             if self.feed_file[feed]["folder name"] != "":
-                self.scripts_treeWidget.topLevelItem(i).setText(
+                treeWidgetItem.setText(
                     2,
                     _translate(
                         "ScriptsHandlerWindow",
@@ -225,36 +212,34 @@ class Ui_ScriptsHandlerWindow(object):
                     ),
                 )
                 if self.feed_file[feed]["installation status"] != "completed":
-                    self.scripts_treeWidget.topLevelItem(i).setForeground(2, red_color)
-                    self.scripts_treeWidget.topLevelItem(i).setToolTip(
+                    treeWidgetItem.setForeground(2, red_color)
+                    treeWidgetItem.setToolTip(
                         2, "This script is not installed properly!"
                     )
             else:
                 pass
                 # TODO: change the color/opacity of the text in the first column of this row if needed? (not done because we have the option of "Updatable" in the respective combobox)
-            self.scripts_treeWidget.topLevelItem(i).setText(
+            treeWidgetItem.setText(
                 3,
                 _translate(
                     "ScriptsHandlerWindow", self.feed_file[feed]["latest version"]
                 ),
             )
-            current_row = f"self.topLevelItem_{script_ID}"
-            exec(f"{current_row} = self.scripts_treeWidget.topLevelItem(i)")
-            exec(f"{current_row}.setCheckState(0, Qt.CheckState.Unchecked)")
-            current_combobox = f"self.combobox_{script_ID}"
-            exec(f"{current_combobox} = QComboBox(self.centralwidget)")
-            exec(
-                f"self.scripts_treeWidget.setItemWidget({current_row}, 4, {current_combobox})"
-            )
+            treeWidgetItem.setCheckState(0, Qt.CheckState.Unchecked)
+            self.feed_file[feed]["treeWidgetItem"] = treeWidgetItem
+            combobox = QComboBox(self.centralwidget)
+            self.scripts_treeWidget.setItemWidget(treeWidgetItem, 4, combobox)
             if self.feed_file[feed]["tags"]:
-                exec(f"{current_combobox}.addItems({self.feed_file[feed]['tags']})")
-            self.scripts_treeWidget.topLevelItem(i).setText(5, script_ID)
+                combobox.addItems(self.feed_file[feed]["tags"])
+            self.feed_file[feed]["combobox"] = combobox
         for i in range(5):
             if i == 1:
                 self.scripts_treeWidget.setColumnWidth(i, 200)
                 continue
             self.scripts_treeWidget.resizeColumnToContents(i)
         self.scripts_treeWidget_checked = []
+        self.install_pushButton.setEnabled(False)
+        self.uninstall_pushButton.setEnabled(False)
         self.scripts_treeWidget.itemChanged.connect(self.treeWidgetItemChangeHandler)
         self.scripts_treeWidget.setSortingEnabled(True)
         self.manage_hidden_scripts()
@@ -275,31 +260,31 @@ class Ui_ScriptsHandlerWindow(object):
     def manage_hidden_scripts(self):
         hidden_state = self.manage_hidden_scripts_combobox.currentText()
         filter_term = self.search_scripts_lineedit.text().lower()
-        for script_ID, _ in self.IDs:
-            current_row = f"self.topLevelItem_{script_ID}"
+        for feed in self.feed_file:
+            treeWidgetItem = self.feed_file[feed]["treeWidgetItem"]
             if hidden_state == "All":
-                if filter_term in f"{current_row}.text(0)".lower():
-                    exec(f"{current_row}.setHidden(False)")
+                if filter_term in treeWidgetItem.text(0).lower():
+                    treeWidgetItem.setHidden(False)
                 else:
-                    exec(f"{current_row}.setHidden(True)")
+                    treeWidgetItem.setHidden(True)
             elif hidden_state == "Updatable":
-                if eval(f"{current_row}.text(2) != ''") and eval(
-                    f"{current_row}.text(2) != {current_row}.text(3)"
-                ):
-                    if filter_term in f"{current_row}.text(0)".lower():
-                        exec(f"{current_row}.setHidden(False)")
+                if treeWidgetItem.text(2) != "" and treeWidgetItem.text(
+                    2
+                ) != treeWidgetItem.text(3):
+                    if filter_term in treeWidgetItem.text(0).lower():
+                        treeWidgetItem.setHidden(False)
                     else:
-                        exec(f"{current_row}.setHidden(True)")
+                        treeWidgetItem.setHidden(True)
                 else:
-                    exec(f"{current_row}.setHidden(True)")
+                    treeWidgetItem.setHidden(True)
             else:
-                if eval(f"{current_row}.text(2) == ''"):
-                    exec(f"{current_row}.setHidden(True)")
+                if treeWidgetItem.text(2) == "":
+                    treeWidgetItem.setHidden(True)
                 else:
-                    if filter_term in f"{current_row}.text(0)".lower():
-                        exec(f"{current_row}.setHidden(False)")
+                    if filter_term in treeWidgetItem.text(0).lower():
+                        treeWidgetItem.setHidden(False)
                     else:
-                        exec(f"{current_row}.setHidden(True)")
+                        treeWidgetItem.setHidden(True)
         self.fetch_script_info()
 
     def update_feeds_process(self, MainWindow):
@@ -345,9 +330,8 @@ class Ui_ScriptsHandlerWindow(object):
         if selected_item:
             script_description = ""
             selected_item = selected_item[0]
-            script_ID = selected_item.text(5)
-            for ID, feed in self.IDs:
-                if ID == script_ID:
+            for feed in self.feed_file:
+                if selected_item == self.feed_file[feed]["treeWidgetItem"]:
                     break
             desired_attributes = [
                 "name",
@@ -417,16 +401,16 @@ class Ui_ScriptsHandlerWindow(object):
 
     def install_checked_scripts(self, MainWindow):
         urls = []
-        for script_ID, feed in self.IDs:
-            current_row = f"self.topLevelItem_{script_ID}"
+        for feed in self.feed_file:
+            treeWidgetItem = self.feed_file[feed]["treeWidgetItem"]
             if (
-                eval(f"{current_row}.checkState(0) == Qt.CheckState.Checked")
-                and not eval(f"{current_row}.isHidden()")
-                and eval(f"{current_row}.text(2) != {current_row}.text(3)")
+                treeWidgetItem.checkState(0) == Qt.CheckState.Checked
+                and not treeWidgetItem.isHidden()
+                and treeWidgetItem.text(2) != treeWidgetItem.text(3)
             ):
                 url = self.feed_file[feed]["url"]
-                current_combobox = f"self.combobox_{script_ID}"
-                selected_tag = eval(f"{current_combobox}.currentText()")
+                combobox = self.feed_file[feed]["combobox"]
+                selected_tag = combobox.currentText()
                 if selected_tag != "":
                     url_split = url.split("/")
                     try:
@@ -446,15 +430,17 @@ class Ui_ScriptsHandlerWindow(object):
         )
         verification.setIcon(QMessageBox.Icon.Question)
         verification.exec()
+        # self.feed_file[feed]["treeWidgetItem"] = treeWidgetItem
+        # self.feed_file[feed]["combobox"] = combobox
         if verification.clickedButton().text() == "&Yes":
-            for script_ID, feed in self.IDs:
-                current_row = f"self.topLevelItem_{script_ID}"
+            for feed in self.feed_file:
+                treeWidgetItem = self.feed_file[feed]["treeWidgetItem"]
                 if (
-                    eval(f"{current_row}.checkState(0) == Qt.CheckState.Checked")
-                    and not eval(f"{current_row}.isHidden()")
+                    treeWidgetItem.checkState(0) == Qt.CheckState.Checked
+                    and not treeWidgetItem.isHidden()
                     and self.feed_file[feed]["folder name"]
                 ):
-                    script = eval(f"{current_row}.text(0)")
+                    script = treeWidgetItem.text(0)
                     uninstall_script(script, feed)
             self.scripts_treeWidget_init()
             self.main_gui_combobox_handler(MainWindow)

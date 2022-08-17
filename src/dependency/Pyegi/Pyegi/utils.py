@@ -141,6 +141,10 @@ class github_decode(object):
         url_split = url.split("/")
         self.repo_name = "/".join(url_split[3:5])
         self.tags = []
+        try:
+            self.ID = "/".join(url_split[3:5]) + "/" + "/".join(url_split[7:])
+        except:
+            self.ID = "/".join(url_split[3:5])
 
     def start(self):
         url = self.url
@@ -168,7 +172,6 @@ class github_decode(object):
             self.script_info = ""
 
         self.main_prefix_len = len("/" + "/".join(url_split[3:]))
-        self.ID = self.repo_name + self.prefix
 
     def resolve_url(self):
         self.get_all_tags()
