@@ -103,12 +103,8 @@ def assign_feed(feed_file, g, folder_name, version, installation_status):
 def get_IDs(urls):
     IDs = []
     for url in urls:
-        url_split = url.split("/")
-        try:
-            ID = "/".join(url_split[3:5]) + "/" + "/".join(url_split[7:])
-        except:
-            ID = "/".join(url_split[3:5])
-        IDs.append(ID)
+        g = github_decode(url)
+        IDs.append(g.ID)
     return IDs
 
 
@@ -172,6 +168,12 @@ def update_feeds():
     urls = pyegi_info["known-feeds"]
     while urls:
         url = urls[0]
+        if url[:19] != "https://github.com/":
+            url = "https://" + url[url.find("github.com/") :]
+        url_split = url.split("/")
+        if len(url_split) < 5:
+            urls = urls[1:]
+            continue
         checked_urls.append(url)
         g = github_decode(url)
         g.resolve_url()
