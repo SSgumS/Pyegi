@@ -82,7 +82,7 @@ def get_description_value(poetry_data, pyegi_data, attr, theme):
             output2 = try_except(poetry_data, "version-description")
         if output2 != "":
             output = f"{output2} ({output})"
-    if attr == "installed version":
+    if attr == "latest version":
         try:
             output2 = pyegi_data["version_description"]
         except:

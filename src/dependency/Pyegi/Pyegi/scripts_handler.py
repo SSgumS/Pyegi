@@ -156,9 +156,6 @@ class Ui_ScriptsHandlerWindow(object):
 
         self.retranslateUi(ScriptsHandlerWindow)
         self.scripts_treeWidget_init()
-        self.scripts_treeWidget.itemSelectionChanged.connect(
-            lambda: self.fetch_script_info()
-        )
         QtCore.QMetaObject.connectSlotsByName(ScriptsHandlerWindow)
 
     def retranslateUi(self, ScriptsHandlerWindow):
@@ -253,6 +250,9 @@ class Ui_ScriptsHandlerWindow(object):
         self.install_pushButton.setEnabled(False)
         self.uninstall_pushButton.setEnabled(False)
         self.scripts_treeWidget.itemChanged.connect(self.treeWidgetItemChangeHandler)
+        self.scripts_treeWidget.itemSelectionChanged.connect(
+            lambda: self.fetch_script_info()
+        )
         self.scripts_treeWidget.setSortingEnabled(True)
         self.manage_hidden_scripts()
 

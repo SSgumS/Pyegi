@@ -162,7 +162,8 @@ def update_feeds():
     if development_mode:
         pyproject_contents = toml.load(pyproject_file_path)
     else:
-        pyproject_contents = toml.loads(pyproject_file_url)
+        response = urllib.request.get(pyproject_file_url)
+        pyproject_contents = toml.loads(response.text)
     pyegi_info = pyproject_contents["tool"]["pyegi"]
     checked_urls = []
     urls = pyegi_info["known-feeds"]
