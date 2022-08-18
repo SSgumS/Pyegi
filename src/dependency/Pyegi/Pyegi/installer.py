@@ -93,10 +93,18 @@ def feed_details(g):
     }
 
 
-def assign_feed(feed_file, g, folder_name, version, installation_status):
+def assign_feed(
+    feed_file,
+    g,
+    folder_name,
+    version,
+    installed_version_description,
+    installation_status,
+):
     feed_file[g.ID] = feed_details(g)
     feed_file[g.ID]["folder name"] = folder_name
     feed_file[g.ID]["installed version"] = version
+    feed_file[g.ID]["installed_version_description"] = installed_version_description
     feed_file[g.ID]["installation status"] = installation_status
 
 
@@ -126,21 +134,46 @@ def add_to_feed(url, pyegi_info):
         try:
             folder_name = feed_file[g.ID]["folder name"]
             version = feed_file[g.ID]["installed version"]
+            installed_version_description = feed_file[g.ID][
+                "installed_version_description"
+            ]
             installation_status = feed_file[g.ID]["installation status"]
         except:
             folder_name = ""
             version = ""
+            installed_version_description = ""
             installation_status = ""
         if g.tags:
-            assign_feed(feed_file, g, folder_name, version, installation_status)
+            assign_feed(
+                feed_file,
+                g,
+                folder_name,
+                version,
+                installed_version_description,
+                installation_status,
+            )
         else:
             if g.ID in main_known_feeds_IDs:
                 idx = main_known_feeds_IDs.index(g.ID)
                 if main_known_feeds[idx] == url:
-                    assign_feed(feed_file, g, folder_name, version, installation_status)
+                    assign_feed(
+                        feed_file,
+                        g,
+                        folder_name,
+                        version,
+                        installed_version_description,
+                        installation_status,
+                    )
             else:
                 if (g.ID not in feed_file) or (g.branch_name == g.default_branch):
-                    assign_feed(feed_file, g, folder_name, version, installation_status)
+                    assign_feed(
+                        feed_file,
+                        g,
+                        folder_name,
+                        version,
+                        installed_version_description,
+                        installation_status,
+                    )
                 else:
                     if not feed_file[g.ID]["is_main_branch"]:
                         date_time = datetime.strptime(
@@ -152,7 +185,12 @@ def add_to_feed(url, pyegi_info):
                         )
                         if date_time > local_date_time:
                             assign_feed(
-                                feed_file, g, folder_name, version, installation_status
+                                feed_file,
+                                g,
+                                folder_name,
+                                version,
+                                installed_version_description,
+                                installation_status,
                             )
     json.dump(feed_file, open(feed_file_path, "w"))
     return script_info.known_feeds
@@ -214,6 +252,7 @@ def download_script(g):
     else:
         folder_name = initial_folder_name
     feed_file[g.ID]["installed version"] = g.script_info.version
+    feed_file[g.ID]["installed_version_description"] = g.script_info.version_description
     script_path = scriptsPath + folder_name + "/"
     for folder in folders:
         path = script_path + folder
@@ -367,6 +406,7 @@ def uninstall_script(script, ID):
         shutil.rmtree(commons_dir + zero_pkg)
     feed_file[ID]["folder name"] = ""
     feed_file[ID]["installed version"] = ""
+    feed_file[ID]["installed_version_description"] = ""
     json.dump(feed_file, open(feed_file_path, "w"))
 
 
