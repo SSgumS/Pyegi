@@ -88,3 +88,6 @@ QDialogButtonBox QPushButton {
 QMessageBox {
 	background-color: rgb(30,37,47);
 }
+QStatusBar {
+	background-color: rgb(60,67,77)
+}
