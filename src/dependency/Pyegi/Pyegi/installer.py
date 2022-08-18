@@ -358,8 +358,9 @@ def uninstall_script(script, ID):
     feed_file = json.load(f)
     f.close()
     folder_name = feed_file[ID]["folder name"]
-    script_path = scriptsPath + folder_name + "/"
-    shutil.rmtree(script_path)
+    if folder_name:
+        script_path = scriptsPath + folder_name + "/"
+        shutil.rmtree(script_path)
     zero_pkgs = clean_lib_links(script)
     for zero_pkg in zero_pkgs:
         shutil.rmtree(commons_dir + zero_pkg)

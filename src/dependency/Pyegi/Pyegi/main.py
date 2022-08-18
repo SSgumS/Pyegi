@@ -1,7 +1,6 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import (
     QPushButton,
-    QLineEdit,
     QComboBox,
     QCompleter,
     QGridLayout,
@@ -11,16 +10,18 @@ from PyQt6.QtWidgets import (
     QTextBrowser,
 )
 from PyQt6.QtCore import Qt, QCoreApplication
-from PyQt6.QtGui import QMouseEvent, QKeyEvent, QMovie
+from PyQt6.QtGui import QMovie
 import os
-from os.path import exists
 import json
 import sys
-import toml
-import re
 from settings import Ui_SettingsWindow
 from scripts_handler import Ui_ScriptsHandlerWindow
-from utils import set_style, try_except, get_settings, ComboBoxLineEdit
+from utils import (
+    set_style,
+    get_settings,
+    ComboBoxLineEdit,
+    get_textBrowser_description,
+)
 from installer import development_mode
 from datetime import datetime
 
@@ -33,50 +34,6 @@ system_inputs = sys.argv
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
-
-
-def get_description_value(poetry_data, pyegi_data, attr):
-    try:
-        output = pyegi_data[attr]
-    except:
-        output = try_except(poetry_data, attr)
-    if attr == "authors":
-        try:
-            for i, str in enumerate(output):
-                output[i] = re.sub(
-                    "(.+) ?\<(.+)>", '<a href="mailto: \\2">\\1</a>', str
-                )
-        except:
-            pass
-    return output
-
-
-def convert_to_header(str):
-    return f"<html><b>{str}:</b></html>"
-
-
-def get_description(script_name):
-    pyproject_file_path = f"{scriptsPath}{script_name}/pyproject.toml"
-    script_description = ""
-    if exists(pyproject_file_path):
-        pyproject_data = toml.load(pyproject_file_path)
-        poetry_data = try_except(pyproject_data["tool"], "poetry")
-        pyegi_data = try_except(pyproject_data["tool"], "pyegi")
-        desired_attributes = [
-            "name",
-            "description",
-            "version",
-            "version-description",
-            "authors",
-        ]
-        description_values = []
-        for attr in desired_attributes:
-            description_value = get_description_value(poetry_data, pyegi_data, attr)
-            description_values.append(description_value)
-        headers = [convert_to_header(str) for str in desired_attributes]
-        for header, description_value in zip(headers, description_values):
-            script_description += f"{header}<br>{description_value}<br><br>"
-    return script_description
 
 
 class QPushButton2(QPushButton):
@@ -126,7 +83,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(825, 600)
-        set_style(MainWindow)
+        self.theme = set_style(MainWindow)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QGridLayout(self.centralwidget)
@@ -174,6 +131,7 @@ class Ui_MainWindow(object):
         self.preview_label.setFont(font)
         self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_label.setObjectName("preview_label")
+        self.preview_label.setFixedSize(self.preview_label.size())
         self.description_tab = QtWidgets.QWidget()
         self.description_tab.setObjectName("description_tab")
         self.description_Layout = QtWidgets.QGridLayout(self.description_tab)
@@ -251,7 +209,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Main Window"))
         self.ScriptSelection_label.setText(_translate("MainWindow", "Select Script"))
         self.preview_label.setText(
             _translate("MainWindow", "No script selected to preview.")
@@ -259,7 +217,7 @@ class Ui_MainWindow(object):
         self.cancel_pushButton.setText(_translate("MainWindow", "Cancel"))
         self.settings_pushButton.setText(_translate("MainWindow", "Settings"))
         self.scripts_handler_pushButton.setText(
-            _translate("MainWindow", "Handle Scripts")
+            _translate("MainWindow", "Scripts Management")
         )
         self.next_pushButton.setText(_translate("MainWindow", "Next"))
         self.LinesSelection_label.setText(_translate("MainWindow", "Apply script on:"))
@@ -306,7 +264,9 @@ class Ui_MainWindow(object):
             self.selected_script = ""
         else:
             self.selected_script = self.combobox.itemText(self.combobox.currentIndex())
-            self.description_textbrowser.setText(get_description(self.selected_script))
+            self.description_textbrowser.setText(
+                get_textBrowser_description(self.selected_script, self.theme)
+            )
         main_gif_path = ""
         scriptFolder = self.selected_script
         for file in os.listdir(scriptsPath + scriptFolder):

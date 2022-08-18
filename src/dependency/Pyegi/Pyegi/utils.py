@@ -11,8 +11,11 @@ from urllib.parse import quote, unquote
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
+import re
 
 utils_path = os.path.dirname(__file__)
+dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
+scriptsPath = dependency_dir + "PythonScripts/"
 settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
 temp_dir = utils_path + "/temp/"
@@ -50,6 +53,7 @@ def set_style(window: QWidget, theme: str = None):
         theme_data = f.read()
         f.close()
         window.setStyleSheet(theme_data)
+    return theme
 
 
 def create_dirs(path):
@@ -64,6 +68,71 @@ def try_except(data, attr, default_out=""):
     except:
         output = default_out
     return output
+
+
+def get_description_value(poetry_data, pyegi_data, attr, theme):
+    try:
+        output = pyegi_data[attr]
+    except:
+        output = try_except(poetry_data, attr)
+    if attr == "version":
+        try:
+            output2 = pyegi_data["version-description"]
+        except:
+            output2 = try_except(poetry_data, "version-description")
+        if output2 != "":
+            output = f"{output2} ({output})"
+    if attr == "installed version":
+        try:
+            output2 = pyegi_data["version_description"]
+        except:
+            output2 = try_except(poetry_data, "version_description")
+        if output2 != "":
+            output = f"{output2} ({output})"
+    if attr == "authors":
+        if theme == Theme.PYEGI:
+            hyperlink_color = 'style="color: rgb(200, 200, 200)"'
+        else:
+            hyperlink_color = ""
+        try:
+            for i, str in enumerate(output):
+                output[i] = re.sub(
+                    "(.+) ?\<(.+)>",
+                    f'<a {hyperlink_color} href="mailto: \\2">\\1</a>',
+                    str,
+                )
+        except:
+            pass
+    return output
+
+
+def convert_to_header(str):
+    return f"<html><b>{str}:</b></html>"
+
+
+def get_textBrowser_description(script_name, theme):
+    pyproject_file_path = f"{scriptsPath}{script_name}/pyproject.toml"
+    script_description = ""
+    if exists(pyproject_file_path):
+        pyproject_data = toml.load(pyproject_file_path)
+        poetry_data = try_except(pyproject_data["tool"], "poetry")
+        pyegi_data = try_except(pyproject_data["tool"], "pyegi")
+        desired_attributes = [
+            "name",
+            "description",
+            "version",
+            "authors",
+        ]
+        description_values = []
+        for attr in desired_attributes:
+            description_value = get_description_value(
+                poetry_data, pyegi_data, attr, theme
+            )
+            description_values.append(description_value)
+        headers = [convert_to_header(str) for str in desired_attributes]
+        for header, description_value in zip(headers, description_values):
+            script_description += f"{header}<br>{description_value}<br><br>"
+    return script_description
 
 
 def get_description(poetry_data, pyegi_data, attr, default_out=""):

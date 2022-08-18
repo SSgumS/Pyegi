@@ -1,5 +1,5 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QCoreApplication, QObject, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QObject, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QPushButton,
     QLineEdit,
@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 )
 import os
 import json
-from utils import set_style, get_settings, github_decode, ComboBoxLineEdit
+from utils import Theme, set_style, get_settings, github_decode, get_description_value
 from installer import update_feeds, install_script, uninstall_script
 import re
 from datetime import datetime
@@ -55,7 +55,17 @@ class Installation_Worker(QObject):
         for url in self.urls:
             g = github_decode(url)
             g.start()
-            install_script(g)
+            isInstalled = False
+            installation_attempts = 0
+            while not isInstalled and installation_attempts < 3:
+                try:
+                    install_script(g)
+                    isInstalled = True
+                except:
+                    uninstall_script(g.script_name, g.ID)
+                    installation_attempts += 1
+            if not isInstalled:
+                print(f"Couldn't install '{g.script_name}'!")
         self.finished.emit()
 
 
@@ -64,7 +74,7 @@ class Ui_ScriptsHandlerWindow(object):
         ScriptsHandlerWindow.setObjectName("ScriptsHandlerWindow")
         ScriptsHandlerWindow.resize(930, 500)
         self.overall_settings = get_settings()
-        set_style(ScriptsHandlerWindow, self.overall_settings["Theme"])
+        self.theme = set_style(ScriptsHandlerWindow, self.overall_settings["Theme"])
         self.centralwidget = QtWidgets.QWidget(ScriptsHandlerWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QGridLayout(self.centralwidget)
@@ -79,7 +89,7 @@ class Ui_ScriptsHandlerWindow(object):
         combobox_items = [ci.Installed, ci.Updatable, ci.All]
         self.manage_hidden_scripts_combobox.addItems(combobox_items)
         self.widgets_layout.addWidget(self.manage_hidden_scripts_combobox, 0, 0, 1, 1)
-        self.manage_hidden_scripts_combobox.setCurrentText(ci.Installed)
+        self.manage_hidden_scripts_combobox.setCurrentText(ci.All)
         self.manage_hidden_scripts_combobox.currentTextChanged.connect(
             lambda: self.manage_hidden_scripts()
         )
@@ -87,14 +97,16 @@ class Ui_ScriptsHandlerWindow(object):
         self.update_feeds_pushButton = QPushButton(self.centralwidget)
         self.update_feeds_pushButton.setObjectName("update_feeds_pushButton")
         self.widgets_layout.addWidget(self.update_feeds_pushButton, 0, 1, 1, 1)
+        self.update_feeds_pushButton.setMinimumWidth(80)
         self.update_feeds_pushButton.clicked.connect(
             lambda: self.update_feeds_process(MainWindow)
         )
 
         self.search_scripts_lineedit = QLineEdit(self.centralwidget)
         self.search_scripts_lineedit.setObjectName("search_scripts_lineedit")
-        self.widgets_layout.addWidget(self.search_scripts_lineedit, 0, 10, 1, 1)
+        self.widgets_layout.addWidget(self.search_scripts_lineedit, 0, 7, 1, 4)
         self.search_scripts_lineedit.setPlaceholderText("Search Scripts")
+        self.search_scripts_lineedit.setMinimumWidth(250)
         self.search_scripts_lineedit.textChanged.connect(
             lambda: self.manage_hidden_scripts()
         )
@@ -152,7 +164,7 @@ class Ui_ScriptsHandlerWindow(object):
     def retranslateUi(self, ScriptsHandlerWindow):
         _translate = QtCore.QCoreApplication.translate
         ScriptsHandlerWindow.setWindowTitle(
-            _translate("ScriptsHandlerWindow", "MainWindow")
+            _translate("ScriptsHandlerWindow", "Scripts Management")
         )
         self.install_pushButton.setText(
             _translate("ScriptsHandlerWindow", "Install/Update")
@@ -306,7 +318,7 @@ class Ui_ScriptsHandlerWindow(object):
             lambda: self.update_feeds_pushButton.setText("Update feeds")
         )
         self.thread.finished.connect(
-            lambda: MainWindow.scripts_handler_pushButton.setText("Handle Scripts")
+            lambda: MainWindow.scripts_handler_pushButton.setText("Scripts Management")
         )
 
     def process_controls(self, MainWindow, Status):
@@ -338,20 +350,13 @@ class Ui_ScriptsHandlerWindow(object):
                 "description",
                 "installed version",
                 "latest version",
-                "version_description",
                 "authors",
             ]
             description_values = []
             for attr in desired_attributes:
-                description_value = self.feed_file[feed][attr]
-                if attr == "authors":
-                    try:
-                        for i, str in enumerate(description_value):
-                            description_value[i] = re.sub(
-                                "(.+) ?\<(.+)>", '<a href="mailto: \\2">\\1</a>', str
-                            )
-                    except:
-                        pass
+                description_value = get_description_value(
+                    {}, self.feed_file[feed], attr, self.theme
+                )
                 description_values.append(description_value)
             headers = [self.convert_to_header(str) for str in desired_attributes]
             for header, description_value in zip(headers, description_values):
@@ -430,8 +435,6 @@ class Ui_ScriptsHandlerWindow(object):
         )
         verification.setIcon(QMessageBox.Icon.Question)
         verification.exec()
-        # self.feed_file[feed]["treeWidgetItem"] = treeWidgetItem
-        # self.feed_file[feed]["combobox"] = combobox
         if verification.clickedButton().text() == "&Yes":
             for feed in self.feed_file:
                 treeWidgetItem = self.feed_file[feed]["treeWidgetItem"]
