@@ -75,20 +75,19 @@ def get_description_value(poetry_data, pyegi_data, attr, theme):
         output = pyegi_data[attr]
     except:
         output = try_except(poetry_data, attr)
-    if attr == "version":
-        try:
-            output2 = pyegi_data["version-description"]
-        except:
-            output2 = try_except(poetry_data, "version-description")
-        if output2 != "":
-            output = f"{output2} ({output})"
-    if attr == "latest version":
-        try:
-            output2 = pyegi_data["version_description"]
-        except:
-            output2 = try_except(poetry_data, "version_description")
-        if output2 != "":
-            output = f"{output2} ({output})"
+    version_description_map = {
+        "version": "version-description",
+        "latest version": "version_description",
+        "installed version": "installed_version_description",
+    }
+    for version in version_description_map:
+        if attr == version:
+            try:
+                output2 = pyegi_data[version_description_map[version]]
+            except:
+                output2 = try_except(poetry_data, version_description_map[version])
+            if output2 != "":
+                output = f"{output2} ({output})"
     if attr == "authors":
         if theme == Theme.PYEGI:
             hyperlink_color = 'style="color: rgb(200, 200, 200)"'
