@@ -383,7 +383,7 @@ class Ui_ScriptsHandlerWindow:
             if (
                 treeWidgetItem.checkState(0) == Qt.CheckState.Checked
                 and not treeWidgetItem.isHidden()
-                and treeWidgetItem.text(2) != treeWidgetItem.text(3)
+                and self.feed_file[feed]["installation status"] != "completed"
             ):
                 url = self.feed_file[feed]["url"]
                 combobox = self.feed_file[feed]["combobox"]
