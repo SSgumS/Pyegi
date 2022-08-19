@@ -308,7 +308,7 @@ class Ui_MainWindow:
             if not os.path.isdir(folder_path):
                 continue
             try:
-            pyproject = ScriptPyProject(os.path.join(folder_path, "pyproject.toml"))
+                pyproject = ScriptPyProject(os.path.join(folder_path, "pyproject.toml"))
             except:
                 continue
             self.combobox_items.append(MainWindowComboboxEntry(pyproject, folder_name))

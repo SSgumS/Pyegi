@@ -243,7 +243,11 @@ def install_pkgs(g: FeedParser):
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
-        os.system(f"{python_path} -m poetry lock")
+        return_value = os.system(f"{python_path} -m poetry lock")
+        if return_value != 0:
+            raise ValueError(
+                "Something went wrong during creating the 'poetry.lock' file!"
+            )
         src = script_path + pyproject_file
         dst = temp_dir + pyproject_file
         shutil.copyfile(src, dst)
@@ -251,7 +255,11 @@ def install_pkgs(g: FeedParser):
         dst = temp_dir + poetry_lock_file
         shutil.copyfile(src, dst)
         os.chdir(temp_dir)
-        os.system(f"{python_path} -m poetry lock --no-update")
+        return_value = os.system(f"{python_path} -m poetry lock --no-update")
+        if return_value != 0:
+            raise ValueError(
+                "Something went wrong during creating the 'poetry.lock' file!"
+            )
         lock_content = toml.load(poetry_lock_file)
         packages = lock_content["package"]
         new_packages = []
@@ -298,7 +306,9 @@ def install_pkgs(g: FeedParser):
                 new_packages.append(name_in_commons)
 
         os.chdir(temp_dir)
-        os.system(f"{python_path} -m poetry install --no-dev")
+        return_value = os.system(f"{python_path} -m poetry install --no-dev")
+        if return_value != 0:
+            raise ValueError("Something went wrong during installing the libraries!")
         for name_in_commons in new_packages:
             filename = (
                 f"{temp_dir}.venv/Lib/site-packages/{name_in_commons}.dist-info/RECORD"
@@ -350,18 +360,19 @@ def uninstall_script(feed_id):
     if folder_name:
         script_path = scriptsPath + folder_name + "/"
         try:
-        shutil.rmtree(script_path)
+            shutil.rmtree(script_path)
         except FileNotFoundError:
             pass
     zero_pkgs = clean_lib_links(feed_id)
     for zero_pkg in zero_pkgs:
         try:
-        shutil.rmtree(commons_dir + zero_pkg)
+            shutil.rmtree(commons_dir + zero_pkg)
         except FileNotFoundError:
             pass
     feed_file[feed_id]["folder name"] = ""
     feed_file[feed_id]["installed version"] = ""
     feed_file[feed_id]["installed_version_description"] = ""
+    feed_file[feed_id]["installation status"] = ""
     with open(feed_file_path, "w") as file:
         json.dump(feed_file, file)
 
