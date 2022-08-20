@@ -7,11 +7,22 @@ from enum import Enum
 import toml
 from os.path import exists
 import urllib.request
-from urllib.parse import quote, unquote
+from urllib.parse import unquote
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
 import re
+from typing import List
+from datetime import datetime
+import copy
+
+
+if exists(os.path.dirname(__file__) + "/development-indicator.dummy"):
+    DEVELOPMENT_MODE = True
+else:
+    DEVELOPMENT_MODE = False
+if DEVELOPMENT_MODE:
+    print(">>>>>>>>>>  Development mode  <<<<<<<<<<")
 
 utils_path = os.path.dirname(__file__)
 dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
@@ -19,6 +30,7 @@ scriptsPath = dependency_dir + "PythonScripts/"
 settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
 temp_dir = utils_path + "/temp/"
+feed_file_path = utils_path + "/scripts_feed.json"
 
 
 class Theme(Enum):
@@ -35,7 +47,7 @@ def get_settings():
     return overall_settings
 
 
-def set_style(window: QWidget, theme: str = None):
+def set_style(window: QWidget, theme: str = None) -> Theme:
     if not theme:
         # load theme
         overall_settings = get_settings()
@@ -62,84 +74,98 @@ def create_dirs(path):
         os.makedirs(parent)
 
 
-def try_except(data, attr, default_out=""):
+def get_dict_attribute(data: dict, attr, default=""):
     try:
         output = data[attr]
     except:
-        output = default_out
+        output = default
+    if isinstance(output, (list, dict)):
+        output = copy.deepcopy(output)
     return output
 
 
-def get_description_value(poetry_data, pyegi_data, attr, theme):
-    try:
-        output = pyegi_data[attr]
-    except:
-        output = try_except(poetry_data, attr)
-    version_description_map = {
+def get_pyegi_duplicated_field(poetry_data, pyegi_data, attr, default=""):
+    output = get_dict_attribute(pyegi_data, attr, None)
+    if not output:
+        output = get_dict_attribute(poetry_data, attr, default)
+    return output
+
+
+def _get_description_value(data: dict, attr, theme: Theme):
+    output = get_dict_attribute(data, attr)
+
+    if theme == Theme.PYEGI:
+        hyperlink_color = 'style="color: rgb(200, 200, 200);"'
+    else:
+        hyperlink_color = ""
+
+    attr_to_version_description_map = {
         "version": "version-description",
-        "latest version": "version_description",
+        "latest version": "latest_version_description",
         "installed version": "installed_version_description",
     }
-    for version in version_description_map:
-        if attr == version:
-            try:
-                output2 = pyegi_data[version_description_map[version]]
-            except:
-                output2 = try_except(poetry_data, version_description_map[version])
-            if output2 != "":
-                output = f"{output2} ({output})"
+    for key in attr_to_version_description_map:
+        if attr != key:
+            continue
+        version_description = get_dict_attribute(
+            data, attr_to_version_description_map[attr]
+        )
+        if version_description != "":
+            output = f"{version_description} ({output})"
+        break
+
     if attr == "authors":
-        if theme == Theme.PYEGI:
-            hyperlink_color = 'style="color: rgb(200, 200, 200)"'
-        else:
-            hyperlink_color = ""
         try:
             for i, str in enumerate(output):
                 output[i] = re.sub(
-                    "(.+) ?\<(.+)>",
-                    f'<a {hyperlink_color} href="mailto: \\2">\\1</a>',
+                    r"(.+?) ?<(.+)>",
+                    f'<a {hyperlink_color} href="mailto:\\2">\\1</a>',
                     str,
                 )
         except:
             pass
+        output = "<span>[" + ", ".join(output) + "]</span>"
+    elif attr == "url":
+        output = f'<a {hyperlink_color} href="{output}">{output}</a>'
+
     return output
 
 
-def convert_to_header(str):
-    return f"<html><b>{str}:</b></html>"
+def _convert_to_header(str):
+    return f"<b>{str}:</b>"
 
 
-def get_textBrowser_description(script_name, theme):
-    pyproject_file_path = f"{scriptsPath}{script_name}/pyproject.toml"
-    script_description = ""
-    if exists(pyproject_file_path):
-        pyproject_data = toml.load(pyproject_file_path)
-        poetry_data = try_except(pyproject_data["tool"], "poetry")
-        pyegi_data = try_except(pyproject_data["tool"], "pyegi")
-        desired_attributes = [
-            "name",
-            "description",
-            "version",
-            "authors",
-        ]
-        description_values = []
-        for attr in desired_attributes:
-            description_value = get_description_value(
-                poetry_data, pyegi_data, attr, theme
-            )
-            description_values.append(description_value)
-        headers = [convert_to_header(str) for str in desired_attributes]
-        for header, description_value in zip(headers, description_values):
-            script_description += f"{header}<br>{description_value}<br><br>"
+def get_textBrowser_description(data: dict, theme: Theme, desired_attributes=None):
+    script_description = "<html>"
+    description_values = []
+    if not desired_attributes:
+        desired_attributes = data.keys()
+    for attr in desired_attributes:
+        description_value = _get_description_value(data, attr, theme)
+        description_values.append(description_value)
+    headers = [_convert_to_header(str) for str in desired_attributes]
+    for header, description_value in zip(headers, description_values):
+        script_description += f"{header}<br>{description_value}<br><br>"
+    script_description += "</html>"
     return script_description
 
 
-def get_description(poetry_data, pyegi_data, attr, default_out=""):
-    try:
-        output = pyegi_data[attr]
-    except:
-        output = try_except(poetry_data, attr, default_out)
-    return output
+def get_feed_file():
+    if exists(feed_file_path):
+        with open(feed_file_path) as file:
+            feed_file = json.load(file)
+    else:
+        feed_file = {}
+        with open(feed_file_path, "w") as file:
+            json.dump(feed_file, file)
+    return feed_file
+
+
+def download_file(url, local_path):
+    with requests.get(url, stream=True) as r:
+        with open(local_path, "wb") as f:
+            for chunk in r.iter_content(chunk_size=16 * 1024):
+                f.write(chunk)
 
 
 class ComboBoxLineEdit(QLineEdit):
@@ -168,81 +194,103 @@ class ComboBoxLineEdit(QLineEdit):
         completer.complete()
 
 
-class script_pyegi_connection(object):
-    def __init__(self, pyproject_file_path, datetime, is_dir=True) -> None:
-        self.describer_version = ""
-        self.name = ""
-        self.description = ""
-        self.version = ""
-        self.version_description = ""
-        self.authors = []
-        self.discoverable = True
-        self.known_feeds = []
-        self.keep_files = []
-        self.datetime = datetime
-        if is_dir:
-            if not exists(pyproject_file_path):
-                return
+class ScriptPyProject:
+    def __init__(self, pyproject_file_path=None, pyproject_text=None) -> None:
+        if pyproject_file_path:
             pyproject_data = toml.load(pyproject_file_path)
         else:
-            try:
-                pyproject_data = toml.loads(pyproject_file_path)
-            except:
-                return
-        poetry_data = try_except(pyproject_data["tool"], "poetry")
-        pyegi_data = try_except(pyproject_data["tool"], "pyegi")
-        self.describer_version = try_except(pyegi_data, "describer-version")
-        self.name = get_description(poetry_data, pyegi_data, "name")
-        self.description = get_description(poetry_data, pyegi_data, "description")
-        self.version = get_description(poetry_data, pyegi_data, "version")
-        self.version_description = try_except(pyegi_data, "version-description")
-        self.authors = get_description(poetry_data, pyegi_data, "authors", [])
-        self.discoverable = try_except(pyegi_data, "discoverable", True)
-        self.known_feeds = try_except(pyegi_data, "known-feeds", [])
-        pyegi_data_files = try_except(pyegi_data, "files")
-        self.keep_files = try_except(pyegi_data_files, "keep", [])
+            pyproject_data = toml.loads(pyproject_text)
+        self.pyproject_data = pyproject_data
+        poetry_data = get_dict_attribute(pyproject_data["tool"], "poetry")
+        pyegi_data = get_dict_attribute(pyproject_data["tool"], "pyegi")
+        self.describer_version = get_dict_attribute(
+            pyegi_data, "describer-version", "0.1.0"
+        )
+        self.name = get_pyegi_duplicated_field(poetry_data, pyegi_data, "name")
+        self.description = get_pyegi_duplicated_field(
+            poetry_data, pyegi_data, "description"
+        )
+        self.version = get_pyegi_duplicated_field(poetry_data, pyegi_data, "version")
+        self.version_description = get_dict_attribute(pyegi_data, "version-description")
+        self.authors = get_pyegi_duplicated_field(
+            poetry_data, pyegi_data, "authors", []
+        )
+        self.discoverable = get_dict_attribute(pyegi_data, "discoverable", True)
+        self.known_feeds: List[str] = get_dict_attribute(pyegi_data, "known-feeds", [])
+        for i in range(len(self.known_feeds)):
+            self.known_feeds[i] = unquote(self.known_feeds[i])
+        pyegi_data_files = get_dict_attribute(pyegi_data, "files")
+        self.keep_files = get_dict_attribute(pyegi_data_files, "keep", [])
+
+    def get_textBrowser_description(self, theme: Theme):
+        return get_textBrowser_description(
+            {
+                "name": self.name,
+                "description": self.description,
+                "version": self.version,
+                "version-description": self.version_description,
+                "authors": self.authors,
+            },
+            theme,
+            ["name", "description", "version", "authors"],
+        )
 
 
-class github_decode(object):
-    def __init__(self, url) -> None:
-        self.url = url
-        url_split = url.split("/")
+class FeedParser:
+    def __init__(self, url, parse=True) -> None:
+        self.url = unquote(url)
+        url_split = self.url.split("/")
+        if len(url_split) < 5:
+            raise ValueError("Wrong feed url!")
+        if url_split[0] == "http":
+            url_split[0] = "https"
+            self.url = "/".join(url_split)
         self.repo_name = "/".join(url_split[3:5])
         self.tags = []
         try:
-            self.ID = "/".join(url_split[3:5]) + "/" + "/".join(url_split[7:])
+            self.folder_path = "/".join(url_split[7:])
         except:
-            self.ID = "/".join(url_split[3:5])
+            self.folder_path = ""
+        if self.folder_path != "":
+            self.ID = self.repo_name + "/" + self.folder_path
+        else:
+            self.ID = self.repo_name + "/"
 
-    def start(self):
+        self.is_parsed = False
+        if parse:
+            self._parse()
+
+    def _parse(self):
+        self.is_parsed = True
+
         url = self.url
         url_split = url.split("/")
-        script_name = unquote(url_split[-1])
-        self.repo_name = "/".join(url_split[3:5])
-        self.default_branch = self.main_branch_name()
+
+        self.default_branch = self._get_main_branch_name()
         try:
             self.branch_name = url_split[6]
         except:
             self.branch_name = self.default_branch
             url_split.append("tree")
             url_split.append(self.branch_name)
+            self.url = "/".join(url_split)
 
-        try:
-            self.prefix = "/" + "/".join(url_split[7:])
-        except:
-            self.prefix = ""
+        self.script_info = self._get_script_info()
+        self.script_name = self.script_info.name
 
-        try:
-            self.script_info = self.get_script_info()
-            self.script_name = self.script_info.name
-        except:
-            self.script_name = script_name
-            self.script_info = ""
+        self._file_root_prefix_len = len(
+            f"/{self.repo_name}/blob/{self.branch_name}/{self.folder_path}/"
+        )
+        self._dir_root_prefix_len = len(
+            f"/{self.repo_name}/tree/{self.branch_name}/{self.folder_path}/"
+        )
 
-        self.main_prefix_len = len("/" + "/".join(url_split[3:]))
+    def ensure_parsed(self):
+        if not self.is_parsed:
+            self._parse()
 
     def resolve_url(self):
-        self.get_all_tags()
+        self.populate_tags()
         if self.tags:
             url = self.url
             url_split = url.split("/")
@@ -265,9 +313,9 @@ class github_decode(object):
                 urllib.request.urlopen(url)
                 return False
             except:
-                raise ValueError("You are not connected to the internet!")
+                raise ConnectionError("You are not connected to the internet!")
 
-    def main_branch_name(self):
+    def _get_main_branch_name(self):
         url = self.url
         url_split = url.split("/")
         url = "/".join(url_split[:5])
@@ -287,20 +335,20 @@ class github_decode(object):
                 pass
         return branch_name
 
-    def get_script_info(self):
+    def _get_script_info(self):
         pyproject_toml_path = "pyproject.toml"
-        pyproject_toml_url = self.get_download_url(pyproject_toml_path, self.prefix)
-        reqs = requests.get(pyproject_toml_url)
-        datetime = self.get_pyproject_datetime(self.url)
-        script_info = script_pyegi_connection(reqs.text, datetime, False)
+        pyproject_toml_url = self.get_download_url(
+            pyproject_toml_path, self.folder_path
+        )
+        response = requests.get(pyproject_toml_url)
+        self.raw_datetime = self._get_pyproject_datetime_text()
+        self.datetime = FeedParser.parse_datetime(self.raw_datetime)
+        script_info = ScriptPyProject(pyproject_text=response.text)
         return script_info
 
-    def get_links(self, main_url):
+    def _get_links(self, main_url):
         url_split = main_url.split("/")
 
-        if len(url_split) == 5:
-            url_split.append("tree")
-            url_split.append(self.branch_name)
         prefix = "/" + "/".join(url_split[3:])
         prefix_len = len(prefix)
         url_blob = url_split
@@ -316,26 +364,27 @@ class github_decode(object):
 
         dirs = []
         files = []
-        links = []
+        dir_links = []
         for link in soup.find_all("a", class_="js-navigation-open Link--primary"):
-            url = link.get("href")
+            url = unquote(link.get("href"))
             if url[:prefix_blob_len] == prefix_blob:
-                files.append(unquote(url[self.main_prefix_len + 1 :]))
+                files.append(url[self._file_root_prefix_len :])
             if (url[:prefix_len] == prefix) and (url != prefix):
-                dirs.append(unquote(url[self.main_prefix_len + 1 :]) + "/")
-                links.append("https://github.com" + url)
-        return dirs, files, links
+                dirs.append(url[self._dir_root_prefix_len :])
+                dir_links.append("https://github.com" + url)
+        return dirs, files, dir_links
 
     def get_files_and_folders(self):
+        self.ensure_parsed()
         urls = [self.url]
         folders = []
         files = []
         while urls:
             current_url = urls[0]
-            dirs, filenames, links = self.get_links(current_url)
+            dirs, filenames, dir_links = self._get_links(current_url)
             folders += dirs
             files += filenames
-            urls += links
+            urls += dir_links
             urls = urls[1:]
 
         folders.sort()
@@ -355,10 +404,11 @@ class github_decode(object):
 
         return files, folders
 
-    def get_download_url(self, file, prefix=""):
-        return f"https://raw.githubusercontent.com/{self.repo_name}/{self.branch_name}{prefix}/{quote(file)}"
+    def get_download_url(self, file, folder_path=""):
+        self.ensure_parsed()
+        return f"https://raw.githubusercontent.com/{self.repo_name}/{self.branch_name}/{folder_path}/{file}"
 
-    def get_tags(self, url):
+    def _get_tags(self, url):
         reqs = requests.get(url)
         soup = BeautifulSoup(reqs.text, "html.parser")
         tags = []
@@ -371,7 +421,10 @@ class github_decode(object):
             tags.append(tag)
         return tags
 
-    def get_all_tags(self):
+    def populate_tags(self):
+        if self.tags:
+            return
+
         url = self.url
         url_split = url.split("/")
         url = "/".join(url_split[:5]) + "/tags"
@@ -380,7 +433,7 @@ class github_decode(object):
         more_tags = True
         url2 = url
         while more_tags:
-            tags_temp = self.get_tags(url2)
+            tags_temp = self._get_tags(url2)
             if tags_temp:
                 tags += tags_temp
                 url2 = url + "?after=" + tags_temp[-1]
@@ -389,11 +442,13 @@ class github_decode(object):
 
         self.tags = tags
 
-    def get_pyproject_datetime(self, url):
-        url_split = url.split("/")
-        if len(url_split) == 5:
-            url_split.append("tree")
-            url_split.append(self.default_branch)
+    @classmethod
+    def parse_datetime(cls, raw_datetime):
+        return datetime.strptime(raw_datetime, "%Y-%m-%dT%H:%M:%SZ")
+
+    def _get_pyproject_datetime_text(self) -> datetime:
+        self.ensure_parsed()
+        url_split = self.url.split("/")
         url_split[5] = "file-list"
         url = "/".join(url_split)
         reqs = requests.get(url)
@@ -406,3 +461,7 @@ class github_decode(object):
             if subdiv:
                 time_div = div.find("time-ago")
                 return time_div.get("datetime")
+        raise LookupError("No datetime found!")
+
+    def is_main_branch(self):
+        return self.branch_name == self.default_branch

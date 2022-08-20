@@ -31,14 +31,31 @@ def run_step(context: dict):
     )
 
     # Copy new files
-    shutil.copytree("src", automation_path, dirs_exist_ok=True)
+    os.makedirs(os.path.join(pyegi_dependency_path, "PythonScripts"))
+    shutil.copytree(
+        "src/dependency/Pyegi/PythonScripts/[sample] prefix",
+        os.path.join(pyegi_dependency_path, "PythonScripts", "[sample] prefix"),
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(
+        "src/dependency/Pyegi/Pyegi",
+        os.path.join(pyegi_dependency_path, "Pyegi"),
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(
+        "src/include",
+        os.path.join(automation_path, "include"),
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(
+        "src/autoload",
+        os.path.join(automation_path, "autoload"),
+        dirs_exist_ok=True,
+    )
     shutil.copy("poetry.toml", pyegi_dependency_path)
     shutil.copy("pyproject.toml", pyegi_dependency_path)
 
     # Copy .venv
     target_venv_path = os.path.join(pyegi_dependency_path, ".venv")
-    if (not exists(target_venv_path)) or (
-        get_last_modified(".venv", True) != get_last_modified(target_venv_path, True)
-    ):
-        shutil.rmtree(target_venv_path, ignore_errors=True)
-        shutil.copytree(".venv", target_venv_path, dirs_exist_ok=True)
+    if not exists(target_venv_path):
+        os.symlink(os.path.abspath(".venv"), target_venv_path, target_is_directory=True)

@@ -9,8 +9,8 @@ settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
 
 
-class Ui_SettingsWindow(object):
-    def setupUi(self, SettingsWindow, MainWindow=None):
+class Ui_SettingsWindow:
+    def setupUi(self, SettingsWindow, main_ui=None):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 171)
         self.overall_settings = get_settings()
@@ -60,7 +60,7 @@ class Ui_SettingsWindow(object):
         self.ok_pushButton.setObjectName("ok_pushButton")
         self.widgets_layout.addWidget(self.ok_pushButton, 3, 5, 1, 1)
         self.ok_pushButton.clicked.connect(
-            lambda: self.writeSettings(SettingsWindow, MainWindow)
+            lambda: self.writeSettings(SettingsWindow, main_ui)
         )
         self.window_layout.addLayout(self.widgets_layout, 0, 0, 1, 1)
         SettingsWindow.setCentralWidget(self.centralwidget)
@@ -82,19 +82,19 @@ class Ui_SettingsWindow(object):
         self.feeds_label.setText(
             _translate(
                 "SettingsWindow",
-                "Days between two consecutive automatic update of the feeds:",
+                "Update feed interval (Days):",
             )
         )
         self.feeds_spinbox.setValue(self.overall_settings["Automatic feeds update"])
         self.cancel_pushButton.setText(_translate("SettingsWindow", "Cancel"))
         self.ok_pushButton.setText(_translate("SettingsWindow", "OK"))
 
-    def writeSettings(self, SettingsWindow, MainWindow):
+    def writeSettings(self, SettingsWindow, main_ui):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         self.overall_settings["Automatic feeds update"] = int(self.feeds_spinbox.text())
         json.dump(self.overall_settings, open(settings_file_path, "w"))
-        if MainWindow:
-            set_style(MainWindow, self.overall_settings["Theme"])
+        if main_ui:
+            set_style(main_ui.window, self.overall_settings["Theme"])
         SettingsWindow.close()
 
 
