@@ -8,8 +8,16 @@ import csv
 import json
 import warnings
 import urllib.request
-from utils import github_decode, create_dirs
-from datetime import datetime
+import requests
+from utils import (
+    FeedParser,
+    create_dirs,
+    DEVELOPMENT_MODE,
+    get_feed_file,
+    ScriptPyProject,
+    download_file,
+)
+from typing import List
 
 
 pyproject_file = "pyproject.toml"
@@ -22,13 +30,6 @@ scriptsPath = dependency_dir + "PythonScripts/"
 feed_file_path = os.path.dirname(__file__) + "/scripts_feed.json"
 pyproject_file_path = dependency_dir + pyproject_file
 # system_inputs = sys.argv
-development_check_file_path = (
-    os.path.dirname(__file__) + "/kl342klfdsf.3244dsffger+_Fwr_@2dsa2@.k3f"
-)
-if exists(development_check_file_path):
-    development_mode = True
-else:
-    development_mode = False
 pyproject_file_url = (
     "https://raw.githubusercontent.com/SSgumS/Pyegi/main/pyproject.toml"
 )
@@ -76,203 +77,151 @@ def clean_lib_links(script):
     return zero_pkgs
 
 
-def feed_details(g):
-    url = g.url
-    script_info = g.script_info
-    is_main_brabch = g.branch_name == g.default_branch
-    g.get_all_tags()
-    return {
-        "url": url,
+def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[str]:
+    feed_file = get_feed_file()
+
+    if not feed.script_info.discoverable:
+        return []
+
+    # prioritize main feeds
+    for main_feed in main_known_feeds:
+        if feed.ID == main_feed.ID and feed.url != main_feed.url:
+            return []
+    # prioritize existing feed in a special situation
+    feed.populate_tags()
+    if (
+        (feed.ID in feed_file)
+        and feed_file[feed.ID]["url"] != feed.url
+        and (not feed.is_main_branch())
+        and (not feed.tags)
+        and (not feed_file[feed.ID]["is_main_branch"])
+    ):
+        date_time = feed.datetime
+        local_date_time = FeedParser.parse_datetime(feed_file[feed.ID]["raw_datetime"])
+        if feed_file[feed.ID]["is_main_branch"] or local_date_time > date_time:
+            try:
+                feed = (FeedParser(feed_file[feed.ID]["url"]),)
+            except:
+                pass
+
+    # update feed file entry
+    try:
+        folder_name = feed_file[feed.ID]["folder name"]
+        installed_version = feed_file[feed.ID]["installed version"]
+        installed_version_description = feed_file[feed.ID][
+            "installed_version_description"
+        ]
+        installation_status = feed_file[feed.ID]["installation status"]
+    except:
+        folder_name = ""
+        installed_version = ""
+        installed_version_description = ""
+        installation_status = ""
+    script_info = feed.script_info
+    feed_file[feed.ID] = {
+        "id": feed.ID,
+        "url": feed.url,
         "name": script_info.name,
         "description": script_info.description,
         "latest version": script_info.version,
-        "version_description": script_info.version_description,
+        "latest_version_description": script_info.version_description,
         "authors": script_info.authors,
-        "tags": g.tags,
-        "is_main_branch": is_main_brabch,
+        "tags": feed.tags,
+        "is_main_branch": feed.is_main_branch(),
+        "folder name": folder_name,
+        "installed version": installed_version,
+        "installed_version_description": installed_version_description,
+        "installation status": installation_status,
     }
 
+    # update feed file
+    with open(feed_file_path, "w") as file:
+        json.dump(feed_file, file)
 
-def assign_feed(
-    feed_file,
-    g,
-    folder_name,
-    version,
-    installed_version_description,
-    installation_status,
-):
-    feed_file[g.ID] = feed_details(g)
-    feed_file[g.ID]["folder name"] = folder_name
-    feed_file[g.ID]["installed version"] = version
-    feed_file[g.ID]["installed_version_description"] = installed_version_description
-    feed_file[g.ID]["installation status"] = installation_status
-
-
-def get_IDs(urls):
-    IDs = []
-    for url in urls:
-        g = github_decode(url)
-        IDs.append(g.ID)
-    return IDs
-
-
-def add_to_feed(url, pyegi_info):
-    main_known_feeds = pyegi_info["known-feeds"]
-    main_known_feeds_IDs = get_IDs(main_known_feeds)
-    if exists(feed_file_path):
-        f = open(feed_file_path)
-        feed_file = json.load(f)
-        f.close()
-    else:
-        feed_file = {}
-    g = github_decode(url)
-    g.start()
-    script_info = g.script_info
-    if script_info == "":
-        return []
-    if script_info.discoverable == True:
-        try:
-            folder_name = feed_file[g.ID]["folder name"]
-            version = feed_file[g.ID]["installed version"]
-            installed_version_description = feed_file[g.ID][
-                "installed_version_description"
-            ]
-            installation_status = feed_file[g.ID]["installation status"]
-        except:
-            folder_name = ""
-            version = ""
-            installed_version_description = ""
-            installation_status = ""
-        if g.tags:
-            assign_feed(
-                feed_file,
-                g,
-                folder_name,
-                version,
-                installed_version_description,
-                installation_status,
-            )
-        else:
-            if g.ID in main_known_feeds_IDs:
-                idx = main_known_feeds_IDs.index(g.ID)
-                if main_known_feeds[idx] == url:
-                    assign_feed(
-                        feed_file,
-                        g,
-                        folder_name,
-                        version,
-                        installed_version_description,
-                        installation_status,
-                    )
-            else:
-                if (g.ID not in feed_file) or (g.branch_name == g.default_branch):
-                    assign_feed(
-                        feed_file,
-                        g,
-                        folder_name,
-                        version,
-                        installed_version_description,
-                        installation_status,
-                    )
-                else:
-                    if not feed_file[g.ID]["is_main_branch"]:
-                        date_time = datetime.strptime(
-                            script_info.datetime, "%Y-%m-%dT%H:%M:%SZ"
-                        )
-                        local_date_time = datetime.strptime(
-                            g.get_pyproject_datetime(feed_file[g.ID]["url"]),
-                            "%Y-%m-%dT%H:%M:%SZ",
-                        )
-                        if date_time > local_date_time:
-                            assign_feed(
-                                feed_file,
-                                g,
-                                folder_name,
-                                version,
-                                installed_version_description,
-                                installation_status,
-                            )
-    json.dump(feed_file, open(feed_file_path, "w"))
     return script_info.known_feeds
 
 
 def update_feeds():
-    if development_mode:
-        pyproject_contents = toml.load(pyproject_file_path)
+    if DEVELOPMENT_MODE:
+        pyegi_info = ScriptPyProject(pyproject_file_path)
     else:
-        response = urllib.request.get(pyproject_file_url)
-        pyproject_contents = toml.loads(response.text)
-    pyegi_info = pyproject_contents["tool"]["pyegi"]
+        response = requests.get(pyproject_file_url)
+        pyegi_info = ScriptPyProject(pyproject_text=response.text)
     checked_urls = []
-    urls = pyegi_info["known-feeds"]
+    urls = pyegi_info.known_feeds
+    main_known_feeds = [FeedParser(url, False) for url in urls]
     while urls:
         url = urls[0]
-        if url[:19] != "https://github.com/":
-            url = "https://" + url[url.find("github.com/") :]
-        url_split = url.split("/")
-        if len(url_split) < 5:
+        try:
+            g = FeedParser(url)
+        except:
             urls = urls[1:]
             continue
-        checked_urls.append(url)
-        g = github_decode(url)
-        g.resolve_url()
         url = g.url
-        known_feeds = add_to_feed(url, pyegi_info)
+        checked_urls.append(url)
+        known_feeds = add_to_feed(g, main_known_feeds)
         for known_feed in known_feeds:
             if (known_feed not in checked_urls) and g.is_url(known_feed):
                 urls.append(known_feed)
         urls = urls[1:]
 
 
-def download_script(g):
+def download_script(g: FeedParser):
     script = g.script_name
-    print(f"Preparing {script} links...")
-    files, folders = g.get_files_and_folders()
-    f = open(feed_file_path)
-    feed_file = json.load(f)
-    f.close()
+
+    with open(feed_file_path) as file:
+        feed_file = json.load(file)
+    # folder name
     initial_folder_name = feed_file[g.ID]["folder name"]
     if initial_folder_name == "":
         initial_folder_name = script
         folder_name = initial_folder_name
-        new_folder_name = folder_name
-        i = 2
-        is_exiting_name = True
-        while is_exiting_name:
-            for feed in feed_file:
-                if folder_name.lower() == feed_file[feed]["folder name"].lower():
-                    new_folder_name = initial_folder_name + f"_{i}"
-                    continue
-            if new_folder_name == folder_name:
-                is_exiting_name = False
-            else:
-                folder_name = new_folder_name
+        # current dirs that exist
+        current_folders = []
+        all_sub_objects = os.listdir(scriptsPath)
+        for entry in all_sub_objects:
+            path = os.path.join(scriptsPath, entry)
+            if os.path.isdir(path):
+                current_folders.append(entry)
+        # choose folder name
+        i = 1
+        while folder_name in current_folders:
+            folder_name = f"{initial_folder_name}_{i}"
             i += 1
         feed_file[g.ID]["folder name"] = folder_name
     else:
         folder_name = initial_folder_name
+    # version
     feed_file[g.ID]["installed version"] = g.script_info.version
     feed_file[g.ID]["installed_version_description"] = g.script_info.version_description
+
+    print(f"Preparing {script} links...")
+    files, folders = g.get_files_and_folders()
+
+    print(f"Creating {script} directories...")
     script_path = scriptsPath + folder_name + "/"
     for folder in folders:
-        path = script_path + folder
+        path = os.path.join(script_path, folder)
         if not exists(path):
             os.makedirs(path)
-
     if not exists(script_path):
         os.makedirs(script_path)
+    feed_file[g.ID]["installation status"] = "directories created"
+    with open(feed_file_path, "w") as file:
+        json.dump(feed_file, file)
 
-    print(f"Downloading {script}...")
+    print(f"Downloading {script} files...")
     for file in files:
-        file_download_url = g.get_download_url(file, g.prefix)
-        file_name = f"{script_path}{file}"
-        if (file not in g.script_info.keep_files) or (not exists(file_name)):
-            urllib.request.urlretrieve(file_download_url, file_name)
+        file_download_url = g.get_download_url(file, g.folder_path)
+        path = f"{script_path}{file}"
+        if (file not in g.script_info.keep_files) or (not exists(path)):
+            download_file(file_download_url, path)
     feed_file[g.ID]["installation status"] = "downloaded"
-    json.dump(feed_file, open(feed_file_path, "w"))
+    with open(feed_file_path, "w") as file:
+        json.dump(feed_file, file)
 
 
-def install_pkgs(g):
+def install_pkgs(g: FeedParser):
     script = g.script_name
     print(f"Processing {script} dependencies...")
     f = open(feed_file_path)
@@ -290,7 +239,7 @@ def install_pkgs(g):
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
             # removing script from lib_links
-            zero_pkgs = clean_lib_links(script)
+            zero_pkgs = clean_lib_links(g.ID)
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
@@ -321,12 +270,12 @@ def install_pkgs(g):
             is_new_package = True
             for pkg in lib_links["Packages"]:
                 if pkg["Name"] == name_in_commons:
-                    pkg["Scripts"].append(script)
+                    pkg["Scripts"].append(g.ID)
                     is_new_package = False
             if is_new_package:
                 lib_link = {}
                 lib_link["Name"] = name_in_commons
-                lib_link["Scripts"] = [script]
+                lib_link["Scripts"] = [g.ID]
                 lib_links["Packages"].append(lib_link)
             json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
             # check if the package is already in commons
@@ -384,7 +333,8 @@ def install_pkgs(g):
             f'The file "{pyproject_file}" doesn\'t exist in {script} script directory.'
         )
         feed_file[g.ID]["installation status"] = "not installed"
-    json.dump(feed_file, open(feed_file_path, "w"))
+    with open(feed_file_path, "w") as file:
+        json.dump(feed_file, file)
 
 
 def install_script(g):
@@ -392,22 +342,28 @@ def install_script(g):
     install_pkgs(g)
 
 
-def uninstall_script(script, ID):
-    print(f"Processing {script} dependencies...")
-    f = open(feed_file_path)
-    feed_file = json.load(f)
-    f.close()
-    folder_name = feed_file[ID]["folder name"]
+def uninstall_script(feed_id):
+    with open(feed_file_path) as file:
+        feed_file = json.load(file)
+    print(f"Processing {feed_file[feed_id]['name']} dependencies...")
+    folder_name = feed_file[feed_id]["folder name"]
     if folder_name:
         script_path = scriptsPath + folder_name + "/"
+        try:
         shutil.rmtree(script_path)
-    zero_pkgs = clean_lib_links(script)
+        except FileNotFoundError:
+            pass
+    zero_pkgs = clean_lib_links(feed_id)
     for zero_pkg in zero_pkgs:
+        try:
         shutil.rmtree(commons_dir + zero_pkg)
-    feed_file[ID]["folder name"] = ""
-    feed_file[ID]["installed version"] = ""
-    feed_file[ID]["installed_version_description"] = ""
-    json.dump(feed_file, open(feed_file_path, "w"))
+        except FileNotFoundError:
+            pass
+    feed_file[feed_id]["folder name"] = ""
+    feed_file[feed_id]["installed version"] = ""
+    feed_file[feed_id]["installed_version_description"] = ""
+    with open(feed_file_path, "w") as file:
+        json.dump(feed_file, file)
 
 
 if __name__ == "__main__":
@@ -418,8 +374,7 @@ if __name__ == "__main__":
     ]
     # url = "https://github.com/python-poetry/poetry-core/tree/1.1.0a6"
     url = "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania"
-    g = github_decode(url)
-    g.start()
+    g = FeedParser(url)
     # install_script(g)
     # download_script(g)
     # for script in scripts_names:
