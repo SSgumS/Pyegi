@@ -31,6 +31,7 @@ settings_file_path = utils_path + "/settings.json"
 themes_path = utils_path + "/Themes/"
 temp_dir = utils_path + "/temp/"
 feed_file_path = utils_path + "/scripts_feed.json"
+pyproject_toml_path = "pyproject.toml"
 
 
 class Theme(Enum):
@@ -157,7 +158,7 @@ def get_feed_file():
     else:
         feed_file = {}
         with open(feed_file_path, "w") as file:
-            json.dump(feed_file, file)
+            json.dump(feed_file, file, indent=4)
     return feed_file
 
 
@@ -238,13 +239,13 @@ class ScriptPyProject:
 
 class FeedParser:
     def __init__(self, url, parse=True) -> None:
+        if url[:19] != "https://github.com/":
+            url = "https://" + url[url.find("github.com/") :]
         self.url = unquote(url)
         url_split = self.url.split("/")
         if len(url_split) < 5:
             raise ValueError("Wrong feed url!")
-        if url_split[0] == "http":
-            url_split[0] = "https"
-            self.url = "/".join(url_split)
+        self.username = url_split[3]
         self.repo_name = "/".join(url_split[3:5])
         self.tags = []
         try:
@@ -289,32 +290,6 @@ class FeedParser:
         if not self.is_parsed:
             self._parse()
 
-    def resolve_url(self):
-        self.populate_tags()
-        if self.tags:
-            url = self.url
-            url_split = url.split("/")
-            if len(url_split) == 5:
-                url_split.append("tree")
-                url_split.append(self.tags[0])
-            else:
-                url_split[6] = self.tags[0]
-            url = "/".join(url_split)
-            if self.is_url(url):
-                self.url = url
-
-    def is_url(self, url):
-        try:
-            urllib.request.urlopen(url)
-            return True
-        except:
-            try:
-                url = "https://www.google.com/"
-                urllib.request.urlopen(url)
-                return False
-            except:
-                raise ConnectionError("You are not connected to the internet!")
-
     def _get_main_branch_name(self):
         url = self.url
         url_split = url.split("/")
@@ -336,7 +311,6 @@ class FeedParser:
         return branch_name
 
     def _get_script_info(self):
-        pyproject_toml_path = "pyproject.toml"
         pyproject_toml_url = self.get_download_url(
             pyproject_toml_path, self.folder_path
         )
@@ -387,8 +361,13 @@ class FeedParser:
             urls += dir_links
             urls = urls[1:]
 
+        # since we need folders variable to create folders
+        # and we dont't want to use os.makedirs function more than needed
+        # we try to exclude unnecessary folders
+
         folders.sort()
         folders_len = len(folders)
+        # we need a list for extracting the indexes of the folders to be excluded
         to_be_removed = np.zeros(folders_len)
 
         for i in range(folders_len - 1):
@@ -399,6 +378,8 @@ class FeedParser:
                     to_be_removed[i] = 1
                     break
 
+        # now that we have the indexes, we remove the corresponding folders in a reversed mode
+        # in order to avoid calculating the new indexes
         for i in reversed(np.nonzero(to_be_removed)[0]):
             folders.pop(i)
 
@@ -441,6 +422,38 @@ class FeedParser:
                 more_tags = False
 
         self.tags = tags
+
+    def get_relevant_tags(self):
+        if not self.tags:
+            self.populate_tags()
+
+        url = self.url
+        url_split = url.split("/")
+        if len(url_split) == 5:
+            url_split.append("tree")
+            url_split.append("")
+
+        relevant_tags = []
+        version_list = []
+        version_description_list = []
+        for tag in self.tags:
+            url_split[6] = tag
+            url = "/".join(url_split)
+            g = FeedParser(url, False)
+            pyproject_toml_url = f"https://raw.githubusercontent.com/{g.repo_name}/{tag}/{g.folder_path}/{pyproject_toml_path}"
+            try:
+                response = requests.get(pyproject_toml_url)
+                script_info = ScriptPyProject(pyproject_text=response.text)
+                version = script_info.version
+                if version not in version_list:
+                    relevant_tags.append(tag)
+                    version_list.append(version)
+                    version_description_list.append(script_info.version_description)
+            except:
+                pass
+        self.relevant_tags = relevant_tags
+        self.version_list = version_list
+        self.version_description_list = version_description_list
 
     @classmethod
     def parse_datetime(cls, raw_datetime):

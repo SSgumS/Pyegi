@@ -8,23 +8,14 @@ name = "[sample] All the Lua GUI elements"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
+python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
 
 [tool.pyegi]
 describer-version = "0.1.0"
-name = "[sample] All the Lua GUI elements"
-description = "There is no code for this one. It only shows all the elements of a Lua GUI available in Aegisub."
-version = "0.0.1"
 version-description = ""
-authors = [
-  "DrunkSimurgh <saman.9267@gmail.com>",
-  "SSgumS <sssafais@hotmail.com>",
-]
 discoverable = true
-known-feeds = [
-  "https://github.com/SSgumS/A",
-]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

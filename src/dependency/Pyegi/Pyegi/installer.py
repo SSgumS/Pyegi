@@ -18,6 +18,7 @@ from utils import (
     download_file,
 )
 from typing import List
+import numpy as np
 
 
 pyproject_file = "pyproject.toml"
@@ -73,13 +74,11 @@ def clean_lib_links(script):
         else:
             pkgs.append(package)
     lib_links["Packages"] = pkgs
-    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
+    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"), indent=4)
     return zero_pkgs
 
 
 def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[str]:
-    feed_file = get_feed_file()
-
     if not feed.script_info.discoverable:
         return []
 
@@ -88,13 +87,13 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
         if feed.ID == main_feed.ID and feed.url != main_feed.url:
             return []
     # prioritize existing feed in a special situation
-    feed.populate_tags()
+    feed_file = get_feed_file()
+    feed.get_relevant_tags()
     if (
         (feed.ID in feed_file)
         and feed_file[feed.ID]["url"] != feed.url
         and (not feed.is_main_branch())
-        and (not feed.tags)
-        and (not feed_file[feed.ID]["is_main_branch"])
+        and (not feed.relevant_tags)
     ):
         date_time = feed.datetime
         local_date_time = FeedParser.parse_datetime(feed_file[feed.ID]["raw_datetime"])
@@ -126,7 +125,9 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
         "latest version": script_info.version,
         "latest_version_description": script_info.version_description,
         "authors": script_info.authors,
-        "tags": feed.tags,
+        "relevant tags": feed.relevant_tags,
+        "version list": feed.version_list,
+        "version description list": feed.version_description_list,
         "is_main_branch": feed.is_main_branch(),
         "folder name": folder_name,
         "installed version": installed_version,
@@ -136,7 +137,7 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
 
     # update feed file
     with open(feed_file_path, "w") as file:
-        json.dump(feed_file, file)
+        json.dump(feed_file, file, indent=4)
 
     return script_info.known_feeds
 
@@ -150,6 +151,10 @@ def update_feeds():
     checked_urls = []
     urls = pyegi_info.known_feeds
     main_known_feeds = [FeedParser(url, False) for url in urls]
+    known_users = [feed.username for feed in main_known_feeds]
+    known_users = np.unique(np.array(known_users)).tolist()
+    usernames = {}
+    feeds_limit = 10
     while urls:
         url = urls[0]
         try:
@@ -157,12 +162,30 @@ def update_feeds():
         except:
             urls = urls[1:]
             continue
+        is_known_user = True
+        is_permitted_to_add_feeds = True
+        username = g.username
+        if username not in known_users:
+            is_known_user = False
+            try:
+                feed_count = usernames[username]
+            except:
+                feed_count = 0
+                usernames[username] = 0
+            if feed_count >= feeds_limit:
+                is_permitted_to_add_feeds = False
         url = g.url
         checked_urls.append(url)
-        known_feeds = add_to_feed(g, main_known_feeds)
-        for known_feed in known_feeds:
-            if (known_feed not in checked_urls) and g.is_url(known_feed):
-                urls.append(known_feed)
+        if is_permitted_to_add_feeds:
+            known_feeds = add_to_feed(g, main_known_feeds)
+            if not is_known_user:
+                permitted_feeds_number = max(
+                    feeds_limit - (feed_count + len(known_feeds)), 0
+                )
+                known_feeds = known_feeds[:permitted_feeds_number]
+            for known_feed in known_feeds:
+                if known_feed not in checked_urls:
+                    urls.append(known_feed)
         urls = urls[1:]
 
 
@@ -208,7 +231,7 @@ def download_script(g: FeedParser):
         os.makedirs(script_path)
     feed_file[g.ID]["installation status"] = "directories created"
     with open(feed_file_path, "w") as file:
-        json.dump(feed_file, file)
+        json.dump(feed_file, file, indent=4)
 
     print(f"Downloading {script} files...")
     for file in files:
@@ -218,7 +241,7 @@ def download_script(g: FeedParser):
             download_file(file_download_url, path)
     feed_file[g.ID]["installation status"] = "downloaded"
     with open(feed_file_path, "w") as file:
-        json.dump(feed_file, file)
+        json.dump(feed_file, file, indent=4)
 
 
 def install_pkgs(g: FeedParser):
@@ -285,7 +308,7 @@ def install_pkgs(g: FeedParser):
                 lib_link["Name"] = name_in_commons
                 lib_link["Scripts"] = [g.ID]
                 lib_links["Packages"].append(lib_link)
-            json.dump(lib_links, open(commons_dir + "lib_links.json", "w"))
+            json.dump(lib_links, open(commons_dir + "lib_links.json", "w"), indent=4)
             # check if the package is already in commons
             dir_exist = os.path.isdir(commons_dir + name_in_commons)
             if dir_exist:
@@ -344,7 +367,7 @@ def install_pkgs(g: FeedParser):
         )
         feed_file[g.ID]["installation status"] = "not installed"
     with open(feed_file_path, "w") as file:
-        json.dump(feed_file, file)
+        json.dump(feed_file, file, indent=4)
 
 
 def install_script(g):
@@ -374,7 +397,7 @@ def uninstall_script(feed_id):
     feed_file[feed_id]["installed_version_description"] = ""
     feed_file[feed_id]["installation status"] = ""
     with open(feed_file_path, "w") as file:
-        json.dump(feed_file, file)
+        json.dump(feed_file, file, indent=4)
 
 
 if __name__ == "__main__":
