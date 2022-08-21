@@ -92,7 +92,7 @@ class Ui_SettingsWindow:
     def writeSettings(self, SettingsWindow, main_ui):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         self.overall_settings["Automatic feeds update"] = int(self.feeds_spinbox.text())
-        json.dump(self.overall_settings, open(settings_file_path, "w"))
+        json.dump(self.overall_settings, open(settings_file_path, "w"), indent=4)
         if main_ui:
             set_style(main_ui.window, self.overall_settings["Theme"])
         SettingsWindow.close()

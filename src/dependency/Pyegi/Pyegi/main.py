@@ -67,6 +67,7 @@ class TabBar(QtWidgets.QTabBar):
             s = opt.rect.size()
             s.transpose()
 
+            # This part rotates the tabs' text so that they are not vertical.
             c = self.tabRect(i).center()
             painter.translate(c)
             painter.rotate(90)
@@ -150,9 +151,7 @@ class Ui_MainWindow:
         self.settings_pushButton = QPushButton2(self.centralwidget)
         self.settings_pushButton.setObjectName("settings_pushButton")
         self.widgets_layout.addWidget(self.settings_pushButton, 8, 1, 2, 1)
-        self.settings_pushButton.clicked.connect(
-            lambda: self.openSettingsWindow(window)
-        )
+        self.settings_pushButton.clicked.connect(self.openSettingsWindow)
         self.scripts_handler_pushButton = QPushButton2(self.centralwidget)
         self.scripts_handler_pushButton.setObjectName("scripts_handler_pushButton")
         self.widgets_layout.addWidget(self.scripts_handler_pushButton, 8, 2, 2, 1)
@@ -199,10 +198,10 @@ class Ui_MainWindow:
         else:
             do_feeds_update = True
         if do_feeds_update:
-            self.time_window = QtWidgets.QMainWindow()
-            self.time_ui = Ui_ScriptsHandlerWindow()
-            self.time_ui.setupUi(self.time_window, self)
-            self.time_ui.update_feeds_process()
+            self.scripts_handler_window = QtWidgets.QMainWindow()
+            self.scripts_handler_ui = Ui_ScriptsHandlerWindow()
+            self.scripts_handler_ui.setupUi(self.scripts_handler_window, self)
+            self.scripts_handler_ui.update_feeds_process()
 
     def retranslateUi(self, window):
         _translate = QCoreApplication.translate
@@ -253,7 +252,7 @@ class Ui_MainWindow:
             main_py_parameters["applyOn"] = "selected lines"
         main_py_parameters["selectedScript"] = self.selected_script.folder_name
         with open(system_inputs[1], "w") as file:
-            json.dump(main_py_parameters, file)
+            json.dump(main_py_parameters, file, indent=4)
         QCoreApplication.instance().quit()
 
     def preview(self):

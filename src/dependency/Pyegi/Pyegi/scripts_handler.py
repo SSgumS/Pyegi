@@ -191,7 +191,7 @@ class Ui_ScriptsHandlerWindow:
             3, _translate("ScriptsHandlerWindow", "Latest Version")
         )
         self.scripts_treeWidget.headerItem().setText(
-            4, _translate("ScriptsHandlerWindow", "Available Tags")
+            4, _translate("ScriptsHandlerWindow", "Available Versions")
         )
 
         try:
@@ -235,8 +235,24 @@ class Ui_ScriptsHandlerWindow:
             self.feed_file[feed]["treeWidgetItem"] = treeWidgetItem
             combobox = QComboBox(self.centralwidget)
             self.scripts_treeWidget.setItemWidget(treeWidgetItem, 4, combobox)
-            if self.feed_file[feed]["tags"]:
-                combobox.addItems(self.feed_file[feed]["tags"])
+            if self.feed_file[feed]["relevant tags"]:
+                for version, version_description in zip(
+                    self.feed_file[feed]["version list"],
+                    self.feed_file[feed]["version description list"],
+                ):
+                    if version_description:
+                        item_to_be_added = f"{version_description} ({version})"
+                    else:
+                        item_to_be_added = f"{version}"
+                    combobox.addItem(item_to_be_added)
+            else:
+                version = self.feed_file[feed]["latest version"]
+                version_description = self.feed_file[feed]["latest_version_description"]
+                if version_description:
+                    item_to_be_added = f"{version_description} ({version})"
+                else:
+                    item_to_be_added = f"{version}"
+                combobox.addItem(item_to_be_added)
             self.feed_file[feed]["combobox"] = combobox
         for i in range(5):
             if i == 1:
@@ -331,7 +347,7 @@ class Ui_ScriptsHandlerWindow:
     def update_last_update_datetime(self):
         now = datetime.now()
         self.overall_settings["Last feeds update"] = str(now)
-        json.dump(self.overall_settings, open(settings_file_path, "w"))
+        json.dump(self.overall_settings, open(settings_file_path, "w"), indent=4)
 
     def fetch_selected_script_info(self):
         selected_item = self.scripts_treeWidget.selectedItems()
@@ -387,8 +403,10 @@ class Ui_ScriptsHandlerWindow:
             ):
                 url = self.feed_file[feed]["url"]
                 combobox = self.feed_file[feed]["combobox"]
-                selected_tag = combobox.currentText()
-                if selected_tag != "":
+                selected_index = combobox.currentIndex()
+                relevant_tags = self.feed_file[feed]["relevant tags"]
+                if relevant_tags:
+                    selected_tag = relevant_tags[selected_index]
                     url_split = url.split("/")
                     try:
                         url_split[6] = selected_tag
