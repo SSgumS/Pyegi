@@ -56,7 +56,7 @@ class Ui_EmptyWindow(object):
 
     def retranslateUi(self, EmptyWindow):
         _translate = QtCore.QCoreApplication.translate
-        EmptyWindow.setWindowTitle(_translate("EmptyWindow", "MainWindow"))
+        EmptyWindow.setWindowTitle(_translate("EmptyWindow", "Empty Window"))
 
 
 if __name__ == "__main__":

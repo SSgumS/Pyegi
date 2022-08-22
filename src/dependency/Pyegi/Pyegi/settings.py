@@ -2,6 +2,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
+import sys
 from utils import set_style, Theme, get_settings
 
 utils_path = os.path.dirname(__file__)
@@ -99,8 +100,6 @@ class Ui_SettingsWindow:
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
     SettingsWindow = QtWidgets.QMainWindow()
     ui = Ui_SettingsWindow()
