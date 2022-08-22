@@ -4,7 +4,7 @@ authors = [
   "SSgumS <sssafais@hotmail.com>",
 ]
 description = "Converts line to pixels and moves the pixels."
-name = "[sample] Disintegration"
+name = "Disintegration"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
@@ -12,6 +12,10 @@ pyonfx = "^0.9.13"
 python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
+
+[tool.pyegi]
+describer-version = "0.1.0"
+name = "[sample] Disintegration"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
