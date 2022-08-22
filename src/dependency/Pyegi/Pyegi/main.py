@@ -19,15 +19,11 @@ from settings import Ui_SettingsWindow
 from scripts_handler import Ui_ScriptsHandlerWindow
 from utils import (
     set_style,
-    get_textBrowser_description,
     get_settings,
     ComboBoxLineEdit,
     ScriptPyProject,
-    get_pyegi_duplicated_field,
-    get_dict_attribute,
 )
 from datetime import datetime
-import toml
 from typing import List
 
 
@@ -205,7 +201,7 @@ class Ui_MainWindow:
 
     def retranslateUi(self, window):
         _translate = QCoreApplication.translate
-        window.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        window.setWindowTitle(_translate("MainWindow", "Main Window"))
         self.ScriptSelection_label.setText(_translate("MainWindow", "Select Script"))
         self.preview_label.setText(
             _translate("MainWindow", "No script selected to preview.")
