@@ -238,7 +238,7 @@ class ScriptPyProject:
 
 
 class FeedParser:
-    def __init__(self, url, parse=True) -> None:
+    def __init__(self, url: str, parse=True) -> None:
         if url[:19] != "https://github.com/":
             url = "https://" + url[url.find("github.com/") :]
         self.url = unquote(url)
@@ -402,7 +402,7 @@ class FeedParser:
             tags.append(tag)
         return tags
 
-    def populate_tags(self):
+    def _populate_tags(self):
         if self.tags:
             return
 
@@ -423,9 +423,9 @@ class FeedParser:
 
         self.tags = tags
 
-    def get_relevant_tags(self):
+    def populate_relevant_tags(self):
         if not self.tags:
-            self.populate_tags()
+            self._populate_tags()
 
         url = self.url
         url_split = url.split("/")
