@@ -13,6 +13,22 @@ python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
 
+[tool.pyegi]
+authors = [
+  "DrunkSimurgh <saman.9267@gmail.com>",
+  "SSgumS <sssafais@hotmail.com>",
+]
+describer-version = "0.1.0"
+description = "Adds {Pyegi} to the beginning of desired lines."
+discoverable = true
+known-feeds = []
+name = "[sample] prefix"
+version = "0.0.1"
+version-description = "New Horizon"
+
+[tool.pyegi.files]
+keep = []
+
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0"]
