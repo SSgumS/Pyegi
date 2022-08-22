@@ -7,7 +7,6 @@ import shutil
 import csv
 import json
 import warnings
-import urllib.request
 import requests
 from utils import (
     FeedParser,
@@ -88,7 +87,7 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
             return []
     # prioritize existing feed in a special situation
     feed_file = get_feed_file()
-    feed.get_relevant_tags()
+    feed.populate_relevant_tags()
     if (
         (feed.ID in feed_file)
         and feed_file[feed.ID]["url"] != feed.url
@@ -153,8 +152,9 @@ def update_feeds():
     main_known_feeds = [FeedParser(url, False) for url in urls]
     known_users = [feed.username for feed in main_known_feeds]
     known_users = np.unique(np.array(known_users)).tolist()
-    usernames = {}
-    feeds_limit = 10
+    print(known_users)
+    username_2_count_dict = {}
+    feeds_limit = 7
     while urls:
         url = urls[0]
         try:
@@ -168,21 +168,20 @@ def update_feeds():
         if username not in known_users:
             is_known_user = False
             try:
-                feed_count = usernames[username]
+                feed_count = username_2_count_dict[username]
             except:
                 feed_count = 0
-                usernames[username] = 0
+                username_2_count_dict[username] = 0
             if feed_count >= feeds_limit:
                 is_permitted_to_add_feeds = False
         url = g.url
         checked_urls.append(url)
+        known_feeds = add_to_feed(g, main_known_feeds)
+        # append known_feeds of the feed to urls
         if is_permitted_to_add_feeds:
-            known_feeds = add_to_feed(g, main_known_feeds)
             if not is_known_user:
-                permitted_feeds_number = max(
-                    feeds_limit - (feed_count + len(known_feeds)), 0
-                )
-                known_feeds = known_feeds[:permitted_feeds_number]
+                known_feeds = known_feeds[: feeds_limit - feed_count]
+                username_2_count_dict[username] += len(known_feeds)
             for known_feed in known_feeds:
                 if known_feed not in checked_urls:
                     urls.append(known_feed)
@@ -246,7 +245,7 @@ def download_script(g: FeedParser):
 
 def install_pkgs(g: FeedParser):
     script = g.script_name
-    print(f"Processing {script} dependencies...")
+    print(f"Installing {script} dependencies...")
     f = open(feed_file_path)
     feed_file = json.load(f)
     f.close()
@@ -378,7 +377,7 @@ def install_script(g):
 def uninstall_script(feed_id):
     with open(feed_file_path) as file:
         feed_file = json.load(file)
-    print(f"Processing {feed_file[feed_id]['name']} dependencies...")
+    print(f"Uninstalling {feed_file[feed_id]['name']}...")
     folder_name = feed_file[feed_id]["folder name"]
     if folder_name:
         script_path = scriptsPath + folder_name + "/"
