@@ -136,6 +136,7 @@ class Ui_MainWindow:
         self.widgets_layout.addWidget(self.combobox, 0, 1, 1, 5)
         self.combobox.setLineEdit(ComboBoxLineEdit(self.combobox))
         self.combobox.lineEdit().setPlaceholderText("Wait to load scripts...")
+        self.combobox.setCurrentIndex(-1)
         self.combobox.currentIndexChanged.connect(self.preview)
         self.combobox.currentTextChanged.connect(self.textChangedHandler)
         self.repopulateCombobox()
@@ -233,6 +234,7 @@ class Ui_MainWindow:
         self.child_window.show()
 
     def openScriptsHandlerWindow(self):
+        self.combobox.setCurrentIndex(-1)
         self.child_window = QtWidgets.QMainWindow()
         self.child_ui = Ui_ScriptsHandlerWindow()
         self.child_ui.setupUi(self.child_window, self)
@@ -251,14 +253,18 @@ class Ui_MainWindow:
             json.dump(main_py_parameters, file, indent=4)
         QCoreApplication.instance().quit()
 
-    def preview(self):
-        if self.combobox.currentIndex() == -1:
+    def preview(self, index):
+        # print(index)
+        if index == -1:
             self.preview_label.setText("No script selected to preview.")
+            if hasattr(self, "movie"):
+                self.movie.setFileName(None)
+                del self.movie
             self.selected_script = None
             self.description_textbrowser.setText("")
             return
 
-        self.selected_script = self.combobox_items[self.combobox.currentIndex()]
+        self.selected_script = self.combobox_items[index]
         self.description_textbrowser.setText(
             self.selected_script.pyproject.get_textBrowser_description(self.theme)
         )
@@ -315,6 +321,7 @@ class Ui_MainWindow:
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
         completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        # completer.popup().setStyleSheet("background-color: rgb(210, 245, 200);")
         self.combobox.setCompleter(completer)
 
 

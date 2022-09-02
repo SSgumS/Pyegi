@@ -28,9 +28,9 @@ black = {version = "^22.6.0", allow-prereleases = true}
 describer-version = "0.1.0"
 known-feeds = [
   "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20All%20the%20Lua%20GUI%20elements",
-  "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania",
-  "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20Disintegration",
   "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20prefix",
+  "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/ColorMania",
+  "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/Disintegration",
 ]
 
 [build-system]

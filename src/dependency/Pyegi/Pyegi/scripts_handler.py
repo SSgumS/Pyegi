@@ -399,11 +399,14 @@ class Ui_ScriptsHandlerWindow:
             if (
                 treeWidgetItem.checkState(0) == Qt.CheckState.Checked
                 and not treeWidgetItem.isHidden()
-                and self.feed_file[feed]["installation status"] != "completed"
             ):
                 url = self.feed_file[feed]["url"]
                 combobox = self.feed_file[feed]["combobox"]
                 selected_index = combobox.currentIndex()
+                if self.feed_file[feed][
+                    "installation status"
+                ] == "completed" and combobox.currentText() == treeWidgetItem.text(2):
+                    continue
                 relevant_tags = self.feed_file[feed]["relevant tags"]
                 if relevant_tags:
                     selected_tag = relevant_tags[selected_index]
