@@ -61,20 +61,29 @@ def clean_lib_links(script):
     lib_links = json.load(f)
     f.close()
     pkgs = []
-    zero_pkgs = []
     for package in lib_links["Packages"]:
         if script in package["Scripts"]:
             package["Scripts"].remove(script)
-            if len(package["Scripts"]) == 0:
-                if exists(commons_dir + package["Name"]):
-                    zero_pkgs.append(package["Name"])
-            else:
-                pkgs.append(package)
-        else:
-            pkgs.append(package)
+        pkgs.append(package)
     lib_links["Packages"] = pkgs
     json.dump(lib_links, open(commons_dir + "lib_links.json", "w"), indent=4)
-    return zero_pkgs
+
+
+def remove_zero_pkgs():
+    f = open(commons_dir + "lib_links.json")
+    lib_links = json.load(f)
+    f.close()
+    pkgs = []
+    for package in lib_links["Packages"]:
+        if len(package["Scripts"]) != 0:
+            pkgs.append(package)
+        else:
+            try:
+                shutil.rmtree(commons_dir + package["Name"])
+            except FileNotFoundError:
+                pass
+    lib_links["Packages"] = pkgs
+    json.dump(lib_links, open(commons_dir + "lib_links.json", "w"), indent=4)
 
 
 def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[str]:
@@ -98,7 +107,7 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
         local_date_time = FeedParser.parse_datetime(feed_file[feed.ID]["raw_datetime"])
         if feed_file[feed.ID]["is_main_branch"] or local_date_time > date_time:
             try:
-                feed = (FeedParser(feed_file[feed.ID]["url"]),)
+                feed = FeedParser(feed_file[feed.ID]["url"])
             except:
                 pass
 
@@ -132,6 +141,7 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
         "installed version": installed_version,
         "installed_version_description": installed_version_description,
         "installation status": installation_status,
+        "raw_datetime": feed.raw_datetime,
     }
 
     # update feed file
@@ -152,7 +162,6 @@ def update_feeds():
     main_known_feeds = [FeedParser(url, False) for url in urls]
     known_users = [feed.username for feed in main_known_feeds]
     known_users = np.unique(np.array(known_users)).tolist()
-    print(known_users)
     username_2_count_dict = {}
     feeds_limit = 7
     while urls:
@@ -186,6 +195,31 @@ def update_feeds():
                 if known_feed not in checked_urls:
                     urls.append(known_feed)
         urls = urls[1:]
+
+
+def clean_script_folder(g: FeedParser):
+    script = g.script_name
+
+    with open(feed_file_path) as file:
+        feed_file = json.load(file)
+    # folder name
+    folder_name = feed_file[g.ID]["folder name"]
+    if folder_name:
+        print(f"Cleaning {script}'s directory...")
+        clean_lib_links(g.ID)
+        script_path = scriptsPath + folder_name + "/"
+        for dirpath, _, filenames in os.walk(script_path):
+            for filename in filenames:
+                file_path = dirpath + "/" + filename
+                file_path = file_path.replace("\\", "/")
+                if file_path[len(script_path) + 1 :] not in g.script_info.keep_files:
+                    os.remove(file_path)
+
+        feed_file[g.ID]["installed version"] = ""
+        feed_file[g.ID]["installed_version_description"] = ""
+        feed_file[g.ID]["installation status"] = "pre-download"
+        with open(feed_file_path, "w") as file:
+            json.dump(feed_file, file, indent=4)
 
 
 def download_script(g: FeedParser):
@@ -251,7 +285,6 @@ def install_pkgs(g: FeedParser):
     f.close()
     folder_name = feed_file[g.ID]["folder name"]
     script_path = scriptsPath + folder_name + "/"
-    zero_pkgs = []
     if exists(script_path + pyproject_file):
         # renew temp folder
         create_poetry_toml(temp_dir)
@@ -260,8 +293,6 @@ def install_pkgs(g: FeedParser):
             os.remove(script_path + poetry_lock_file)
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
-            # removing script from lib_links
-            zero_pkgs = clean_lib_links(g.ID)
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)
@@ -289,10 +320,6 @@ def install_pkgs(g: FeedParser):
             if package["category"] != "main":
                 continue
             name_in_commons = f"{package['name']}-{package['version']}"
-            try:
-                zero_pkgs.remove(name_in_commons)
-            except:
-                pass
             # update lib_links
             f = open(commons_dir + "lib_links.json")
             lib_links = json.load(f)
@@ -357,8 +384,7 @@ def install_pkgs(g: FeedParser):
         # removing temp dir
         shutil.rmtree(temp_dir)
         # remove unused packages from commons
-        for zero_pkg in zero_pkgs:
-            shutil.rmtree(commons_dir + zero_pkg)
+        remove_zero_pkgs()
         feed_file[g.ID]["installation status"] = "completed"
     else:
         print(
@@ -370,6 +396,7 @@ def install_pkgs(g: FeedParser):
 
 
 def install_script(g):
+    clean_script_folder(g)
     download_script(g)
     install_pkgs(g)
 
@@ -385,12 +412,8 @@ def uninstall_script(feed_id):
             shutil.rmtree(script_path)
         except FileNotFoundError:
             pass
-    zero_pkgs = clean_lib_links(feed_id)
-    for zero_pkg in zero_pkgs:
-        try:
-            shutil.rmtree(commons_dir + zero_pkg)
-        except FileNotFoundError:
-            pass
+    clean_lib_links(feed_id)
+    remove_zero_pkgs()
     feed_file[feed_id]["folder name"] = ""
     feed_file[feed_id]["installed version"] = ""
     feed_file[feed_id]["installed_version_description"] = ""
