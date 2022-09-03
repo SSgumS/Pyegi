@@ -17,12 +17,7 @@ import json
 import sys
 from settings import Ui_SettingsWindow
 from scripts_handler import Ui_ScriptsHandlerWindow
-from utils import (
-    set_style,
-    get_settings,
-    ComboBoxLineEdit,
-    ScriptPyProject,
-)
+from utils import set_style, get_settings, ComboBoxLineEdit, ScriptPyProject, Theme
 from datetime import datetime
 from typing import List
 
@@ -90,7 +85,7 @@ class Ui_MainWindow:
         self.window = window
         window.setObjectName("MainWindow")
         window.resize(825, 600)
-        self.theme = set_style(window)
+        self.setTheme()
         self.centralwidget = QtWidgets.QWidget(window)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QGridLayout(self.centralwidget)
@@ -136,7 +131,6 @@ class Ui_MainWindow:
         self.widgets_layout.addWidget(self.combobox, 0, 1, 1, 5)
         self.combobox.setLineEdit(ComboBoxLineEdit(self.combobox))
         self.combobox.lineEdit().setPlaceholderText("Wait to load scripts...")
-        self.combobox.setCurrentIndex(-1)
         self.combobox.currentIndexChanged.connect(self.preview)
         self.combobox.currentTextChanged.connect(self.textChangedHandler)
         self.repopulateCombobox()
@@ -254,7 +248,6 @@ class Ui_MainWindow:
         QCoreApplication.instance().quit()
 
     def preview(self, index):
-        # print(index)
         if index == -1:
             self.preview_label.setText("No script selected to preview.")
             if hasattr(self, "movie"):
@@ -321,8 +314,23 @@ class Ui_MainWindow:
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         completer.setFilterMode(Qt.MatchFlag.MatchContains)
         completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        # completer.popup().setStyleSheet("background-color: rgb(210, 245, 200);")
         self.combobox.setCompleter(completer)
+        self.setComboboxPopupStyle()
+
+    def setComboboxPopupStyle(self):
+        if not hasattr(self, "combobox"):
+            return
+
+        if self.theme == Theme.PYEGI:
+            self.combobox.completer().popup().setStyleSheet(
+                "color: rgb(100,162,131); background-color: rgb(24,28,31); border: none;"
+            )
+        else:
+            self.combobox.completer().popup().setStyleSheet("")
+
+    def setTheme(self, theme: Theme = None):
+        self.theme = set_style(self.window, theme)
+        self.setComboboxPopupStyle()
 
 
 if __name__ == "__main__":

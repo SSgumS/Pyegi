@@ -48,12 +48,11 @@ def get_settings():
     return overall_settings
 
 
-def set_style(window: QWidget, theme: str = None) -> Theme:
+def set_style(window: QWidget, theme: Theme = None) -> Theme:
     if not theme:
         # load theme
         overall_settings = get_settings()
-        theme = overall_settings["Theme"]
-    theme: Theme = Theme(theme)
+        theme = Theme(overall_settings["Theme"])
     # set theme
     if theme == Theme.DARK:
         window.setStyleSheet(qdarktheme.load_stylesheet())

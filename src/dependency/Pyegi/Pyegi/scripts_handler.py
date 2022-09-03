@@ -81,7 +81,7 @@ class Ui_ScriptsHandlerWindow:
         window.setObjectName("ScriptsHandlerWindow")
         window.resize(1280, 720)
         self.overall_settings = get_settings()
-        self.theme = set_style(window, self.overall_settings["Theme"])
+        self.theme = set_style(window)
         self.centralwidget = QtWidgets.QWidget(window)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QGridLayout(self.centralwidget)
