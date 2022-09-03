@@ -198,28 +198,28 @@ def update_feeds():
 
 
 def clean_script_folder(g: FeedParser):
-    script = g.script_name
-
     with open(feed_file_path) as file:
         feed_file = json.load(file)
-    # folder name
     folder_name = feed_file[g.ID]["folder name"]
-    if folder_name:
-        print(f"Cleaning {script}'s directory...")
-        clean_lib_links(g.ID)
-        script_path = scriptsPath + folder_name + "/"
-        for dirpath, _, filenames in os.walk(script_path):
-            for filename in filenames:
-                file_path = dirpath + "/" + filename
-                file_path = file_path.replace("\\", "/")
-                if file_path[len(script_path) + 1 :] not in g.script_info.keep_files:
-                    os.remove(file_path)
+    if not folder_name:
+        return
 
-        feed_file[g.ID]["installed version"] = ""
-        feed_file[g.ID]["installed_version_description"] = ""
-        feed_file[g.ID]["installation status"] = "pre-download"
-        with open(feed_file_path, "w") as file:
-            json.dump(feed_file, file, indent=4)
+    script = g.script_name
+    print(f"Cleaning {script}'s directory...")
+    clean_lib_links(g.ID)
+    script_path = scriptsPath + folder_name + "/"
+    for dirpath, _, filenames in os.walk(script_path):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            file_path = file_path.replace("\\", "/")
+            if file_path[len(script_path) :] not in g.script_info.keep_files:
+                os.remove(file_path)
+
+    feed_file[g.ID]["installed version"] = ""
+    feed_file[g.ID]["installed_version_description"] = ""
+    feed_file[g.ID]["installation status"] = "pre-download"
+    with open(feed_file_path, "w") as file:
+        json.dump(feed_file, file, indent=4)
 
 
 def download_script(g: FeedParser):
@@ -293,6 +293,8 @@ def install_pkgs(g: FeedParser):
             os.remove(script_path + poetry_lock_file)
         if exists(script_path + ".venv"):
             shutil.rmtree(script_path + ".venv")
+            # removing script from lib_links
+            clean_lib_links(g.ID)
         create_poetry_toml(script_path)
         # start installing process
         os.chdir(script_path)

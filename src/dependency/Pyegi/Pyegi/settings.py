@@ -3,7 +3,11 @@ from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
 import sys
+import typing
 from utils import set_style, Theme, get_settings
+
+if typing.TYPE_CHECKING:
+    from main import Ui_MainWindow
 
 utils_path = os.path.dirname(__file__)
 settings_file_path = utils_path + "/settings.json"
@@ -15,7 +19,7 @@ class Ui_SettingsWindow:
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 171)
         self.overall_settings = get_settings()
-        set_style(SettingsWindow, self.overall_settings["Theme"])
+        set_style(SettingsWindow, Theme(self.overall_settings["Theme"]))
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QtWidgets.QGridLayout(self.centralwidget)
@@ -36,7 +40,7 @@ class Ui_SettingsWindow:
         self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 5)
         self.themes_combobox.setCurrentText(self.overall_settings["Theme"])
         self.themes_combobox.currentTextChanged.connect(
-            lambda: set_style(SettingsWindow, self.themes_combobox.currentText())
+            lambda: set_style(SettingsWindow, Theme(self.themes_combobox.currentText()))
         )
 
         self.feeds_label = QtWidgets.QLabel(self.centralwidget)
@@ -90,12 +94,12 @@ class Ui_SettingsWindow:
         self.cancel_pushButton.setText(_translate("SettingsWindow", "Cancel"))
         self.ok_pushButton.setText(_translate("SettingsWindow", "OK"))
 
-    def writeSettings(self, SettingsWindow, main_ui):
+    def writeSettings(self, SettingsWindow, main_ui: "Ui_MainWindow"):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         self.overall_settings["Automatic feeds update"] = int(self.feeds_spinbox.text())
         json.dump(self.overall_settings, open(settings_file_path, "w"), indent=4)
         if main_ui:
-            set_style(main_ui.window, self.overall_settings["Theme"])
+            main_ui.setTheme(Theme(self.overall_settings["Theme"]))
         SettingsWindow.close()
 
 
