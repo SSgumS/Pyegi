@@ -88,21 +88,22 @@ with lib
             output = f\read '*a'
             f\close!
 
-            local log_level
-            if status
-                log_level = 5
-            else
-                log_level = 1
-            aegisub.log log_level, 'Command Logs: \n\n' unless quiet
-            aegisub.log log_level, output unless quiet
-            aegisub.log log_level, "\n\nStatus: " unless quiet
-            if status
-                aegisub.log log_level, "success\n" unless quiet
-            else
-                aegisub.log log_level, "failed\n" unless quiet
-                aegisub.log log_level, "Reason: #{reason}\n" unless quiet
-                aegisub.log log_level, "Exit Code: #{exit_code}\n" unless quiet
-            aegisub.log log_level, '\nFinished: %s\n', cmd unless quiet
+            unless quiet
+                local log_level
+                if status
+                    log_level = 5
+                else
+                    log_level = 1
+                aegisub.log log_level, "Command Logs: \n\n"
+                aegisub.log log_level, output
+                aegisub.log log_level, "\n\nStatus: "
+                if status
+                    aegisub.log log_level, "success\n"
+                else
+                    aegisub.log log_level, "failed\n"
+                    aegisub.log log_level, "Reason: #{reason}\n"
+                    aegisub.log log_level, "Exit Code: #{exit_code}\n"
+                aegisub.log log_level, '\nFinished: %s\n', cmd
 
             output, status, reason, exit_code
     }
