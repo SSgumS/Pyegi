@@ -52,7 +52,7 @@ with lib
                 wrapper_path = aegisub.decode_path('?temp' .. pathsep .. 'petzku-wrapper.bat')
                 exit_code_path = os.tmpname()
                 -- provided by https://sourceforge.net/projects/unxutils/
-                tee_path = "#{re.match(debug.getinfo(1).source, '@?(.*[/\\\\])')[1].str}tee"
+                tee_path = "#{re.match(debug.getinfo(1).source, '@?(.*[/\\\\])')[1].str}util/tee"
                 -- create wrapper
                 f = io.open wrapper_path, 'w'
                 f\write "@echo off\n"
@@ -82,7 +82,6 @@ with lib
 
             
             status, reason, exit_code = os.execute runner_path
-            os.execute 'del ' .. runner_path
 
             f = io.open output_path
             output = f\read '*a'
