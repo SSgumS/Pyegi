@@ -175,7 +175,7 @@ class Ui_MainWindow:
         self.overall_settings = get_settings()
         do_feeds_update = False
         last_check_str = self.overall_settings["Last feeds update"]
-        if last_check_str != "":
+        if last_check_str:
             last_check = datetime.strptime(
                 self.overall_settings["Last feeds update"], "%Y-%m-%d %H:%M:%S.%f"
             )

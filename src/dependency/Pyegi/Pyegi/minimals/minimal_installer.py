@@ -14,7 +14,7 @@ from .minimal_utils import (
     ensure_dir_tree,
     rmtree,
 )
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Union
 from poetry.core.semver import (
     parse_constraint,
     Version,
@@ -194,19 +194,32 @@ def _initialize_script_dir(dir):
 
 
 def clean_script_folder(
-    script_id, script_path, keep_files, is_feed=True
-) -> PythonVersion:
+    script_id, keep_files, script_path=None, is_feed=True
+) -> Union[PythonVersion, None]:
     if not script_path:
-        return
+        if is_feed:
+            from utils import FeedFile
+
+            feed_file = FeedFile()
+            script = feed_file.get_script(script_id)
+            script_path = script.folder
+            if not script_path:
+                return
+        else:
+            raise ValueError("script_path not provided!")
 
     print(f"Cleaning {script_id}'s directory...")
-    # infer python
-    py_version = infer_python_version(
-        script_path + GLOBAL_PATHS.pyproject_filename
-    ).python_version
-    com_dir = py_version.common_dir
-    # remove from lib_links
-    remove_script_from_lib_links(script_id, com_dir)
+    py_version = None
+    try:
+        # infer python
+        py_version = infer_python_version(
+            script_path + GLOBAL_PATHS.pyproject_filename
+        ).python_version
+        com_dir = py_version.common_dir
+        # remove from lib_links
+        remove_script_from_lib_links(script_id, com_dir)
+    except FileNotFoundError:
+        pass
     # delete old files
     rmtree(script_path, keep_files)
 
@@ -223,7 +236,16 @@ def clean_script_folder(
     return py_version
 
 
-def install_pkgs(script_id, script_path, is_feed=True) -> PythonVersion:
+def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
+    if is_feed and not script_path:
+        from utils import FeedFile
+
+        feed_file = FeedFile()
+        script = feed_file.get_script(script_id)
+        script_path = script.folder
+    if not script_path:
+        raise ValueError("script_path is unknown!")
+
     print(f"Processing {script_id} dependencies...")
     # create poetry.toml
     _initialize_script_dir(GLOBAL_PATHS.temp_dir)
@@ -234,22 +256,24 @@ def install_pkgs(script_id, script_path, is_feed=True) -> PythonVersion:
     ).python_version
     com_dir = py_version.common_dir
     # renew venvs
-    py_version.create_env(script_id)
+    py_version.create_env(script_path)
     py_version.create_env(GLOBAL_PATHS.temp_dir)
 
     # start installing process
     # create lock file
+    old_cwd = os.getcwd()
     os.chdir(script_path)
-    py_version.run_module(["poetry", "lock"])
+    result = py_version.run_module(["poetry", "lock"])
+    print(result.stdout)
     # copy pyproject and lock file to temp
-    src = script_id + GLOBAL_PATHS.pyproject_filename
+    src = script_path + GLOBAL_PATHS.pyproject_filename
     dst = GLOBAL_PATHS.temp_dir + GLOBAL_PATHS.pyproject_filename
     shutil.copyfile(src, dst)
-    src = script_id + GLOBAL_PATHS.poetry_lock_file
-    dst = GLOBAL_PATHS.temp_dir + GLOBAL_PATHS.poetry_lock_file
+    src = script_path + GLOBAL_PATHS.poetry_lock_filename
+    dst = GLOBAL_PATHS.temp_dir + GLOBAL_PATHS.poetry_lock_filename
     shutil.copyfile(src, dst)
     # analyse lock file
-    lock_content = toml.load(GLOBAL_PATHS.poetry_lock_file)
+    lock_content = toml.load(script_path + GLOBAL_PATHS.poetry_lock_filename)
     packages = lock_content["package"]
     new_packages = []
     for package in packages:
@@ -270,6 +294,7 @@ def install_pkgs(script_id, script_path, is_feed=True) -> PythonVersion:
     # install new packages
     os.chdir(GLOBAL_PATHS.temp_dir)
     py_version.run_module(["poetry", "install", "--no-dev"])
+    print(result.stdout)
     # update common-packages and create links
     for name_in_commons in new_packages:
         try:
@@ -283,7 +308,7 @@ def install_pkgs(script_id, script_path, is_feed=True) -> PythonVersion:
         except FileNotFoundError as e:
             warnings.warn(e)
     # revert current location
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(old_cwd)
 
     # removing temp dir
     shutil.rmtree(GLOBAL_PATHS.temp_dir)

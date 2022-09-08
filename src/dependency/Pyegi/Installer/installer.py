@@ -56,7 +56,7 @@ if __name__ == "__main__":
         # pyegi
         excludes = ["Pyegi/settings.json"]
         old_py_version = clean_script_folder(
-            script_id, pyegi_dir, excludes, is_feed=False
+            script_id, excludes, script_path=pyegi_dir, is_feed=False
         )
         # copy new files
         # NOTICE: scripts' binaries are broken because of the static linking
@@ -64,9 +64,9 @@ if __name__ == "__main__":
         shutil.copy(GLOBAL_PATHS.poetry_toml_filename, pyegi_dir)
         shutil.copy(GLOBAL_PATHS.pyproject_filename, pyegi_dir)
         # install Pyegi dependencies
-        new_py_version = install_pkgs(script_id, pyegi_dir, is_feed=False)
+        new_py_version = install_pkgs(script_id, script_path=pyegi_dir, is_feed=False)
         # cleanup old python's commons
-        if old_py_version != new_py_version:
+        if old_py_version != new_py_version and old_py_version:
             clean_lib_links(old_py_version.common_dir)
     elif args.venv != None:
         if len(args.venv) == 0:

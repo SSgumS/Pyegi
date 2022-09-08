@@ -16,6 +16,8 @@ _SLASH_EXTRACTOR = re.compile(r"[\\/]+")
 
 def normalize_path(path: str, is_dir=False) -> str:
     path = _SLASH_EXTRACTOR.sub("/", path)
+    if not path:
+        return path
     if is_dir and not path.endswith(("/")):
         path = path + "/"
     return path
@@ -171,12 +173,12 @@ def run_command(args: List, normalize=False):
     if normalize:
         args[0] = normalize_binary_path(args[0])
     try:
-        result = subprocess.run(args, check=True, capture_output=True, text=True)
-    except:
+        result = subprocess.run(args, capture_output=True, text=True)
+        result.check_returncode()
+    except subprocess.CalledProcessError:
         print(result.stderr)
         raise
-    finally:
-        return result
+    return result
 
 
 def ensure_dir_tree(path):
@@ -214,7 +216,10 @@ def rmtree(path: str, exclude: List[str] = []):
             target = normal_path_join(parent, name)
             target_without_root = target[root_string_len:]
             if target_without_root not in expanded_exclude:
-                shutil.rmtree(target, ignore_errors=True)
+                if os.path.islink(target):
+                    os.remove(target)
+                else:
+                    shutil.rmtree(target)
 
 
 class PythonVersion:

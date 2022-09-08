@@ -170,9 +170,12 @@ class Script:
         self.py_path = None
         # folder
         self.folder_name = get_dict_attribute(info, "folder name")
-        self.folder = normal_path_join(
-            GLOBAL_PATHS.scripts_dir, self.folder_name, is_dir=True
-        )
+        if self.folder_name:
+            self.folder = normal_path_join(
+                GLOBAL_PATHS.scripts_dir, self.folder_name, is_dir=True
+            )
+        else:
+            self.folder = None
 
     def run(self, args: List[str]):
         old_cwd = os.getcwd()
@@ -225,7 +228,7 @@ class FeedFile:
 
         if exists(self.feed_file_path):
             with open(self.feed_file_path) as file:
-                self.raw = json.load(file)
+                self.raw: dict = json.load(file)
         else:
             self.raw = {}
             with open(self.feed_file_path, "w") as file:

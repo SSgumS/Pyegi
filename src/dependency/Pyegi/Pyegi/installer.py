@@ -188,7 +188,11 @@ def download_script(g: FeedParser):
     feed_file.update_script(script)
 
 
-def ensure_init_file(script_id, script_path):
+def ensure_init_file(script_id):
+    feed_file = FeedFile()
+    script = feed_file.get_script(script_id)
+    script_path = script.folder
+
     init_path = script_path + "__init__.py"
     code_section = (
         "import os\n"
@@ -210,25 +214,20 @@ def ensure_init_file(script_id, script_path):
             f.write(code_section)
 
     # update feed_file
-    feed_file = FeedFile()
-    script = feed_file.get_script(script_id)
     script.installation_status = InstallationStatus.W_PYEGI
     feed_file.update_script(script)
 
 
 def install_script(g: FeedParser):
     script_id = g.ID
-    feed_file = FeedFile()
-    script = feed_file.get_script(script_id)
-    script_path = script.folder
 
-    old_py_version = clean_script_folder(script_id, script_path, g.script_info.keeps)
+    old_py_version = clean_script_folder(script_id, g.script_info.keeps)
     download_script(g)
-    ensure_init_file(script_id, script_path)
-    new_py_version = install_pkgs(script_id, script_path)
+    ensure_init_file(script_id)
+    new_py_version = install_pkgs(script_id)
 
     # cleanup old python's commons
-    if old_py_version != new_py_version:
+    if old_py_version != new_py_version and old_py_version:
         clean_lib_links(old_py_version.common_dir)
 
 
@@ -240,8 +239,7 @@ def uninstall_script(script_id):
     if folder_name:
         script_path = script.folder
         # infer python
-        pyproject_file_path = script_path + GLOBAL_PATHS.pyproject_filename
-        py_result = infer_python_version(toml.load(pyproject_file_path))
+        py_result = infer_python_version(script_path + GLOBAL_PATHS.pyproject_filename)
         # remove dirs
         try:
             shutil.rmtree(script_path)
