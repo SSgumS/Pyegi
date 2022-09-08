@@ -77,4 +77,5 @@ def CreateOutputFile(original="C", placement="O"):
     auxiliary_output["Original Lines"] = original
     auxiliary_output["Placement"] = placement
     file_name = GetAuxiliaryFilePath()
-    json.dump(auxiliary_output, open(file_name, "w"))
+    with open(file_name, "w") as file:
+        json.dump(auxiliary_output, file, indent=4)

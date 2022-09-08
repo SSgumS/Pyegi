@@ -11,8 +11,11 @@ from venv import EnvBuilder
 from poetry.core.semver import Version
 
 
+_SLASH_EXTRACTOR = re.compile(r"[\\/]+")
+
+
 def normalize_path(path: str, is_dir=False) -> str:
-    path = path.replace("\\", "/")
+    path = _SLASH_EXTRACTOR.sub("/", path)
     if is_dir and not path.endswith(("/")):
         path = path + "/"
     return path
@@ -24,6 +27,12 @@ def normal_path_join(*paths, is_dir=False) -> str:
 
 class GlobalPaths:
     def __init__(self, dep_dir: str):
+        self.pyproject_filename = "pyproject.toml"
+        self.poetry_toml_filename = "poetry.toml"
+        self.poetry_lock_filename = "poetry.lock"
+        self.lib_links_filename = "lib_links.json"
+        self.settings_filename = "settings.json"
+
         self.dependency_dir = normalize_path(dep_dir, True)
         self.pythons_dir = self.dependency_dir + "Pythons/"
         self.installer_dir = self.dependency_dir + "Installer/"
@@ -31,7 +40,10 @@ class GlobalPaths:
         self.commons_dir = self.pythons_dir + "common-packages/"
         self.scripts_dir = self.dependency_dir + "PythonScripts/"
         self.pyegi_dir = self.dependency_dir + "Pyegi/"
-        self.settings_file = self.pyegi_dir + "settings.json"
+        self.settings_file = self.pyegi_dir + self.settings_filename
+        self.feed_file = self.pyegi_dir + "scripts_feed.json"
+        self.development_indicator_file = self.pyegi_dir + "development-indicator.dummy"
+        self.pyegi_pyproject_file = self.pyegi_dir + self.pyproject_filename
         self.themes_dir = self.pyegi_dir + "Themes/"
 
 
@@ -79,10 +91,13 @@ def _get_lib_relative_dir():
     return normalize_path(path, True)
 
 
-def _get_bin_relative_dir():
+def get_bin_relative_dir(for_venv=True):
     path: str
     if PLATFORM == Platform.WIN:
-        path = "Scripts"
+        if for_venv:
+            path = "Scripts"
+        else:
+            path = ""
     else:
         path = "bin"
     return normalize_path(path, True)
@@ -96,10 +111,10 @@ def normalize_binary_path(path: str, is_basename=False) -> str:
     return path
 
 
-def _get_py_relative_path():
+def _get_py_binary_name():
     if PLATFORM == Platform.WIN:
         return normalize_binary_path("python")
-    return BIN_RELATIVE_DIR + normalize_binary_path("python3")
+    return normalize_binary_path("python3")
 
 
 class VenvEnvBuilder(EnvBuilder):
@@ -164,6 +179,12 @@ def run_command(args: List, normalize=False):
         return result
 
 
+def ensure_dir_tree(path):
+    parent, _ = os.path.split(path)
+    if not os.path.exists(parent):
+        os.makedirs(parent)
+
+
 def rmtree(path: str, exclude: List[str] = []):
     # normalize exclude
     for i in range(len(exclude)):
@@ -201,7 +222,10 @@ class PythonVersion:
         self.version = Version
         self.folder_name = f"python{self.version.major}{self.version.minor}"
         self.py_binary_path = normal_path_join(
-            GLOBAL_PATHS.pythons_dir, self.folder_name, PY_RELATIVE_PATH
+            GLOBAL_PATHS.pythons_dir,
+            self.folder_name,
+            get_bin_relative_dir(False),
+            PY_BINARY_NAME,
         )
         self.common_dir = normalize_path(
             GLOBAL_PATHS.commons_dir + self.folder_name, True
@@ -227,10 +251,9 @@ class PythonVersion:
 PLATFORM = _get_platform()
 AEGISUB_USER_DIR = _get_aegisub_user_dir()
 LIB_RELATIVE_DIR = _get_lib_relative_dir()
-BIN_RELATIVE_DIR = _get_bin_relative_dir()
-PY_RELATIVE_PATH = _get_py_relative_path()
+PY_BINARY_NAME = _get_py_binary_name()
 GLOBAL_PATHS = GlobalPaths(
-    normal_path_join(AEGISUB_USER_DIR, "automation", "dependency", "Pyegi/")
+    normal_path_join(AEGISUB_USER_DIR, "automation", "dependency", "Pyegi", is_dir=True)
 )
 # the order is important; should be descending
 PYTHON_VERSIONS = [

@@ -10,11 +10,12 @@ from Pyegi.minimals.minimal_utils import (
     normal_path_join,
     AEGISUB_USER_DIR,
     VenvEnvBuilder,
+    GLOBAL_PATHS,
 )
 from Pyegi.minimals.minimal_installer import (
     install_pkgs,
-    pyproject_file,
-    poetry_toml_file,
+    clean_script_folder,
+    clean_lib_links,
 )
 
 
@@ -32,32 +33,41 @@ if __name__ == "__main__":
     args, unknown_args = parser.parse_known_args()
 
     if args.install:
-        # renew files
         os.chdir("../../../../")  # go to base folder of project
-        automation_path = normal_path_join(
-            AEGISUB_USER_DIR,
-            "automation/",
+        automation_path = normal_path_join(AEGISUB_USER_DIR, "automation", is_dir=True)
+        dependency_dir = normal_path_join(
+            automation_path, "dependency", "Pyegi", is_dir=True
         )
-        dependency_dir = normal_path_join(automation_path, "dependency", "Pyegi/")
-        pyegi_dir = normal_path_join(dependency_dir, "Pyegi/")
+        pyegi_dir = normal_path_join(dependency_dir, "Pyegi", is_dir=True)
+        script_id = "SSgumS/Pyegi/"
         # remove previous files
+        # include
         shutil.rmtree(
-            normal_path_join(automation_path, "include", "Pyegi"), ignore_errors=True
+            normal_path_join(automation_path, "include", "Pyegi", is_dir=True),
+            ignore_errors=True,
         )
-        excludes = ["Pyegi/settings.json"]
+        # dependency
+        excludes = ["Pyegi"]
         if args.update_pythons:
             excludes.append("Pythons/common-packages")
         else:
             excludes.append("Pythons")
         rmtree(dependency_dir, excludes)
+        # pyegi
+        excludes = ["Pyegi/settings.json"]
+        old_py_version = clean_script_folder(
+            script_id, pyegi_dir, excludes, is_feed=False
+        )
         # copy new files
         # NOTICE: scripts' binaries are broken because of the static linking
         shutil.copytree("src", automation_path, dirs_exist_ok=True)
-        shutil.copy(poetry_toml_file, pyegi_dir)
-        shutil.copy(pyproject_file, pyegi_dir)
-
+        shutil.copy(GLOBAL_PATHS.poetry_toml_filename, pyegi_dir)
+        shutil.copy(GLOBAL_PATHS.pyproject_filename, pyegi_dir)
         # install Pyegi dependencies
-        install_pkgs(pyegi_dir)
+        new_py_version = install_pkgs(script_id, pyegi_dir, is_feed=False)
+        # cleanup old python's commons
+        if old_py_version != new_py_version:
+            clean_lib_links(old_py_version.common_dir)
     elif args.venv != None:
         if len(args.venv) == 0:
             raise ValueError("You didn't provide any path for venv's parent!")

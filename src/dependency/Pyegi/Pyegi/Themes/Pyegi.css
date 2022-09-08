@@ -6,6 +6,9 @@
 QMainWindow {
 	background-color: rgb(30,37,47);
 }
+QWidget:disabled {
+    color: rgb(100,110,120);
+}
 QPushButton {
 	background-color: rgb(41,55,66);
 }
@@ -29,6 +32,9 @@ QComboBox QAbstractItemView, QComboBox::QLineEdit {
 	color: white;
 	background-color: rgb(98,120,144);
 }
+QCheckBox, QRadioButton {
+    spacing: 8px;
+}
 QScrollBar, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical, QScrollBar::add-line, QScrollBar::sub-line {
 	background: rgb(53,62,68);
 }
@@ -42,4 +48,46 @@ QScrollBar::up-arrow, QScrollBar::down-arrow {
 QToolTip {
 	color: white;
 	background-color: rgb(98,120,144);
+}
+QTabWidget::pane {
+  border: none;
+  top:-1px; 
+  background: rgb(98,120,144);
+} 
+QTabBar::tab {
+	color: white;
+	background-color: rgb(48,59,71);
+}
+QTabBar::tab:selected {
+	color: white;
+	background-color: rgb(98,120,144);
+}
+QTabBar::tab:hover {
+	background-color: rgb(78,100,124);
+}
+QMenu {
+	background-color: rgb(48,59,71);
+}
+QMenu::item:selected {
+	background-color: rgb(98,120,144);
+}
+QMenu::item:disabled {
+	color: rgb(100,100,100);
+}
+QTreeWidget {
+	background-color: rgb(24,28,31);
+	alternate-background-color: rgb(48,59,71);
+}
+QHeaderView, QHeaderView::section {
+	background-color: rgb(78,100,124);
+	padding: 0px;
+}
+QDialogButtonBox QPushButton {
+    min-width: 65px;
+}
+QMessageBox {
+	background-color: rgb(30,37,47);
+}
+QStatusBar {
+	background-color: rgb(60,67,77)
 }

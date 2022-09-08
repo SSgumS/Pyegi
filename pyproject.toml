@@ -13,6 +13,9 @@ PyQt6 = "^6.2.3"
 pyonfx = "~0.9.13"
 python = ">=3.9,<3.10"
 pyqtdarktheme = "^1.1.0"
+bs4 = "^0.0.1"
+requests = "^2.28.1"
+numpy = "^1.23.2"
 
 [tool.poetry.dev-dependencies]
 poetry = "~1.1.14" # installed on embedded pythons
@@ -21,6 +24,15 @@ toml = "^0.10.2" # installed on embedded pythons
 PyQt5Designer = "^5.14.1"
 pypyr = "^5.1.0"
 black = {version = "^22.6.0", allow-prereleases = true}
+
+[tool.pyegi]
+describer-version = "0.1.0"
+known-feeds = [
+  "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20All%20the%20Lua%20GUI%20elements",
+  "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20prefix",
+  "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/ColorMania",
+  "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/Disintegration",
+]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

@@ -8,10 +8,11 @@ import warnings
 from .minimal_utils import (
     PYTHON_VERSIONS,
     PythonVersion,
-    normalize_path,
     normal_path_join,
     GLOBAL_PATHS,
     LIB_RELATIVE_DIR,
+    ensure_dir_tree,
+    rmtree,
 )
 from typing import List, NamedTuple
 from poetry.core.semver import (
@@ -22,72 +23,67 @@ from poetry.core.semver import (
 )
 
 
-pyproject_file = "pyproject.toml"
-poetry_toml_file = "poetry.toml"
-poetry_lock_file = "poetry.lock"
-lib_links_file = "lib_links.json"
-
-
 class PyInferRes(NamedTuple):
     python_version: PythonVersion
     is_matched: bool
 
 
-def ensure_dir_tree(path):
-    parent, _ = os.path.split(path)
-    if not exists(parent):
-        os.makedirs(parent)
-
-
-def get_lib_links(lib_links_path: str):
+def get_lib_links(lib_links_dir: str):
+    lib_links_path = normal_path_join(lib_links_dir, GLOBAL_PATHS.lib_links_filename)
     # initialize if not exist
     if not exists(lib_links_path):
         ensure_dir_tree(lib_links_path)
         lib_links = {"Packages": []}
         with open(lib_links_path, "w") as file:
-            json.dump(lib_links, file)
+            json.dump(lib_links, file, indent=4)
     with open(lib_links_path) as file:
         lib_links = json.load(file)
     return lib_links
 
 
-def clean_lib_links(script, lib_links_dir):
-    lib_links_path = normal_path_join(lib_links_dir, lib_links_file)
-    lib_links = get_lib_links(lib_links_path)
+def clean_lib_links(lib_links_dir):
+    lib_links = get_lib_links(lib_links_dir)
     pkgs = []
-    zero_pkgs = []
     for package in lib_links["Packages"]:
-        if script in package["Scripts"]:
-            package["Scripts"].remove(script)
-            if len(package["Scripts"]) == 0:
-                if exists(lib_links_dir + package["Name"]):
-                    zero_pkgs.append(package["Name"])
-            else:
-                pkgs.append(package)
-        else:
+        if len(package["Scripts"]) != 0:
             pkgs.append(package)
+        else:
+            try:
+                shutil.rmtree(lib_links_dir + package["Name"])
+            except FileNotFoundError:
+                pass
     lib_links["Packages"] = pkgs
-    with open(lib_links_path, "w") as file:
-        json.dump(lib_links, file)
-    return zero_pkgs
+    with open(lib_links_dir + GLOBAL_PATHS.lib_links_filename, "w") as file:
+        json.dump(lib_links, file, indent=4)
 
 
-def update_lib_links(script, pkg_name, lib_links_dir):
-    lib_links_path = normal_path_join(lib_links_dir, lib_links_file)
-    lib_links = get_lib_links(lib_links_path)
+def remove_script_from_lib_links(script_id, lib_links_dir):
+    lib_links = get_lib_links(lib_links_dir)
+    pkgs = []
+    for package in lib_links["Packages"]:
+        if script_id in package["Scripts"]:
+            package["Scripts"].remove(script_id)
+        pkgs.append(package)
+    lib_links["Packages"] = pkgs
+    with open(lib_links_dir + GLOBAL_PATHS.lib_links_filename, "w") as file:
+        json.dump(lib_links, file, indent=4)
+
+
+def add_script_to_lib_links(script_id, pkg_name, lib_links_dir):
+    lib_links = get_lib_links(lib_links_dir)
     is_new_package = True
     for pkg in lib_links["Packages"]:
         if pkg["Name"] == pkg_name:
-            pkg["Scripts"].append(script)
+            pkg["Scripts"].append(script_id)
             is_new_package = False
             break
     if is_new_package:
         lib_link = {}
         lib_link["Name"] = pkg_name
-        lib_link["Scripts"] = [script]
+        lib_link["Scripts"] = [script_id]
         lib_links["Packages"].append(lib_link)
-    with open(lib_links_path, "w") as file:
-        json.dump(lib_links, file)
+    with open(lib_links_dir + GLOBAL_PATHS.lib_links_filename, "w") as file:
+        json.dump(lib_links, file, indent=4)
 
 
 def _check_approximation_for_version_range(range: VersionRange, target: Version):
@@ -137,6 +133,7 @@ def infer_python_version(pyproject_path: str) -> PyInferRes:
     return result
 
 
+# copy package from src to common_dir if is_new and create links for targets
 def commonize_pkg(
     common_dir: str,
     pkg_name: str,
@@ -150,22 +147,31 @@ def commonize_pkg(
         targets.append(src)
     if src == None:
         raise Exception("src is not provided!")
-    file_path = normal_path_join(
-        src, pkg_name, LIB_RELATIVE_DIR, f"{pkg_name}.dist-info", "RECORD"
+
+    # create record path
+    record_relative_path = normal_path_join(
+        LIB_RELATIVE_DIR, f"{pkg_name}.dist-info", "RECORD"
     )
-    if is_new and not exists(file_path):
-        raise FileNotFoundError(f"Package {pkg_name} didn't have any RECORD file!")
-    with open(file_path, "r") as csvfile:
+    if is_new:
+        record_file_path = normal_path_join(src, ".venv", record_relative_path)
+        if not exists(record_file_path):
+            raise FileNotFoundError(f"Package {pkg_name} didn't have any RECORD file!")
+    else:
+        record_file_path = normal_path_join(src, pkg_name, record_relative_path)
+
+    with open(record_file_path, "r") as csvfile:
         csvreader = csv.reader(csvfile)
         for row in csvreader:
             relative_path = row[0]
             # normalize relative path
             connection_path, _ = os.path.split(LIB_RELATIVE_DIR)
             while relative_path[:3] == "../":
+                # get parent relative path
                 connection_path, _ = os.path.split(connection_path)
+                # skip ../
                 relative_path = relative_path[3:]
             relative_path = normal_path_join(connection_path, relative_path)
-            # move if necessary
+            # move if is_new
             path_in_common = f"{common_dir}{pkg_name}/{relative_path}"
             if is_new:
                 org_file = f"{src}.venv/{relative_path}"
@@ -179,7 +185,7 @@ def commonize_pkg(
 
 
 def _initialize_script_dir(dir):
-    poetry_toml_path = dir + poetry_toml_file
+    poetry_toml_path = dir + GLOBAL_PATHS.poetry_toml_filename
     if not exists(poetry_toml_path):
         ensure_dir_tree(poetry_toml_path)
         toml_file = open(poetry_toml_path, "w")
@@ -187,50 +193,75 @@ def _initialize_script_dir(dir):
         toml_file.close()
 
 
-def install_pkgs(script_path):
-    print(f"Processing {script_path} dependencies...")
-    # normalize dir path
-    script_path = normalize_path(script_path, True)
+def clean_script_folder(
+    script_id, script_path, keep_files, is_feed=True
+) -> PythonVersion:
+    if not script_path:
+        return
+
+    print(f"Cleaning {script_id}'s directory...")
+    # infer python
+    py_version = infer_python_version(
+        script_path + GLOBAL_PATHS.pyproject_filename
+    ).python_version
+    com_dir = py_version.common_dir
+    # remove from lib_links
+    remove_script_from_lib_links(script_id, com_dir)
+    # delete old files
+    rmtree(script_path, keep_files)
+
+    if is_feed:
+        from utils import FeedFile, InstallationStatus
+
+        feed_file = FeedFile()
+        script = feed_file.get_script(script_id)
+        script.installed_version = ""
+        script.installed_version_description = ""
+        script.installation_status = InstallationStatus.CLEANED
+        feed_file.update_script(script)
+
+    return py_version
+
+
+def install_pkgs(script_id, script_path, is_feed=True) -> PythonVersion:
+    print(f"Processing {script_id} dependencies...")
     # create poetry.toml
     _initialize_script_dir(GLOBAL_PATHS.temp_dir)
     _initialize_script_dir(script_path)
     # infer python
-    py_version = infer_python_version(script_path + pyproject_file).python_version
+    py_version = infer_python_version(
+        script_path + GLOBAL_PATHS.pyproject_filename
+    ).python_version
     com_dir = py_version.common_dir
-    # removing script from lib_links
-    zero_pkgs = clean_lib_links(script_path, com_dir)
     # renew venvs
-    py_version.create_env(script_path)
+    py_version.create_env(script_id)
     py_version.create_env(GLOBAL_PATHS.temp_dir)
+
     # start installing process
     # create lock file
     os.chdir(script_path)
     py_version.run_module(["poetry", "lock"])
     # copy pyproject and lock file to temp
-    src = script_path + pyproject_file
-    dst = GLOBAL_PATHS.temp_dir + pyproject_file
+    src = script_id + GLOBAL_PATHS.pyproject_filename
+    dst = GLOBAL_PATHS.temp_dir + GLOBAL_PATHS.pyproject_filename
     shutil.copyfile(src, dst)
-    src = script_path + poetry_lock_file
-    dst = GLOBAL_PATHS.temp_dir + poetry_lock_file
+    src = script_id + GLOBAL_PATHS.poetry_lock_file
+    dst = GLOBAL_PATHS.temp_dir + GLOBAL_PATHS.poetry_lock_file
     shutil.copyfile(src, dst)
     # analyse lock file
-    lock_content = toml.load(poetry_lock_file)
+    lock_content = toml.load(GLOBAL_PATHS.poetry_lock_file)
     packages = lock_content["package"]
     new_packages = []
     for package in packages:
         if package["category"] != "main":
             continue
         name_in_commons = f"{package['name']}-{package['version']}"
-        try:
-            zero_pkgs.remove(name_in_commons)
-        except ValueError:
-            pass
         # update lib_links
-        update_lib_links(script_path, name_in_commons, com_dir)
+        add_script_to_lib_links(script_id, name_in_commons, com_dir)
         # check if the package is already in commons
         dir_exist = os.path.isdir(com_dir + name_in_commons)
         if dir_exist:
-            # create symlinks for existing packages
+            # create links for existing packages
             commonize_pkg(
                 com_dir, name_in_commons, [GLOBAL_PATHS.temp_dir, script_path]
             )
@@ -239,7 +270,7 @@ def install_pkgs(script_path):
     # install new packages
     os.chdir(GLOBAL_PATHS.temp_dir)
     py_version.run_module(["poetry", "install", "--no-dev"])
-    # update common-packages and create symlinks
+    # update common-packages and create links
     for name_in_commons in new_packages:
         try:
             commonize_pkg(
@@ -253,8 +284,19 @@ def install_pkgs(script_path):
             warnings.warn(e)
     # revert current location
     os.chdir(os.path.dirname(__file__))
+
     # removing temp dir
     shutil.rmtree(GLOBAL_PATHS.temp_dir)
     # remove unused packages from commons
-    for zero_pkg in zero_pkgs:
-        shutil.rmtree(com_dir + zero_pkg)
+    clean_lib_links(com_dir)
+
+    # update feed file
+    if is_feed:
+        from utils import FeedFile, InstallationStatus
+
+        feed_file = FeedFile()
+        script = feed_file.get_script(script_id)
+        script.installation_status = InstallationStatus.COMPLETED
+        feed_file.update_script(script)
+
+    return py_version

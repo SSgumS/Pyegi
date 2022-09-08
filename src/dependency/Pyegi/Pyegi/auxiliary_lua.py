@@ -19,15 +19,10 @@ from os.path import exists
 import json
 import sys
 import numpy as np
-from utils import set_style
+from utils import set_style, GLOBAL_PATHS, normal_path_join, run_script, FeedFile
 
 
-dependency_dir = os.path.dirname(os.path.dirname(__file__)) + "/"
-scriptsPath = dependency_dir + "PythonScripts/"
 system_inputs = sys.argv
-utils_path = os.path.dirname(__file__)
-settings_file_path = utils_path + "/settings.json"
-themes_path = utils_path + "/Themes/"
 
 
 def exec2(self, string):
@@ -38,7 +33,7 @@ def exec2(self, string):
 
 
 class Ui_LuaConverter(object):
-    def setupUi(self, LuaConverter, script_name, window_name="main_window"):
+    def setupUi(self, LuaConverter, script_id, window_name="main_window"):
         LuaConverter.setObjectName("LuaConverter")
         set_style(LuaConverter)
 
@@ -52,14 +47,18 @@ class Ui_LuaConverter(object):
         self.widgets_layout.setContentsMargins(20, 20, 20, 0)
         self.widgets_layout.setVerticalSpacing(10)
 
+        # get script details
+        self.script = FeedFile().get_script(script_id)
+
         if exists(system_inputs[3]):
             script_settings_file_path = system_inputs[3]
         else:
-            script_settings_file_path = scriptsPath + f"{script_name}/settings.json"
+            script_settings_file_path = (
+                self.script.folder + GLOBAL_PATHS.settings_filename
+            )
 
-        f = open(script_settings_file_path)
-        script_settings = json.load(f)
-        f.close()
+        with open(script_settings_file_path) as file:
+            script_settings = json.load(file)
 
         for i, w in enumerate(script_settings["Windows"]):
             if w["name"] == window_name:
@@ -117,7 +116,7 @@ class Ui_LuaConverter(object):
             if class1 == "Pyegi_button":
                 _locals = locals()
                 exec(
-                    f"self.{name1}.clicked.connect(lambda: self.button_clicked({widget}, LuaConverter, script_settings, script_name, window_index))",
+                    f"self.{name1}.clicked.connect(lambda: self.button_clicked({widget}, LuaConverter, script_settings, window_index))",
                     _locals,
                 )
         all_zeros = np.zeros((max_row_col, max_row_col))
@@ -163,12 +162,12 @@ class Ui_LuaConverter(object):
         self.statusbar.setObjectName("statusbar")
         LuaConverter.setStatusBar(self.statusbar)
 
-        self.retranslateUi(LuaConverter, widgets, script_name)
+        self.retranslateUi(LuaConverter, widgets)
         QtCore.QMetaObject.connectSlotsByName(LuaConverter)
 
-    def retranslateUi(self, LuaConverter, widgets, script_name):
+    def retranslateUi(self, LuaConverter, widgets):
         _translate = QCoreApplication.translate
-        LuaConverter.setWindowTitle(_translate("LuaConverter", script_name))
+        LuaConverter.setWindowTitle(_translate("LuaConverter", self.script.name))
 
         for widget in widgets["Controls"]:
             class1 = widget["class"]
@@ -226,9 +225,7 @@ class Ui_LuaConverter(object):
                 )
                 exec(f'self.{widget["name"]}.setInputMask("\#HH")')
 
-    def button_clicked(
-        self, button, LuaConverter, script_settings, script_name, window_index
-    ):
+    def button_clicked(self, button, LuaConverter, script_settings, window_index):
         widgets = script_settings["Windows"][window_index]
         if button["action"].lower() == "cancel":
             LuaConverter.close()
@@ -311,26 +308,13 @@ class Ui_LuaConverter(object):
 
             py_parameters_file_path = system_inputs[3]
             with open(py_parameters_file_path, "w") as outfile:
-                json.dump(script_settings, outfile)
+                json.dump(script_settings, outfile, indent=4)
 
             if button["action"].lower() == "apply":
-                old_cwd = os.getcwd()
-                os.chdir(f"{scriptsPath}{script_name}")
-                if exists(f"{scriptsPath}{script_name}/.venv/Scripts/python.exe"):
-                    os.system(
-                        f'""{scriptsPath}{script_name}/.venv/Scripts/python.exe" -s -m main "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
-                    )
-                else:
-                    print(
-                        "There's something wrong with the script environment. Switching to Pyegi environment..."
-                    )
-                    os.system(
-                        f'""{dependency_dir}.venv/Scripts/python.exe" -s -m main "{system_inputs[1]}" "{system_inputs[2]}" "{py_parameters_file_path}" "{system_inputs[4]}" "{system_inputs[5]}""'
-                    )
-                os.chdir(old_cwd)
+                self.script.run(system_inputs[1:])
                 sys.exit()
             else:
-                self.setupUi(LuaConverter, script_name, button["transition to"])
+                self.setupUi(LuaConverter, self.script.id, button["transition to"])
 
     def set_color(self, name1):
         color0 = eval(f"self.{name1}.palette().button().color()")

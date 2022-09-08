@@ -3,15 +3,17 @@ authors = [
   "DrunkSimurgh <saman.9267@gmail.com>",
   "SSgumS <sssafais@hotmail.com>",
 ]
-description = "Converts line to pixels and moves the pixels."
-name = "Disintegration"
+description = "There is no code for this one. It only shows all the elements of a Lua GUI available in Aegisub."
+name = "[sample] All the Lua GUI elements"
 version = "0.0.1"
 
 [tool.poetry.dependencies]
-pyonfx = "^0.9.13"
 python = ">=3.9,<3.10"
 
 [tool.poetry.dev-dependencies]
+
+[tool.pyegi]
+describer-version = "0.1.0"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
