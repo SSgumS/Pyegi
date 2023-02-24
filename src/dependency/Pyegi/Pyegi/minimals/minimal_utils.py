@@ -145,7 +145,8 @@ class VenvEnvBuilder(EnvBuilder):
                     f.read().split("\n")[0]
                 ).group(1)
         except FileNotFoundError:
-            pass  # the rest is the same
+            pass
+        # the rest is the same
 
         with open(path, "w", encoding="utf-8") as f:
             f.write("home = %s\n" % context.python_dir)
@@ -223,8 +224,8 @@ def rmtree(path: str, exclude: List[str] = []):
 
 
 class PythonVersion:
-    def __init__(self, Version):
-        self.version = Version
+    def __init__(self, version: Version):
+        self.version = version
         self.folder_name = f"python{self.version.major}{self.version.minor}"
         self.py_binary_path = normal_path_join(
             GLOBAL_PATHS.pythons_dir,
@@ -262,7 +263,7 @@ GLOBAL_PATHS = GlobalPaths(
 )
 # the order is important; should be descending
 PYTHON_VERSIONS = [
-    PythonVersion(Version(3, 10, 5)),
-    PythonVersion(Version(3, 9, 13)),
-    PythonVersion(Version(3, 8, 13)),
+    PythonVersion(Version(3, 10, 9)),
+    PythonVersion(Version(3, 9, 16)),
+    PythonVersion(Version(3, 8, 16)),
 ]

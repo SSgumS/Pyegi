@@ -143,8 +143,6 @@ def commonize_pkg(
 ):
     if not is_new:
         src = common_dir
-    elif src not in targets:
-        targets.append(src)
     if src == None:
         raise Exception("src is not provided!")
 
@@ -176,7 +174,10 @@ def commonize_pkg(
             if is_new:
                 org_file = f"{src}.venv/{relative_path}"
                 ensure_dir_tree(path_in_common)
-                shutil.move(org_file, path_in_common)
+                if org_file.lower() == record_file_path.lower():
+                    shutil.copy(org_file, path_in_common)
+                else:
+                    shutil.move(org_file, path_in_common)
             # create link
             for target in targets:
                 dst = f"{target}.venv/{relative_path}"
@@ -293,7 +294,7 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
             new_packages.append(name_in_commons)
     # install new packages
     os.chdir(GLOBAL_PATHS.temp_dir)
-    py_version.run_module(["poetry", "install", "--no-dev"])
+    result = py_version.run_module(["poetry", "install", "--no-dev", "--no-root"])
     print(result.stdout)
     # update common-packages and create links
     for name_in_commons in new_packages:

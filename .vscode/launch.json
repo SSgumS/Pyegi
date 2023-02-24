@@ -23,6 +23,7 @@
                 "${fileDirname}/sample_auxiliary_out.json",
                 // "--install",
             ],
+            // "console": "externalTerminal",
             "justMyCode": true,
         }
     ]

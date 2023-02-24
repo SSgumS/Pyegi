@@ -52,11 +52,25 @@ try {
     if ($is64) {
         $arch = "x86_64"
     }
-    $packageVersion = "20220802"
-    $pythonVersions = "3.8.13", "3.9.13", "3.10.6"
+    $packageVersion = "20230116"
+    $pythonVersions = "3.8.16", "3.9.16", "3.10.9"
     $pyegiPythonsDir = "$($env:APPDATA -replace "\\", "/")/Aegisub/automation/dependency/Pyegi/Pythons/"
+    # set shouldUpdate
+    if ($Args[0] -eq "--update-pythons") {
+        $shouldUpdate = $true
+    }
+    else {
+        $shouldUpdate = $false
+    }
     # prepare environments
     Set-Location "../Pythons/"
+    # read logs
+    $logsFilePath = "./python-fetch.logs"
+    $logsFileContent = ""
+    if (Test-Path -Path $logsFilePath) {
+        $logsFileContent = Get-Content -Path $logsFilePath -Raw
+        $null = New-Item -Path $logsFilePath -ItemType File -Force
+    }
     for ($i = 0; $i -lt $pythonVersions.Count; $i++) {
         $pyVer = $pythonVersions[$i]
         # determine folder name
@@ -64,33 +78,39 @@ try {
             throw "Python version `"$pyVer`" is in incorrect format!"
         }
         $targetFolder = "python$($Matches.major)$($Matches.minor)"
+        # check if it had been fetched before
+        if (($logsFileContent -match "`n$pyVer`n") -and (Test-Path -Path $targetFolder) -and (-not $shouldUpdate)) {
+            Write-Output "$`n$pyVer`n" >> $logsFilePath
+            Write-Output "Skip fetching $pyVer."
+            continue
+        }
         # provide pythons
         $pyegiPyDir = "$pyegiPythonsDir$targetFolder/"
         if (
             (-not (Test-Path -Path $pyegiPyDir)) -or
-            ($Args[0] -eq "--update-pythons" -and
+            ($shouldUpdate -and
             (Get-ChildItem "$($pyegiPyDir)python.exe").VersionInfo.ProductVersion -ne $pyVer)
         ) {
             # update pythons
             Update-Python $pyVer $targetFolder
             $parameter = "--update-pythons"
-            $shouldUpdate = $true
         }
         else {
             # copy from pyegi
             Remove-Target-Dir $targetFolder
-            New-Item -ItemType SymbolicLink -Path $targetFolder -Target $pyegiPyDir
+            $null = New-Item -ItemType SymbolicLink -Path $targetFolder -Target $pyegiPyDir
             $parameter = ""
-            $shouldUpdate = $false
         }
         # install poetry
-        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.1.14 appdirs toml"
+        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.1.15 appdirs toml"
+        # write logs
+        Write-Output "`n$pyVer`n" >> $logsFilePath
     }
     Set-Location ".."
 
     # run installer
     Set-Location "Installer"
-    ../Pythons/python39/python.exe -s ./installer.py --install $parameter
+    ../Pythons/python310/python.exe -s ./installer.py --install $parameter
 }
 finally {
     # set location back to the initial one
