@@ -157,32 +157,33 @@ def commonize_pkg(
     else:
         record_file_path = normal_path_join(src, pkg_name, record_relative_path)
 
-    with open(record_file_path, "r") as csvfile:
-        csvreader = csv.reader(csvfile)
-        for row in csvreader:
-            relative_path = row[0]
-            # normalize relative path
-            connection_path, _ = os.path.split(LIB_RELATIVE_DIR)
-            while relative_path[:3] == "../":
-                # get parent relative path
-                connection_path, _ = os.path.split(connection_path)
-                # skip ../
-                relative_path = relative_path[3:]
-            relative_path = normal_path_join(connection_path, relative_path)
-            # move if is_new
-            path_in_common = f"{common_dir}{pkg_name}/{relative_path}"
-            if is_new:
-                org_file = f"{src}.venv/{relative_path}"
-                ensure_dir_tree(path_in_common)
-                if org_file.lower() == record_file_path.lower():
-                    shutil.copy(org_file, path_in_common)
-                else:
-                    shutil.move(org_file, path_in_common)
-            # create link
-            for target in targets:
-                dst = f"{target}.venv/{relative_path}"
-                ensure_dir_tree(dst)
+    with open(record_file_path) as file:
+        lines = file.readlines()
+    csvreader = csv.reader(lines)
+    for row in csvreader:
+        relative_path = row[0]
+        # normalize relative path
+        connection_path, _ = os.path.split(LIB_RELATIVE_DIR)
+        while relative_path[:3] == "../":
+            # get parent relative path
+            connection_path, _ = os.path.split(connection_path)
+            # skip ../
+            relative_path = relative_path[3:]
+        relative_path = normal_path_join(connection_path, relative_path)
+        # move if is_new
+        path_in_common = f"{common_dir}{pkg_name}/{relative_path}"
+        if is_new:
+            org_file = f"{src}.venv/{relative_path}"
+            ensure_dir_tree(path_in_common)
+            shutil.move(org_file, path_in_common)
+        # create link
+        for target in targets:
+            dst = f"{target}.venv/{relative_path}"
+            ensure_dir_tree(dst)
+            try:
                 os.link(path_in_common, dst)
+            except FileExistsError:
+                pass
 
 
 def _initialize_script_dir(dir):
@@ -280,7 +281,9 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
     for package in packages:
         if package["category"] != "main":
             continue
-        name_in_commons = f"{package['name']}-{package['version']}"
+        path_compatible_pkg_name: str = package["name"]
+        path_compatible_pkg_name = path_compatible_pkg_name.replace("-", "_")
+        name_in_commons = f"{path_compatible_pkg_name}-{package['version']}"
         # update lib_links
         add_script_to_lib_links(script_id, name_in_commons, com_dir)
         # check if the package is already in commons
@@ -307,7 +310,7 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
                 is_new=True,
             )
         except FileNotFoundError as e:
-            warnings.warn(e.strerror)
+            warnings.warn(e.args[0])
     # revert current location
     os.chdir(old_cwd)
 
