@@ -320,7 +320,7 @@ class Ui_MainWindow:
         else:
             self.combobox.completer().popup().setStyleSheet("")
 
-    def setTheme(self, theme: Theme = None):
+    def setTheme(self, theme: Theme | None = None):
         self.theme = set_style(self.window, theme)
         self.setComboboxPopupStyle()
 

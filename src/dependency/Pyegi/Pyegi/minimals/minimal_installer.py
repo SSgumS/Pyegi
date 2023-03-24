@@ -138,7 +138,7 @@ def commonize_pkg(
     common_dir: str,
     pkg_name: str,
     targets: List[str],
-    src: str = None,
+    src: str | None = None,
     is_new: bool = False,
 ):
     if not is_new:
@@ -307,7 +307,7 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
                 is_new=True,
             )
         except FileNotFoundError as e:
-            warnings.warn(e)
+            warnings.warn(e.strerror)
     # revert current location
     os.chdir(old_cwd)
 

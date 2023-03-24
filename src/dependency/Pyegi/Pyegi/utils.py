@@ -40,7 +40,7 @@ def get_settings():
     return overall_settings
 
 
-def set_style(window: QWidget, theme: Theme = None) -> Theme:
+def set_style(window: QWidget, theme: Theme | None = None) -> Theme:
     if not theme:
         # load theme
         overall_settings = get_settings()
@@ -60,7 +60,7 @@ def set_style(window: QWidget, theme: Theme = None) -> Theme:
     return theme
 
 
-def get_dict_attribute(data: dict, attr, default=""):
+def get_dict_attribute(data: dict, attr, default: str | None = ""):
     try:
         output = data[attr]
     except:

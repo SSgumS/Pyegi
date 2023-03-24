@@ -5,6 +5,7 @@ import platform
 import sys
 import re
 import appdirs
+import warnings
 from enum import Enum
 from typing import List
 from venv import EnvBuilder
@@ -141,9 +142,11 @@ class VenvEnvBuilder(EnvBuilder):
                 "r",
                 encoding="utf-8",
             ) as f:
-                context.python_dir = self.referenced_py_dir_extractor.search(
-                    f.read().split("\n")[0]
-                ).group(1)
+                match = self.referenced_py_dir_extractor.search(f.read().split("\n")[0])
+                if match:
+                    context.python_dir = match.group(1)
+                else:
+                    warnings.warn("Could not find home python directory in pyvenv.cfg!")
         except FileNotFoundError:
             pass
         # the rest is the same
@@ -173,11 +176,13 @@ class VenvEnvBuilder(EnvBuilder):
 def run_command(args: List, normalize=False):
     if normalize:
         args[0] = normalize_binary_path(args[0])
+    result = None
     try:
         result = subprocess.run(args, capture_output=True, text=True)
         result.check_returncode()
     except subprocess.CalledProcessError:
-        print(result.stderr)
+        if result:
+            print(result.stderr)
         raise
     return result
 
