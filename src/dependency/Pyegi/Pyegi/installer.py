@@ -267,7 +267,7 @@ if __name__ == "__main__":
         if os.path.isdir(normal_path_join(GLOBAL_PATHS.scripts_dir, name))
     ]
     # url = "https://github.com/python-poetry/poetry-core/tree/1.1.0a6"
-    url = "https://github.com/SSgumS/Pyegi/tree/download_script/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20ColorMania"
+    url = "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/ColorMania"
     g = FeedParser(url)
     # install_script(g)
     # download_script(g)

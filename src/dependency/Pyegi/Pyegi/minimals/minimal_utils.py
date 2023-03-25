@@ -10,7 +10,7 @@ import warnings
 from enum import Enum
 from typing import List
 from venv import EnvBuilder
-from poetry.core.semver import Version
+from poetry.core.constraints.version import Version
 
 
 _SLASH_EXTRACTOR = re.compile(r"[\\/]+")
@@ -174,12 +174,30 @@ class VenvEnvBuilder(EnvBuilder):
             f.write("%s\n" % base_lib_path)
 
 
-def run_command(args: List, normalize=False):
-    if normalize:
-        args[0] = normalize_binary_path(args[0])
+def run_command(args: List):
+    env = None
+    executer = args[0]
+    if executer.endswith(PY_BINARY_NAME):
+        env = os.environ.copy()
+        venv_identifier = "/.venv/"
+        path = env["PATH"].split(os.pathsep)
+        if venv_identifier in executer:
+            # set correct virtual environment
+            env["VIRTUAL_ENV"] = executer[
+                : executer.index(venv_identifier) + len(venv_identifier)
+            ]
+            # remove all other virtual environments' dependencies from path and add the scripts directory of the current virtual environment
+            path = [item for item in path if venv_identifier not in item]
+            path.insert(0, normal_path_join(env["VIRTUAL_ENV"], get_bin_relative_dir()))
+        else:
+            # remove virtual environment effects from environment
+            env.pop("VIRTUAL_ENV", None)
+            path = [item for item in path if venv_identifier not in item]
+        env["PATH"] = os.pathsep.join(path)
+
     result = None
     try:
-        result = subprocess.run(args, capture_output=True, text=True)
+        result = subprocess.run(args, capture_output=True, text=True, env=env)
         result.check_returncode()
     except subprocess.CalledProcessError:
         if result:
@@ -282,7 +300,7 @@ GLOBAL_PATHS = GlobalPaths(_dependency_path)
 
 # the order is important; should be descending
 PYTHON_VERSIONS = [
-    PythonVersion(Version(3, 10, 9)),
-    PythonVersion(Version(3, 9, 16)),
-    PythonVersion(Version(3, 8, 16)),
+    PythonVersion(Version.from_parts(3, 10, 9)),
+    PythonVersion(Version.from_parts(3, 9, 16)),
+    PythonVersion(Version.from_parts(3, 8, 16)),
 ]

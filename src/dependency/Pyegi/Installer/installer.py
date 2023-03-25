@@ -21,9 +21,7 @@ from Pyegi.minimals.minimal_installer import (
 
 
 def _create_env(parent_path, update=False):
-    builder = VenvEnvBuilder(
-        clear=(not update), symlinks=True, upgrade=update, with_pip=True
-    )
+    builder = VenvEnvBuilder(clear=(not update), upgrade=update, with_pip=True)
     builder.create(normal_path_join(parent_path, ".venv"))
 
 

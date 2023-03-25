@@ -15,8 +15,9 @@ from .minimal_utils import (
     rmtree,
 )
 from typing import List, NamedTuple, Union
-from poetry.core.semver import (
+from poetry.core.constraints.version import (
     parse_constraint,
+    VersionRangeConstraint,
     Version,
     VersionRange,
     VersionUnion,
@@ -86,7 +87,9 @@ def add_script_to_lib_links(script_id, pkg_name, lib_links_dir):
         json.dump(lib_links, file, indent=4)
 
 
-def _check_approximation_for_version_range(range: VersionRange, target: Version):
+def _check_approximation_for_version_range(
+    range: VersionRangeConstraint, target: Version
+):
     max = range.max
     if range.include_max:
         if max.major == target.major and max.minor == target.minor:
@@ -138,7 +141,7 @@ def commonize_pkg(
     common_dir: str,
     pkg_name: str,
     targets: List[str],
-    src: str | None = None,
+    src: Union[str, None] = None,
     is_new: bool = False,
 ):
     if not is_new:
