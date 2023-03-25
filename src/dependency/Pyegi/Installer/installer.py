@@ -4,6 +4,7 @@ import sys
 import shutil
 
 sys.path.insert(1, os.path.dirname(os.path.dirname(__file__)))
+sys.argv.append("--use-global-dependency-path")
 
 from Pyegi.minimals.minimal_utils import (
     rmtree,
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     parser.add_argument("--update-pythons", action="store_true")
     parser.add_argument("--venv", type=str)
     parser.add_argument("--update", action="store_true")
-    args, unknown_args = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     if args.install:
         os.chdir("../../../../")  # go to base folder of project

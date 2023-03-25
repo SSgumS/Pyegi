@@ -248,7 +248,7 @@ class Ui_MainWindow:
         if index == -1:
             self.preview_label.setText("No script selected to preview.")
             if hasattr(self, "movie"):
-                self.movie.setFileName(None)
+                self.movie.setFileName("")
                 del self.movie
             self.selected_script = None
             self.description_textbrowser.setText("")

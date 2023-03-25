@@ -1,3 +1,4 @@
+import argparse
 import os
 import shutil
 import subprocess
@@ -259,13 +260,26 @@ class PythonVersion:
         self.run_command(args)
 
 
+_parser = argparse.ArgumentParser()
+_parser.add_argument("--use-global-dependency-path", action="store_true")
+_args, _ = _parser.parse_known_args()
+
 PLATFORM = _get_platform()
 AEGISUB_USER_DIR = _get_aegisub_user_dir()
 LIB_RELATIVE_DIR = _get_lib_relative_dir()
 PY_BINARY_NAME = _get_py_binary_name()
-GLOBAL_PATHS = GlobalPaths(
-    normal_path_join(AEGISUB_USER_DIR, "automation", "dependency", "Pyegi", is_dir=True)
-)
+
+if _args.use_global_dependency_path:
+    _dependency_path = normal_path_join(
+        AEGISUB_USER_DIR, "automation", "dependency", "Pyegi", is_dir=True
+    )
+else:
+    _dependency_path = normal_path_join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        is_dir=True,
+    )
+GLOBAL_PATHS = GlobalPaths(_dependency_path)
+
 # the order is important; should be descending
 PYTHON_VERSIONS = [
     PythonVersion(Version(3, 10, 9)),

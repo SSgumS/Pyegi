@@ -101,6 +101,7 @@ def update_feeds():
         try:
             g = FeedParser(url)
         except:
+            warnings.warn(f"Couldn't process feed {url}.")
             urls = urls[1:]
             continue
         is_known_user = True

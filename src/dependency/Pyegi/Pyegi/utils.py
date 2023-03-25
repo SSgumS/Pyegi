@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 import numpy as np
 import re
-from typing import List
+from typing import List, Any
 from datetime import datetime
 import copy
 import warnings
@@ -24,6 +24,16 @@ else:
     DEVELOPMENT_MODE = False
 if DEVELOPMENT_MODE:
     print(">>>>>>>>>>  Development mode  <<<<<<<<<<")
+    if not exists(GLOBAL_PATHS.pyegi_pyproject_file):
+        root_dir = os.path.dirname(
+            os.path.dirname(
+                os.path.dirname(os.path.dirname(GLOBAL_PATHS.dependency_dir))
+            )
+        )
+        shutil.copy(
+            normal_path_join(root_dir, GLOBAL_PATHS.pyproject_filename),
+            GLOBAL_PATHS.pyegi_pyproject_file,
+        )
 
 
 class Theme(Enum):
@@ -519,7 +529,7 @@ class FeedParser:
 
     @classmethod
     def parse_datetime(cls, raw_datetime):
-        return datetime.strptime(raw_datetime, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.strptime(raw_datetime, "%Y-%m-%dT%H:%M:%S%z")
 
     def _get_pyproject_datetime_text(self) -> datetime:
         self.ensure_parsed()
@@ -534,8 +544,9 @@ class FeedParser:
         ):
             subdiv = div.find("a", title="pyproject.toml")
             if subdiv:
-                time_div = div.find("time-ago")
-                return time_div.get("datetime")
+                time_div: Any | None = div.find("relative-time")
+                if time_div:
+                    return time_div.get("datetime")
         raise LookupError("No datetime found!")
 
     def is_main_branch(self):
