@@ -102,7 +102,7 @@ try {
             $parameter = ""
         }
         # install poetry
-        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.3.2 appdirs toml"
+        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.4 appdirs toml"
         # write logs
         Write-Output "`n$pyVer`n" >> $logsFilePath
     }

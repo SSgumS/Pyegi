@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 
 class Ui_SettingsWindow:
-    def setupUi(self, SettingsWindow, main_ui=None):
+    def setupUi(self, SettingsWindow, main_ui: "Ui_MainWindow" | None = None):
         SettingsWindow.setObjectName("SettingsWindow")
         SettingsWindow.resize(308, 171)
         self.overall_settings = get_settings()
@@ -90,7 +90,7 @@ class Ui_SettingsWindow:
         self.cancel_pushButton.setText(_translate("SettingsWindow", "Cancel"))
         self.ok_pushButton.setText(_translate("SettingsWindow", "OK"))
 
-    def writeSettings(self, SettingsWindow, main_ui: "Ui_MainWindow"):
+    def writeSettings(self, SettingsWindow, main_ui: "Ui_MainWindow" | None):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         self.overall_settings["Automatic feeds update"] = int(self.feeds_spinbox.text())
         with open(GLOBAL_PATHS.settings_file, "w") as file:

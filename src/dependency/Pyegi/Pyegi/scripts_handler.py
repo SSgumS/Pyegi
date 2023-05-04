@@ -72,7 +72,7 @@ class Installation_Worker(QObject):
 
 
 class Ui_ScriptsHandlerWindow:
-    def setupUi(self, window, main_ui: "Ui_MainWindow" = None):
+    def setupUi(self, window, main_ui: "Ui_MainWindow" | None = None):
         self.window = window
         self.main_ui = main_ui
         window.setObjectName("ScriptsHandlerWindow")

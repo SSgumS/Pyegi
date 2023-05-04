@@ -91,13 +91,27 @@ def _check_approximation_for_version_range(
     range: VersionRangeConstraint, target: Version
 ):
     max = range.max
-    if range.include_max:
-        if max.major == target.major and max.minor == target.minor:
+    if max and max.major == target.major:
+        # 0/1-step difference minor version
+        if max.minor == target.minor:
             return True
-    elif max.major == target.major and (max.minor - 1) == target.minor:
-        min = range.min
-        if (max.minor - 1) >= min.minor:
+        # double check 1-step difference minor version
+        if max.include_max:
+            minor: int = max.minor + 1  # type: ignore (max.minor is not None)
+            if minor == target.minor:
+                return True
+
+    min = range.min
+    if min and min.major == target.major:
+        # 0/1-step difference minor version
+        if min.minor == target.minor:
             return True
+        # double check 1-step difference minor version
+        if min.include_min:
+            minor: int = min.minor - 1  # type: ignore (min.minor is not None)
+            if minor == target.minor:
+                return True
+
     return False
 
 
@@ -128,6 +142,7 @@ def infer_python_version(pyproject_path: str) -> PyInferRes:
             for range in version_constraint.ranges:
                 if _check_approximation_for_version_range(range, version):
                     result = PyInferRes(py_version, False)
+                    break
     if result == None:
         result = PyInferRes(PYTHON_VERSIONS[0], False)
     warnings.warn(
