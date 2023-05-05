@@ -19,7 +19,7 @@ from os.path import exists
 import json
 import sys
 import numpy as np
-from utils import set_style, GLOBAL_PATHS, normal_path_join, run_script, FeedFile
+from utils import set_style, GLOBAL_PATHS, FeedFile
 
 
 system_inputs = sys.argv

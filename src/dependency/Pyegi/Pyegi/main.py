@@ -27,7 +27,7 @@ from utils import (
     Script,
 )
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
 
 system_inputs = sys.argv
@@ -320,7 +320,7 @@ class Ui_MainWindow:
         else:
             self.combobox.completer().popup().setStyleSheet("")
 
-    def setTheme(self, theme: Theme | None = None):
+    def setTheme(self, theme: Union[Theme, None] = None):
         self.theme = set_style(self.window, theme)
         self.setComboboxPopupStyle()
 

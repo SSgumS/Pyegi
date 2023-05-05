@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 import numpy as np
 import re
-from typing import List, Any
+from typing import List, Any, Union
 from datetime import datetime
 import copy
 import warnings
@@ -50,7 +50,7 @@ def get_settings():
     return overall_settings
 
 
-def set_style(window: QWidget, theme: Theme | None = None) -> Theme:
+def set_style(window: QWidget, theme: Union[Theme, None] = None) -> Theme:
     if not theme:
         # load theme
         overall_settings = get_settings()
@@ -70,7 +70,7 @@ def set_style(window: QWidget, theme: Theme | None = None) -> Theme:
     return theme
 
 
-def get_dict_attribute(data: dict, attr, default: str | None = ""):
+def get_dict_attribute(data: dict, attr, default: Union[str, None] = ""):
     try:
         output = data[attr]
     except:
@@ -544,7 +544,7 @@ class FeedParser:
         ):
             subdiv = div.find("a", title="pyproject.toml")
             if subdiv:
-                time_div: Any | None = div.find("relative-time")
+                time_div: Union[Any, None] = div.find("relative-time")
                 if time_div:
                     return time_div.get("datetime")
         raise LookupError("No datetime found!")

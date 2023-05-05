@@ -23,6 +23,7 @@ from pkg_installer import update_feeds, install_script, uninstall_script
 from datetime import datetime
 import traceback
 import typing
+from typing import Union
 import sys
 
 if typing.TYPE_CHECKING:
@@ -72,7 +73,7 @@ class Installation_Worker(QObject):
 
 
 class Ui_ScriptsHandlerWindow:
-    def setupUi(self, window, main_ui: "Ui_MainWindow" | None = None):
+    def setupUi(self, window, main_ui: Union["Ui_MainWindow", None] = None):
         self.window = window
         self.main_ui = main_ui
         window.setObjectName("ScriptsHandlerWindow")
