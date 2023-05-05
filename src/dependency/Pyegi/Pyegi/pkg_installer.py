@@ -4,7 +4,7 @@ import shutil
 from typing import List
 import numpy as np
 import re
-from minimals.minimal_installer import *
+from minimals.minimal_pkg_installer import *
 from utils import (
     normalize_path,
     normal_path_join,

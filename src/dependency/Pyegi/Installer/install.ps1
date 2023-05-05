@@ -53,7 +53,7 @@ try {
         $arch = "x86_64"
     }
     $packageVersion = "20230116"
-    $pythonVersions = "3.8.16", "3.9.16", "3.10.9"
+    $pythonVersions = "3.9.16", "3.10.9", "3.11.1"
     $pyegiPythonsDir = "$($env:APPDATA -replace "\\", "/")/Aegisub/automation/dependency/Pyegi/Pythons/"
     # set shouldUpdate
     if ($Args[0] -eq "--update-pythons") {

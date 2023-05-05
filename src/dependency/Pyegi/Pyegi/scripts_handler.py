@@ -19,7 +19,7 @@ from utils import (
     get_textBrowser_description,
     GLOBAL_PATHS,
 )
-from installer import update_feeds, install_script, uninstall_script
+from pkg_installer import update_feeds, install_script, uninstall_script
 from datetime import datetime
 import traceback
 import typing

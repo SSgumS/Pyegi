@@ -300,7 +300,7 @@ GLOBAL_PATHS = GlobalPaths(_dependency_path)
 
 # the order is important; should be descending
 PYTHON_VERSIONS = [
+    PythonVersion(Version.from_parts(3, 11, 1)),
     PythonVersion(Version.from_parts(3, 10, 9)),
     PythonVersion(Version.from_parts(3, 9, 16)),
-    PythonVersion(Version.from_parts(3, 8, 16)),
 ]

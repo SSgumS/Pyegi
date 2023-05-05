@@ -253,6 +253,7 @@ def clean_script_folder(
         script.installation_status = InstallationStatus.CLEANED
         feed_file.update_script(script)
 
+    print(f"Cleaned {script_id}'s directory.")
     return py_version
 
 
@@ -346,4 +347,5 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
         script.installation_status = InstallationStatus.COMPLETED
         feed_file.update_script(script)
 
+    print(f"Processed {script_id} dependencies.")
     return py_version

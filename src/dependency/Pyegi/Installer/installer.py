@@ -13,7 +13,7 @@ from Pyegi.minimals.minimal_utils import (
     VenvEnvBuilder,
     GLOBAL_PATHS,
 )
-from Pyegi.minimals.minimal_installer import (
+from Pyegi.minimals.minimal_pkg_installer import (
     install_pkgs,
     clean_script_folder,
     clean_lib_links,
@@ -42,6 +42,7 @@ if __name__ == "__main__":
         pyegi_dir = normal_path_join(dependency_dir, "Pyegi", is_dir=True)
         script_id = "SSgumS/Pyegi/"
         # remove previous files
+        print("Removing previous files...")
         # include
         shutil.rmtree(
             normal_path_join(automation_path, "include", "Pyegi", is_dir=True),
@@ -60,6 +61,7 @@ if __name__ == "__main__":
             script_id, excludes, script_path=pyegi_dir, is_feed=False
         )
         # copy new files
+        print("Copying new files...")
         # NOTICE: scripts' binaries are broken because of the static linking
         shutil.copytree("src", automation_path, dirs_exist_ok=True)
         shutil.copy(GLOBAL_PATHS.poetry_toml_filename, pyegi_dir)
@@ -69,6 +71,8 @@ if __name__ == "__main__":
         # cleanup old python's commons
         if old_py_version != new_py_version and old_py_version:
             clean_lib_links(old_py_version.common_dir)
+
+        print("Pyegi has been installed successfully!")
     elif args.venv != None:
         if len(args.venv) == 0:
             raise ValueError("You didn't provide any path for venv's parent!")
