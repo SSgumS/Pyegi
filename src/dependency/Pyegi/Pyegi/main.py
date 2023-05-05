@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QRadioButton,
     QTextBrowser,
     QMainWindow,
+    QWidget,
 )
 from PyQt6.QtCore import Qt, QCoreApplication
 from PyQt6.QtGui import QMovie
@@ -34,7 +35,7 @@ system_inputs = sys.argv
 
 
 class QPushButton2(QPushButton):
-    def __init__(self, parent: QPushButton):
+    def __init__(self, parent: QWidget):
         super().__init__(parent)
 
         self.setSizePolicy(

@@ -70,7 +70,7 @@ def set_style(window: QWidget, theme: Union[Theme, None] = None) -> Theme:
     return theme
 
 
-def get_dict_attribute(data: dict, attr, default: Union[str, None] = ""):
+def get_dict_attribute(data: dict, attr, default: Union[Any, str, None] = "") -> Any:
     try:
         output = data[attr]
     except:
@@ -80,7 +80,7 @@ def get_dict_attribute(data: dict, attr, default: Union[str, None] = ""):
     return output
 
 
-def get_pyegi_duplicated_field(poetry_data, pyegi_data, attr, default=""):
+def get_pyegi_duplicated_field(poetry_data, pyegi_data, attr, default: Any = ""):
     output = get_dict_attribute(pyegi_data, attr, None)
     if not output:
         output = get_dict_attribute(poetry_data, attr, default)
@@ -112,11 +112,11 @@ def _get_description_value(data: dict, attr, theme: Theme):
 
     if attr == "authors":
         try:
-            for i, str in enumerate(output):
-                output[i] = re.sub(
+            for i, text in enumerate(output):
+                output[i] = re.sub(  # type: ignore
                     r"(.+?) ?<(.+)>",
                     f'<a {hyperlink_color} href="mailto:\\2">\\1</a>',
-                    str,
+                    text,
                 )
         except:
             pass
@@ -127,8 +127,8 @@ def _get_description_value(data: dict, attr, theme: Theme):
     return output
 
 
-def _convert_to_header(str):
-    return f"<b>{str}:</b>"
+def _convert_to_header(text: str):
+    return f"<b>{text}:</b>"
 
 
 def get_textBrowser_description(data: dict, theme: Theme, desired_attributes=None):
@@ -139,7 +139,7 @@ def get_textBrowser_description(data: dict, theme: Theme, desired_attributes=Non
     for attr in desired_attributes:
         description_value = _get_description_value(data, attr, theme)
         description_values.append(description_value)
-    headers = [_convert_to_header(str) for str in desired_attributes]
+    headers = [_convert_to_header(text) for text in desired_attributes]
     for header, description_value in zip(headers, description_values):
         script_description += f"{header}<br>{description_value}<br><br>"
     script_description += "</html>"
@@ -162,12 +162,12 @@ class InstallationStatus(Enum):
     COMPLETED = "completed"
 
 
-# TODO: this section can be much more completed...
+# TODO: this section can be much more complete...
 class Script:
     def __init__(self, info: dict):
         self._raw = info
         self.id = get_dict_attribute(info, "id")
-        self.name = get_dict_attribute(info, "name")
+        self.name: str = get_dict_attribute(info, "name")
         self.description = get_dict_attribute(info, "description")
         self.authors = get_dict_attribute(info, "authors", [])
         self.installation_status = InstallationStatus(
@@ -185,7 +185,7 @@ class Script:
                 GLOBAL_PATHS.scripts_dir, self.folder_name, is_dir=True
             )
         else:
-            self.folder = None
+            self.folder = ""
 
     def run(self, args: List[str]):
         old_cwd = os.getcwd()
@@ -257,7 +257,7 @@ class ComboBoxLineEdit(QLineEdit):
     def mousePressEvent(self, e: QMouseEvent) -> None:
         super().mousePressEvent(e)
 
-        combobox: QComboBox = self.parent()
+        combobox: QComboBox = self.parent()  # type: ignore
         completer = combobox.completer()
         if combobox.currentText() == "":
             completer.setCompletionMode(
@@ -271,7 +271,7 @@ class ComboBoxLineEdit(QLineEdit):
     def keyPressEvent(self, e: QKeyEvent) -> None:
         super().keyPressEvent(e)
 
-        combobox: QComboBox = self.parent()
+        combobox: QComboBox = self.parent()  # type: ignore
         if combobox.currentText() != "":
             return
         completer = combobox.completer()
@@ -280,7 +280,7 @@ class ComboBoxLineEdit(QLineEdit):
 
 
 class ScriptPyProject:
-    def __init__(self, pyproject_file_path=None, pyproject_text=None) -> None:
+    def __init__(self, pyproject_file_path=None, pyproject_text: str = "") -> None:
         if pyproject_file_path:
             pyproject_data = toml.load(pyproject_file_path)
         else:
@@ -372,8 +372,9 @@ class FeedParser:
         tree_indicator_len = len(tree_indicator)
         reqs = requests.get(url)
         soup = BeautifulSoup(reqs.text, "html.parser")
+        branch_name = "main"
         for link in soup.find_all("include-fragment"):
-            url_temp = link.get("src")
+            url_temp: str = link.get("src")
             try:
                 if url_temp[:tree_indicator_len] == tree_indicator:
                     branch_name = url_temp[tree_indicator_len:]

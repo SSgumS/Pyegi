@@ -94,7 +94,7 @@ def update_feeds():
     main_known_feeds = [FeedParser(url, False) for url in urls]
     known_users = [feed.username for feed in main_known_feeds]
     known_users = np.unique(np.array(known_users)).tolist()
-    username_2_count_dict = {}
+    username_2_count_dict: dict[str, int] = {}
     feeds_limit = 7
     while urls:
         url = urls[0]
@@ -138,7 +138,7 @@ def download_script(g: FeedParser):
 
     # folder name
     initial_folder_name = script.folder_name
-    if initial_folder_name == "":
+    if not initial_folder_name:
         script_name_extractor = re.compile(r"^(.+)_\d+$")
         # check current dirs that exist
         i = 1
