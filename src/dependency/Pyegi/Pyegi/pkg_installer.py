@@ -122,7 +122,7 @@ def update_feeds():
         # append known_feeds of the feed to urls
         if is_permitted_to_add_feeds:
             if not is_known_user:
-                known_feeds = known_feeds[: feeds_limit - feed_count]
+                known_feeds = known_feeds[: feeds_limit - feed_count]  # type: ignore
                 username_2_count_dict[username] += len(known_feeds)
             for known_feed in known_feeds:
                 if known_feed not in checked_urls:
