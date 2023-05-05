@@ -212,6 +212,7 @@ def ensure_dir_tree(path):
         os.makedirs(parent)
 
 
+# TODO: currently, it doesn't respect directory annotations (ending with /) and thinks files and directories are identical
 def rmtree(path: str, exclude: List[str] = []):
     # normalize exclude
     for i in range(len(exclude)):
@@ -247,6 +248,49 @@ def rmtree(path: str, exclude: List[str] = []):
                     shutil.rmtree(target)
 
 
+def cptree(
+    src_path: str,
+    target_path: str,
+    excludes: List[str] = [],
+    copy_function=shutil.copy2,
+):
+    # create file and directory excludes
+    file_excludes = []
+    directory_excludes = []
+    for _, exclude in enumerate(excludes):
+        if exclude.endswith("/"):
+            directory_excludes.append(exclude)
+        else:
+            file_excludes.append(exclude)
+    # copy files respecting exclude
+    root_path_string_len = len(src_path)
+    for parent, _, files in os.walk(src_path):
+        # normalize parent
+        parent = normalize_path(parent, is_dir=True)
+
+        # create target directory
+        relative_parent_path_from_root = parent[root_path_string_len:]
+        target_parent = normal_path_join(target_path, relative_parent_path_from_root)
+        if not os.path.exists(target_parent):
+            os.makedirs(target_parent)
+
+        # copy files
+        for name in files:
+            src = normal_path_join(parent, name)
+            relative_path_from_root = src[root_path_string_len:]
+            target = normal_path_join(target_path, relative_path_from_root)
+            if (not os.path.exists(target)) or (
+                relative_path_from_root not in file_excludes
+                and not any(
+                    [
+                        relative_path_from_root.startswith(excluded_dir)
+                        for excluded_dir in directory_excludes
+                    ]
+                )
+            ):
+                copy_function(src, target)
+
+
 class PythonVersion:
     def __init__(self, version: Version):
         self.version = version
@@ -278,7 +322,7 @@ class PythonVersion:
         self.run_command(args)
 
 
-_parser = argparse.ArgumentParser()
+_parser = argparse.ArgumentParser(add_help=False)
 _parser.add_argument("--use-global-dependency-path", action="store_true")
 _args, _ = _parser.parse_known_args()
 

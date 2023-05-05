@@ -8,6 +8,7 @@ sys.argv.append("--use-global-dependency-path")
 
 from Pyegi.minimals.minimal_utils import (
     rmtree,
+    cptree,
     normal_path_join,
     AEGISUB_USER_DIR,
     VenvEnvBuilder,
@@ -27,10 +28,12 @@ def _create_env(parent_path, update=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--install", action="store_true")
-    parser.add_argument("--update-pythons", action="store_true")
-    parser.add_argument("--venv", type=str)
-    parser.add_argument("--update", action="store_true")
+    # install args
+    parser.add_argument("--install", action="store_true", help="Install Pyegi")
+    parser.add_argument("--update-pythons", action="store_true", help="Update Pythons")
+    # venv args
+    parser.add_argument("--venv", type=str, help="Create a venv")
+    parser.add_argument("--update", action="store_true", help="Update venv")
     args, _ = parser.parse_known_args()
 
     if args.install:
@@ -49,23 +52,29 @@ if __name__ == "__main__":
             ignore_errors=True,
         )
         # dependency
-        excludes = ["Pyegi"]
+        excludes = ["Pyegi/", "PythonScripts/"]
         if args.update_pythons:
-            excludes.append("Pythons/common-packages")
+            excludes.append("Pythons/common-packages/")
         else:
-            excludes.append("Pythons")
+            excludes.append("Pythons/")
         rmtree(dependency_dir, excludes)
         # pyegi
-        excludes = ["Pyegi/settings.json"]
+        try:
+            os.remove(normal_path_join(pyegi_dir, "Themes", "Pyegi.css"))
+        except FileNotFoundError:
+            pass
+        excludes = ["settings.json", "scripts_feed.json", "Themes/"]
         old_py_version = clean_script_folder(
             script_id, excludes, script_path=pyegi_dir, is_feed=False
         )
         # copy new files
         print("Copying new files...")
         # NOTICE: scripts' binaries are broken because of the static linking
-        shutil.copytree("src", automation_path, dirs_exist_ok=True)
-        shutil.copy(GLOBAL_PATHS.poetry_toml_filename, pyegi_dir)
-        shutil.copy(GLOBAL_PATHS.pyproject_filename, pyegi_dir)
+        cptree(
+            "src/", automation_path, excludes=["dependency/Pyegi/Pyegi/settings.json"]
+        )
+        shutil.copy2(GLOBAL_PATHS.poetry_toml_filename, pyegi_dir)
+        shutil.copy2(GLOBAL_PATHS.pyproject_filename, pyegi_dir)
         # install Pyegi dependencies
         new_py_version = install_pkgs(script_id, script_path=pyegi_dir, is_feed=False)
         # cleanup old python's commons

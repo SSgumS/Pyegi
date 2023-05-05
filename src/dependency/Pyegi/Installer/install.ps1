@@ -41,6 +41,17 @@ function Update-Python($version, $targetFolder) {
     Move-Item $initialFolder $targetFolder
 }
 
+function Help() {
+    Write-Output "Usage: ./install.ps1 [--update-pythons]"
+    Write-Output "  --update-pythons: update pythons to the latest version"
+}
+
+# show help if specified
+if ($Args -contains "-h" -or $Args -contains "--help" -or $Args -contains "help") {
+    Help
+    return
+}
+
 # set location to script's location
 $prevPwd = $PWD
 Set-Location -LiteralPath $PSScriptRoot
