@@ -14,7 +14,7 @@ beautifulsoup4 = "4.*"
 numpy = "1.*"
 poetry-core = "1.*"
 pyonfx = "0.9.*"
-pyqtdarktheme = "1.*"
+pyqtdarktheme = "2.*"
 python = ">=3.9,<3.11"
 requests = "2.*"
 
