@@ -9,16 +9,16 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 Pillow = "9.*"
-PyQt6 = "6.4.*"
+PyQt6 = "6.5.*"
 beautifulsoup4 = "4.*"
 numpy = "1.*"
-poetry-core = "1.*"
+poetry-core = "1.6.*"
 pyonfx = "0.9.*"
 pyqtdarktheme = "2.*"
 python = ">=3.9,<3.11"
 requests = "2.*"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 PyQt5Designer = "5.*" 
 appdirs = "1.*" # installed on embedded pythons
 black = "*" 

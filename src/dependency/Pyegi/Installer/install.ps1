@@ -63,8 +63,8 @@ try {
     if ($is64) {
         $arch = "x86_64"
     }
-    $packageVersion = "20230116"
-    $pythonVersions = "3.9.16", "3.10.9", "3.11.1"
+    $packageVersion = "20230726"
+    $pythonVersions = "3.9.17", "3.10.12", "3.11.4"
     $pyegiPythonsDir = "$($env:APPDATA -replace "\\", "/")/Aegisub/automation/dependency/Pyegi/Pythons/"
     # set shouldUpdate
     if ($Args[0] -eq "--update-pythons") {
@@ -113,7 +113,7 @@ try {
             $parameter = ""
         }
         # install poetry
-        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.4.2 appdirs toml"
+        Invoke-Expression "./$targetFolder/python.exe -s -m pip install -U poetry~=1.5.1 appdirs toml"
         # write logs
         Write-Output "`n$pyVer`n" >> $logsFilePath
     }

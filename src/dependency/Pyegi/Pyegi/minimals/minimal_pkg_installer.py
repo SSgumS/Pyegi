@@ -5,6 +5,7 @@ import csv
 import toml
 import json
 import warnings
+import re
 from .minimal_utils import (
     PYTHON_VERSIONS,
     PythonVersion,
@@ -290,14 +291,17 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
     src = script_path + GLOBAL_PATHS.poetry_lock_filename
     dst = GLOBAL_PATHS.temp_dir + GLOBAL_PATHS.poetry_lock_filename
     shutil.copyfile(src, dst)
+    # get main packages
+    result = py_version.run_module(["poetry", "show", "--only", "main"])
+    main_package_names = re.findall(r"^\S+", result.stdout, re.MULTILINE)
     # analyse lock file
     lock_content = toml.load(script_path + GLOBAL_PATHS.poetry_lock_filename)
     packages = lock_content["package"]
     new_packages = []
     for package in packages:
-        if package["category"] != "main":
-            continue
         path_compatible_pkg_name: str = package["name"]
+        if path_compatible_pkg_name not in main_package_names:
+            continue
         path_compatible_pkg_name = path_compatible_pkg_name.replace("-", "_")
         name_in_commons = f"{path_compatible_pkg_name}-{package['version']}"
         # update lib_links
@@ -313,7 +317,7 @@ def install_pkgs(script_id, script_path=None, is_feed=True) -> PythonVersion:
             new_packages.append(name_in_commons)
     # install new packages
     os.chdir(GLOBAL_PATHS.temp_dir)
-    result = py_version.run_module(["poetry", "install", "--no-dev", "--no-root"])
+    result = py_version.run_module(["poetry", "install", "--only", "main", "--no-root"])
     print(result.stdout)
     # update common-packages and create links
     for name_in_commons in new_packages:
