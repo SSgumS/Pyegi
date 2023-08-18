@@ -7,6 +7,7 @@ import sys
 import re
 import appdirs
 import warnings
+import json
 from enum import Enum
 from typing import List
 from venv import EnvBuilder
@@ -289,6 +290,11 @@ def cptree(
                 )
             ):
                 copy_function(src, target)
+
+
+def write_json(obj, file_path: str, indent=4):
+    with open(file_path, "w") as outfile:
+        json.dump(obj, outfile, indent=indent)
 
 
 class PythonVersion:

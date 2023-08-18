@@ -18,6 +18,7 @@ from utils import (
     FeedParser,
     get_textBrowser_description,
     GLOBAL_PATHS,
+    write_json,
 )
 from pkg_installer import update_feeds, install_script, uninstall_script
 from datetime import datetime
@@ -345,8 +346,7 @@ class Ui_ScriptsHandlerWindow:
     def update_last_update_datetime(self):
         now = datetime.now()
         self.overall_settings["Last feeds update"] = str(now)
-        with open(GLOBAL_PATHS.settings_file, "w") as file:
-            json.dump(self.overall_settings, file, indent=4)
+        write_json(self.overall_settings, GLOBAL_PATHS.settings_file)
 
     def fetch_selected_script_info(self):
         selected_item = self.scripts_treeWidget.selectedItems()

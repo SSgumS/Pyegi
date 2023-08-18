@@ -26,6 +26,7 @@ from utils import (
     InstallationStatus,
     FeedFile,
     Script,
+    write_json,
 )
 from datetime import datetime
 from typing import List, Union
@@ -241,8 +242,7 @@ class Ui_MainWindow:
         else:
             main_py_parameters["applyOn"] = "selected lines"
         main_py_parameters["selectedScript"] = self.selected_script.id
-        with open(system_inputs[1], "w") as file:
-            json.dump(main_py_parameters, file, indent=4)
+        write_json(main_py_parameters, system_inputs[1])
         QCoreApplication.instance().quit()
 
     def preview(self, index):

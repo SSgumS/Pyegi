@@ -1,5 +1,4 @@
 import os
-import toml
 import shutil
 from typing import List
 import numpy as np
@@ -77,8 +76,7 @@ def add_to_feed(feed: FeedParser, main_known_feeds: List[FeedParser]) -> List[st
     }
 
     # update feed file
-    with open(GLOBAL_PATHS.feed_file, "w") as file:
-        json.dump(feed_file, file, indent=4)
+    write_json(feed_file, GLOBAL_PATHS.feed_file)
 
     return script_info.known_feeds
 

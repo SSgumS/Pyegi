@@ -37,7 +37,17 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
 
     if args.install:
-        os.chdir("../../../../")  # go to base folder of project
+        # go to base folder of project
+        current_dir = os.path.dirname(__file__)
+        while True:
+            parent_dir = os.path.dirname(current_dir)
+            if os.path.basename(current_dir) == "src":
+                break
+            elif current_dir == parent_dir:
+                raise FileNotFoundError("Couldn't find the base folder of the project.")
+            else:
+                current_dir = parent_dir
+        os.chdir(parent_dir)
         automation_path = normal_path_join(AEGISUB_USER_DIR, "automation", is_dir=True)
         dependency_dir = normal_path_join(
             automation_path, "dependency", "Pyegi", is_dir=True

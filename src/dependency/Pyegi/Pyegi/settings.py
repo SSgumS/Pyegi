@@ -5,7 +5,7 @@ import json
 import sys
 import typing
 from typing import Union
-from utils import set_style, Theme, get_settings, GLOBAL_PATHS
+from utils import set_style, Theme, get_settings, GLOBAL_PATHS, write_json
 
 if typing.TYPE_CHECKING:
     from main import Ui_MainWindow
@@ -94,8 +94,7 @@ class Ui_SettingsWindow:
     def writeSettings(self, SettingsWindow, main_ui: Union["Ui_MainWindow", None]):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
         self.overall_settings["Automatic feeds update"] = int(self.feeds_spinbox.text())
-        with open(GLOBAL_PATHS.settings_file, "w") as file:
-            json.dump(self.overall_settings, file, indent=4)
+        write_json(self.overall_settings, GLOBAL_PATHS.settings_file)
         if main_ui:
             main_ui.setTheme(Theme(self.overall_settings["Theme"]))
         SettingsWindow.close()

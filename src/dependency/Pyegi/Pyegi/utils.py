@@ -241,16 +241,14 @@ class FeedFile:
                 self.raw: dict = json.load(file)
         else:
             self.raw = {}
-            with open(self.feed_file_path, "w") as file:
-                json.dump(self.raw, file, indent=4)
+            write_json(self.raw, self.feed_file_path)
 
     def get_script(self, script_id: str) -> Script:
         return Script(self.raw[script_id])
 
     def update_script(self, script: Script):
         self.raw[script.id] = script.get_raw()
-        with open(self.feed_file_path, "w") as file:
-            json.dump(self.raw, file, indent=4)
+        write_json(self.raw, self.feed_file_path)
 
 
 class ComboBoxLineEdit(QLineEdit):

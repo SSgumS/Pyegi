@@ -13,6 +13,7 @@ from .minimal_utils import (
     LIB_RELATIVE_DIR,
     ensure_dir_tree,
     rmtree,
+    write_json,
 )
 from typing import List, NamedTuple, Union
 from poetry.core.constraints.version import (
@@ -35,8 +36,7 @@ def get_lib_links(lib_links_dir: str):
     if not exists(lib_links_path):
         ensure_dir_tree(lib_links_path)
         lib_links = {"Packages": []}
-        with open(lib_links_path, "w") as file:
-            json.dump(lib_links, file, indent=4)
+        write_json(lib_links, lib_links_path)
     with open(lib_links_path) as file:
         lib_links = json.load(file)
     return lib_links
@@ -54,8 +54,7 @@ def clean_lib_links(lib_links_dir):
             except FileNotFoundError:
                 pass
     lib_links["Packages"] = pkgs
-    with open(lib_links_dir + GLOBAL_PATHS.lib_links_filename, "w") as file:
-        json.dump(lib_links, file, indent=4)
+    write_json(lib_links, lib_links_dir + GLOBAL_PATHS.lib_links_filename)
 
 
 def remove_script_from_lib_links(script_id, lib_links_dir):
@@ -66,8 +65,7 @@ def remove_script_from_lib_links(script_id, lib_links_dir):
             package["Scripts"].remove(script_id)
         pkgs.append(package)
     lib_links["Packages"] = pkgs
-    with open(lib_links_dir + GLOBAL_PATHS.lib_links_filename, "w") as file:
-        json.dump(lib_links, file, indent=4)
+    write_json(lib_links, lib_links_dir + GLOBAL_PATHS.lib_links_filename)
 
 
 def add_script_to_lib_links(script_id, pkg_name, lib_links_dir):
@@ -83,8 +81,7 @@ def add_script_to_lib_links(script_id, pkg_name, lib_links_dir):
         lib_link["Name"] = pkg_name
         lib_link["Scripts"] = [script_id]
         lib_links["Packages"].append(lib_link)
-    with open(lib_links_dir + GLOBAL_PATHS.lib_links_filename, "w") as file:
-        json.dump(lib_links, file, indent=4)
+    write_json(lib_links, lib_links_dir + GLOBAL_PATHS.lib_links_filename)
 
 
 def _check_approximation_for_version_range(

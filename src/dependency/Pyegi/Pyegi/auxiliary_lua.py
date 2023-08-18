@@ -19,7 +19,7 @@ from os.path import exists
 import json
 import sys
 import numpy as np
-from utils import set_style, GLOBAL_PATHS, FeedFile
+from utils import set_style, GLOBAL_PATHS, FeedFile, write_json
 
 
 system_inputs = sys.argv
@@ -307,8 +307,7 @@ class Ui_LuaConverter(object):
                                         exec(f"widget2['value'] = self.{name1}.text()")
 
             py_parameters_file_path = system_inputs[3]
-            with open(py_parameters_file_path, "w") as outfile:
-                json.dump(script_settings, outfile, indent=4)
+            write_json(script_settings, py_parameters_file_path)
 
             if button["action"].lower() == "apply":
                 self.script.run(system_inputs[1:])
