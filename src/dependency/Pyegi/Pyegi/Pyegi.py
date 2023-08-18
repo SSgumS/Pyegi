@@ -1,6 +1,7 @@
 import sys
 import json
 from pyonfx import Line
+from minimals.minimal_pkg_installer import write_json
 
 output_data = [0]
 auxiliary_output = {
@@ -77,5 +78,4 @@ def CreateOutputFile(original="C", placement="O"):
     auxiliary_output["Original Lines"] = original
     auxiliary_output["Placement"] = placement
     file_name = GetAuxiliaryFilePath()
-    with open(file_name, "w") as file:
-        json.dump(auxiliary_output, file, indent=4)
+    write_json(auxiliary_output, file_name)
