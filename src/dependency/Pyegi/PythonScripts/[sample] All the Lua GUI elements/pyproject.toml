@@ -10,7 +10,7 @@ version = "0.0.1"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 
 [tool.pyegi]
 describer-version = "0.1.0"

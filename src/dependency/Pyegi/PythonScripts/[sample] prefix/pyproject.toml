@@ -11,7 +11,7 @@ version = "0.0.1"
 pyonfx = "^0.9.13"
 python = ">=3.9,<3.10"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 
 [tool.pyegi]
 authors = [
