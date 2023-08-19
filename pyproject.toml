@@ -9,7 +9,8 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 Pillow = "9.*"
-PyQt6 = "6.5.*"
+PyQt6 = "6.4.*"
+PyQt6-Qt6 = "6.4.*"
 beautifulsoup4 = "4.*"
 numpy = "1.*"
 poetry-core = "1.6.*"
