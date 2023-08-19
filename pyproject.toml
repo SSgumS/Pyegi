@@ -5,21 +5,35 @@ authors = [
 ]
 description = "Python + Aegisub"
 name = "Pyegi"
-version = "0.0.1"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-Pillow = "^9.0.1"
-PyQt6 = "^6.2.3"
-pyonfx = "^0.9.13"
-python = ">=3.9,<3.10"
-pyqtdarktheme = "^1.1.0"
-toml = "^0.10.2"
+Pillow = "9.*"
+PyQt6 = "6.4.*"
+PyQt6-Qt6 = "6.4.*"
+beautifulsoup4 = "4.*"
+numpy = "1.*"
+poetry-core = "1.6.*"
+pyonfx = "0.9.*"
+pyqtdarktheme = "2.*"
+python = ">=3.9,<3.11"
+requests = "2.*"
 
-[tool.poetry.dev-dependencies]
-PyQt5Designer = "^5.14.1"
-appdirs = "^1.4.4"
-pypyr = "^5.1.0"
-black = {version = "^22.6.0", allow-prereleases = true}
+[tool.poetry.group.dev.dependencies]
+PyQt5Designer = "5.*" 
+appdirs = "1.*" # installed on embedded pythons
+black = "*" 
+pypyr = "5.*" 
+toml = "0.*" # installed on embedded pythons
+
+[tool.pyegi]
+describer-version = "0.1.0"
+known-feeds = [
+  "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20All%20the%20Lua%20GUI%20elements",
+  "https://github.com/SSgumS/Pyegi/tree/main/src/dependency/Pyegi/PythonScripts/%5Bsample%5D%20prefix",
+  "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/ColorMania",
+  "https://github.com/DrunkSimurgh/Pyegi_Scripts/tree/main/Disintegration",
+]
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

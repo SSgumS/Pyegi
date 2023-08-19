@@ -2,19 +2,21 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QCoreApplication
 import os
 import json
-from utils import set_style, Theme, get_settings
+import sys
+import typing
+from typing import Union
+from utils import set_style, Theme, get_settings, GLOBAL_PATHS, write_json
 
-utils_path = os.path.dirname(__file__)
-settings_file_path = utils_path + "/settings.json"
-themes_path = utils_path + "/Themes/"
+if typing.TYPE_CHECKING:
+    from main import Ui_MainWindow
 
 
-class Ui_SettingsWindow(object):
-    def setupUi(self, SettingsWindow, MainWindow=None):
+class Ui_SettingsWindow:
+    def setupUi(self, SettingsWindow, main_ui: Union["Ui_MainWindow", None] = None):
         SettingsWindow.setObjectName("SettingsWindow")
-        SettingsWindow.resize(308, 151)
+        SettingsWindow.resize(308, 171)
         self.overall_settings = get_settings()
-        set_style(SettingsWindow, self.overall_settings["Theme"])
+        set_style(SettingsWindow, Theme(self.overall_settings["Theme"]))
         self.centralwidget = QtWidgets.QWidget(SettingsWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.window_layout = QtWidgets.QGridLayout(self.centralwidget)
@@ -22,17 +24,12 @@ class Ui_SettingsWindow(object):
         self.widgets_layout = QtWidgets.QGridLayout()
         self.widgets_layout.setObjectName("widgets_layout")
         self.theme_label = QtWidgets.QLabel(self.centralwidget)
-        self.theme_label.setAlignment(
-            QtCore.Qt.AlignmentFlag.AlignRight
-            | QtCore.Qt.AlignmentFlag.AlignTrailing
-            | QtCore.Qt.AlignmentFlag.AlignVCenter
-        )
         self.theme_label.setObjectName("theme_label")
         self.widgets_layout.addWidget(self.theme_label, 0, 0, 1, 1)
         self.themes_combobox = QtWidgets.QComboBox(self.centralwidget)
         self.themes_combobox.setObjectName("themes_combobox")
         combobox_items = [Theme.SYSTEM.value, Theme.DARK.value, Theme.LIGHT.value]
-        for f in os.listdir(themes_path):
+        for f in os.listdir(GLOBAL_PATHS.themes_dir):
             whole_name = f.split(".")
             filename = whole_name[0].split("/")[-1]
             combobox_items.append(filename)
@@ -40,24 +37,32 @@ class Ui_SettingsWindow(object):
         self.widgets_layout.addWidget(self.themes_combobox, 0, 1, 1, 5)
         self.themes_combobox.setCurrentText(self.overall_settings["Theme"])
         self.themes_combobox.currentTextChanged.connect(
-            lambda: set_style(SettingsWindow, self.themes_combobox.currentText())
+            lambda: set_style(SettingsWindow, Theme(self.themes_combobox.currentText()))
         )
+
+        self.feeds_label = QtWidgets.QLabel(self.centralwidget)
+        self.feeds_label.setObjectName("feeds_label")
+        self.widgets_layout.addWidget(self.feeds_label, 1, 0, 1, 5)
+        self.feeds_spinbox = QtWidgets.QSpinBox(self.centralwidget)
+        self.feeds_spinbox.setObjectName("feeds_spinbox")
+        self.widgets_layout.addWidget(self.feeds_spinbox, 1, 5, 1, 1)
+        self.feeds_spinbox.setMinimum(1)
         spacerItem = QtWidgets.QSpacerItem(
             20,
             40,
             QtWidgets.QSizePolicy.Policy.Minimum,
             QtWidgets.QSizePolicy.Policy.Expanding,
         )
-        self.widgets_layout.addItem(spacerItem, 1, 0, 1, 1)
+        self.widgets_layout.addItem(spacerItem, 2, 0, 1, 1)
         self.cancel_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.cancel_pushButton.setObjectName("cancel_pushButton")
-        self.widgets_layout.addWidget(self.cancel_pushButton, 2, 0, 1, 1)
+        self.widgets_layout.addWidget(self.cancel_pushButton, 3, 0, 1, 1)
         self.cancel_pushButton.clicked.connect(lambda: SettingsWindow.close())
         self.ok_pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.ok_pushButton.setObjectName("ok_pushButton")
-        self.widgets_layout.addWidget(self.ok_pushButton, 2, 5, 1, 1)
+        self.widgets_layout.addWidget(self.ok_pushButton, 3, 5, 1, 1)
         self.ok_pushButton.clicked.connect(
-            lambda: self.writeSettings(SettingsWindow, MainWindow)
+            lambda: self.writeSettings(SettingsWindow, main_ui)
         )
         self.window_layout.addLayout(self.widgets_layout, 0, 0, 1, 1)
         SettingsWindow.setCentralWidget(self.centralwidget)
@@ -74,22 +79,28 @@ class Ui_SettingsWindow(object):
 
     def retranslateUi(self, SettingsWindow):
         _translate = QtCore.QCoreApplication.translate
-        SettingsWindow.setWindowTitle(_translate("SettingsWindow", "MainWindow"))
+        SettingsWindow.setWindowTitle(_translate("SettingsWindow", "Settings"))
         self.theme_label.setText(_translate("SettingsWindow", "Theme"))
+        self.feeds_label.setText(
+            _translate(
+                "SettingsWindow",
+                "Update feed interval (Days):",
+            )
+        )
+        self.feeds_spinbox.setValue(self.overall_settings["Automatic feeds update"])
         self.cancel_pushButton.setText(_translate("SettingsWindow", "Cancel"))
         self.ok_pushButton.setText(_translate("SettingsWindow", "OK"))
 
-    def writeSettings(self, SettingsWindow, MainWindow):
+    def writeSettings(self, SettingsWindow, main_ui: Union["Ui_MainWindow", None]):
         self.overall_settings["Theme"] = self.themes_combobox.currentText()
-        json.dump(self.overall_settings, open(settings_file_path, "w"))
-        if MainWindow:
-            set_style(MainWindow, self.overall_settings["Theme"])
+        self.overall_settings["Automatic feeds update"] = int(self.feeds_spinbox.text())
+        write_json(self.overall_settings, GLOBAL_PATHS.settings_file)
+        if main_ui:
+            main_ui.setTheme(Theme(self.overall_settings["Theme"]))
         SettingsWindow.close()
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
     SettingsWindow = QtWidgets.QMainWindow()
     ui = Ui_SettingsWindow()
