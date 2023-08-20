@@ -14,7 +14,6 @@ PyQt6-Qt6 = "6.4.*"
 beautifulsoup4 = "4.*"
 numpy = "1.*"
 poetry-core = "1.6.*"
-pyonfx = "0.9.*"
 pyqtdarktheme = "2.*"
 python = ">=3.9,<3.11"
 requests = "2.*"
@@ -23,6 +22,7 @@ requests = "2.*"
 PyQt5Designer = "5.*" 
 appdirs = "1.*" # installed on embedded pythons
 black = "*" 
+pyonfx = "0.9.*" 
 pypyr = "5.*" 
 toml = "0.*" # installed on embedded pythons
 

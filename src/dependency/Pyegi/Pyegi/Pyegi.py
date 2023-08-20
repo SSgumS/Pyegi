@@ -1,10 +1,15 @@
 import sys
 import json
-from pyonfx import Line
+import typing
 from minimals.minimal_pkg_installer import write_json
 
-output_data = [0]
-auxiliary_output = {
+if typing.TYPE_CHECKING:
+    from pyonfx import Line
+
+
+ـoutput_size = 0
+ـoutput_data = []
+ـauxiliary_output = {
     "Original Lines": "C",  # 'C' for Commented, 'U' for Unchanged, and 'D' for deleted
     "Placement": "O",  # 'O' for below Original, 'E' for End, and 'S' for Start
 }
@@ -33,15 +38,19 @@ def GetAuxiliaryFilePath() -> str:
 
 
 def AppendOutputFile(data: list[str]):
-    data = "".join(data[1:])
+    global ـoutput_size, ـoutput_data
+    dataString = "".join(data)
     file_name = GetOutputFilePath()
     with open(file_name, "a", encoding="utf-8") as file:
-        file.write(data)
+        file.write(dataString)
         file.close()
+    # reset output data
+    ـoutput_size = 0
+    ـoutput_data = []
 
 
 def SendLine(l: Line):  # l: line table, ln: line number
-    global output_data, auxiliary_output
+    global ـoutput_size, ـoutput_data, ـauxiliary_output
     ln = l.i + 1
     str_out = "%d\n%d\n%d\n%d\n%s\n%s\n%d\n%d\n%d\n%s\n%s\n" % (
         ln,
@@ -56,11 +65,10 @@ def SendLine(l: Line):  # l: line table, ln: line number
         l.effect,
         l.text,
     )
-    output_data.append(str_out)
-    output_data[0] += len(str_out)
-    if output_data[0] > 1000000:
-        AppendOutputFile(output_data)
-        output_data = [0]
+    ـoutput_data.append(str_out)
+    ـoutput_size += len(str_out)
+    if ـoutput_size > 1000000:
+        AppendOutputFile(ـoutput_data)
 
 
 def CreateOutputFile(original="C", placement="O"):
@@ -72,10 +80,9 @@ def CreateOutputFile(original="C", placement="O"):
     # 'O': produced line(s) will be placed below the corresponding Original line
     # 'E': produced line(s) will be placed at the end of subtitle file
     # 'S': produced line(s) will be placed at the start of subtitle file
-    global output_data, auxiliary_output
-    AppendOutputFile(output_data)
-    output_data = [0]
-    auxiliary_output["Original Lines"] = original
-    auxiliary_output["Placement"] = placement
+    global ـoutput_data, ـauxiliary_output
+    AppendOutputFile(ـoutput_data)
+    ـauxiliary_output["Original Lines"] = original
+    ـauxiliary_output["Placement"] = placement
     file_name = GetAuxiliaryFilePath()
-    write_json(auxiliary_output, file_name)
+    write_json(ـauxiliary_output, file_name)
