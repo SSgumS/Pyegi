@@ -49,7 +49,7 @@ def AppendOutputFile(data: list[str]):
     ـoutput_data = []
 
 
-def SendLine(l: Line):  # l: line table, ln: line number
+def SendLine(l: "Line"):  # l: line table, ln: line number
     global ـoutput_size, ـoutput_data, ـauxiliary_output
     ln = l.i + 1
     str_out = "%d\n%d\n%d\n%d\n%s\n%s\n%d\n%d\n%d\n%s\n%s\n" % (
