@@ -72,9 +72,7 @@ def _get_platform() -> Platform:
 
 def _get_aegisub_user_dir():
     path: str
-    if PLATFORM == Platform.LIN:
-        path = os.path.expanduser("~/.aegisub")
-    else:
+    if PLATFORM == Platform.WIN or PLATFORM == Platform.MAC:
         path = normalize_path(
             appdirs.user_data_dir(
                 "Aegisub",
@@ -82,6 +80,8 @@ def _get_aegisub_user_dir():
                 roaming=True,
             )
         )
+    else:
+        path = os.path.expanduser("~/.aegisub")
     return normalize_path(path, True)
 
 
