@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
 )
-from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtCore import QCoreApplication, QLocale
 import os
 from os.path import exists
 import json
@@ -31,6 +31,7 @@ def exec2(self, string):
     except:
         pass
 
+QLocale.setDefault(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
 
 class Ui_LuaConverter(object):
     def setupUi(self, LuaConverter, script_id, window_name="main_window"):
@@ -182,7 +183,7 @@ class Ui_LuaConverter(object):
                 )
             if class1 == "edit" or class1 == "Pyegi_button":
                 exec(
-                    f'self.{widget["name"]}.setText(_translate("LuaConverter", "{widget["text"]}"))'
+                    f'self.{widget["name"]}.setText("{widget["text"]}")'
                 )
             if class1 == "floatedit" or class1 == "intedit":
                 exec2(self, f'self.{widget["name"]}.setMinimum({widget["min"]})')
