@@ -37,6 +37,10 @@ def GetAuxiliaryFilePath() -> str:
     return sys.argv[5]
 
 
+def GetProjectPropertiesFilePath() -> str:
+    return sys.argv[6]
+
+
 def AppendOutputFile(data: list[str]):
     global ـoutput_size, ـoutput_data
     dataString = "".join(data)
