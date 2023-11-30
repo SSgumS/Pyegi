@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
     QSpacerItem,
     QSizePolicy,
 )
-from PyQt6.QtCore import QCoreApplication, QLocale
+from PyQt6.QtCore import QCoreApplication
 import os
 from os.path import exists
 import json
@@ -30,8 +30,6 @@ def exec2(self, string):
         return exec(string)
     except:
         pass
-
-QLocale.setDefault(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
 
 class Ui_LuaConverter(object):
     def setupUi(self, LuaConverter, script_id, window_name="main_window"):

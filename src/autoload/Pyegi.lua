@@ -51,6 +51,7 @@ local function read_all_file_as_string(file_path)
 	return str
 end
 
+-- serialize objects to be ready to be saved in a json file format
 local function serialize(val, name, skipnewlines, depth)
 	skipnewlines = skipnewlines or false
 	depth = depth or 0

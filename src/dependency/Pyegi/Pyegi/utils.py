@@ -3,6 +3,7 @@ import json
 import qdarktheme
 from PyQt6.QtWidgets import QWidget, QLineEdit, QComboBox, QCompleter
 from PyQt6.QtGui import QMouseEvent, QKeyEvent
+from PyQt6.QtCore import QLocale
 from enum import Enum
 import toml
 from os.path import exists
@@ -17,6 +18,7 @@ import copy
 import warnings
 from minimals.minimal_utils import *
 
+QLocale.setDefault(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
 
 if exists(GLOBAL_PATHS.development_indicator_file):
     DEVELOPMENT_MODE = True
