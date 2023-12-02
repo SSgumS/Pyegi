@@ -9,14 +9,14 @@ from pyonfx import *
 import Pyegi
 
 
-io = Ass(Pyegi.GetInputFilePath(), extended=False)
+io = Ass(Pyegi.get_input_file_path(), extended=False)
 meta, styles, lines = io.get_data()
 
 
 def sub(line: Line, l: Line):  # ln: line number
     l.text = "{Pyegi}%s" % (line.raw_text)
 
-    Pyegi.SendLine(l)
+    Pyegi.send_line(l)
 
 
 for line in lines[1:-1]:
@@ -28,4 +28,4 @@ for line in reversed(lines):
     sub(line, line.copy())
 
 
-Pyegi.CreateOutputFile(original="C", placement="O")
+Pyegi.create_output_file(transform_original=Pyegi.Transform.COMMENTED, insert_new=Pyegi.Location.ORIGINAL)

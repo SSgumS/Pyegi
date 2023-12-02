@@ -5,7 +5,7 @@ authors = [
 ]
 description = "Adds {Pyegi} to the beginning of desired lines."
 name = "[sample] prefix"
-version = "0.0.1"
+version = "0.0.2"
 
 [tool.poetry.dependencies]
 pyonfx = "^0.9.13"
@@ -23,8 +23,8 @@ description = "Adds {Pyegi} to the beginning of desired lines."
 discoverable = true
 known-feeds = []
 name = "[sample] prefix"
-version = "0.0.1"
-version-description = "New Horizon"
+version = "0.0.2"
+version-description = "Fill Space"
 
 [tool.pyegi.files]
 keep = []

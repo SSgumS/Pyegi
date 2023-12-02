@@ -243,14 +243,14 @@ local function post_init(sub, sel)
 			APT("Producing new lines...")
 			local auxiliary_output = json.decode(read_all_file_as_string(lines_parameters_file_path))
 			-- aegisub.log(5, serialize(auxiliary_output) .. "\n")
-			if auxiliary_output["Original Lines"] == "C" then
+			if auxiliary_output["Original Lines"] == "Commented" then
 				for _, i in ipairs(desired_lines_index) do
 					local l = sub[i]
 					-- Comment lines
 					l.comment = true
 					sub[i] = l
 				end
-			elseif auxiliary_output["Original Lines"] == "D" then
+			elseif auxiliary_output["Original Lines"] == "Deleted" then
 				for i = #desired_lines_index, 1, -1 do
 					local index = desired_lines_index[i]
 					sub.delete(index)
@@ -294,10 +294,10 @@ local function post_init(sub, sel)
 				new_line.margin_t = tonumber(all_lines[line_params_number * (counter1 - 1) + 9])
 				new_line.effect = all_lines[line_params_number * (counter1 - 1) + 10]
 				new_line.text = all_lines[line_params_number * (counter1 - 1) + 11]
-				if (line_number < 0) or (auxiliary_output["Placement"] == "S") then
+				if (line_number < 0) or (auxiliary_output["Placement"] == "Start") then
 					sub.insert(1, new_line)
 					produced_lines[1] = produced_lines[1] + 1
-				elseif (line_number > desired_lines_max) or (auxiliary_output["Placement"] == "E") then
+				elseif (line_number > desired_lines_max) or (auxiliary_output["Placement"] == "End") then
 					sub[0] = new_line
 				else
 					sub.insert(desired_lines_index[line_number] + cumsum_i(produced_lines, line_number) + 1, new_line)
