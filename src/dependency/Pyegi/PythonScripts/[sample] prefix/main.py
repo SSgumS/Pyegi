@@ -28,4 +28,4 @@ for line in reversed(lines):
     sub(line, line.copy())
 
 
-Pyegi.create_output_file(transform_original=Pyegi.Transform.COMMENTED, insert_new=Pyegi.Location.ORIGINAL)
+Pyegi.create_output_file(transform_original=Pyegi.Transform.COMMENTED, insert_new=Pyegi.Location.BELOW)

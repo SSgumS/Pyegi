@@ -38,7 +38,7 @@ def get_output_file_path() -> str:
 
 
 def get_parameters():
-    """Loads the contents of the file containing the current states of the script GUI variables to a table.
+    """Loads the contents of the file containing the current states of the script GUI variables to an object.
     """
     with open(sys.argv[3]) as file:
         parameters_table = json.load(file)
@@ -58,7 +58,7 @@ def get_auxiliary_file_path() -> str:
 
 
 def get_project_properties():
-    """Loads the contents of the file containing the properties of the working subtitle (like video_position, active_row, etc) to a table.
+    """Loads the contents of the file containing the properties of the working subtitle (like video_position, active_row, etc) to an object.
     """
     with open(sys.argv[6]) as file:
         project_properties = json.load(file)
