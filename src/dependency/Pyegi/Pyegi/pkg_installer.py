@@ -187,30 +187,35 @@ def download_script(g: FeedParser):
     feed_file.update_script(script)
 
 
-def ensure_init_file(script_id):
+def ensure_script_init(script_id):
     feed_file = FeedFile()
     script = feed_file.get_script(script_id)
     script_path = script.folder
+    pyegi_init_folder_name = "PyegiInitializer"
 
-    init_path = script_path + "__init__.py"
-    code_section = (
+    # edit main file
+    main_path = script_path + "main.py"
+    main_code = f"from {pyegi_init_folder_name} import *\n"
+    # insert the code section at the beginning
+    with open(main_path, "r") as f:
+        lines = f.readlines()
+    with open(main_path, "w") as f:
+        f.write(main_code)
+        for line in lines:
+            f.write(line)
+
+    # create initializer file
+    init_path = normal_path_join(script_path, pyegi_init_folder_name, "__init__.py")
+    init_code = (
         "import os\n"
         "import sys\n"
         "import pathlib\n"
         "file = pathlib.Path(__file__).resolve()\n"
-        'sys.path.append(os.path.join(str(file.parents[2]), "Pyegi"))\n'
+        'sys.path.append(os.path.join(str(file.parents[3]), "Pyegi"))\n'
     )
-    if os.path.exists(init_path):
-        # insert the code section at the beginning
-        with open(init_path, "r") as f:
-            lines = f.readlines()
-        with open(init_path, "w") as f:
-            f.write(code_section)
-            for line in lines:
-                f.write(line)
-    else:
-        with open(init_path, "w") as f:
-            f.write(code_section)
+    ensure_dir_tree(init_path)
+    with open(init_path, "w") as f:
+        f.write(init_code)
 
     # update feed_file
     script.installation_status = InstallationStatus.W_PYEGI
@@ -222,7 +227,7 @@ def install_script(g: FeedParser):
 
     old_py_version = clean_script_folder(script_id, g.script_info.keeps)
     download_script(g)
-    ensure_init_file(script_id)
+    ensure_script_init(script_id)
     new_py_version = install_pkgs(script_id)
 
     # cleanup old python's commons
