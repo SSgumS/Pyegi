@@ -7,16 +7,32 @@ from PyQt6.QtCore import QLocale
 from enum import Enum
 import toml
 from os.path import exists
+import urllib.request
 from urllib.parse import unquote
 import requests
 from bs4 import BeautifulSoup
 import numpy as np
 import re
 from typing import List, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
+import time
 import copy
 import warnings
 from minimals.minimal_utils import *
+
+GITHUB_UA = "Pyegi/1.0 (+https://github.com/SSgumS/Pyegi)"
+
+def _gh_headers(json=True):
+    import os
+    h = {"User-Agent": GITHUB_UA}
+    if json:
+        h["Accept"] = "application/vnd.github+json"
+    tok = os.environ.get("GITHUB_TOKEN")
+    if tok:
+        h["Authorization"] = f"Bearer {tok}"
+    return h
+
+request_headers = {'User-Agent': 'Pyegi/1.0'}
 
 QLocale.setDefault(QLocale(QLocale.Language.English, QLocale.Country.UnitedStates))
 
@@ -329,6 +345,8 @@ class FeedParser:
         else:
             self.ID = self.repo_name + "/"
 
+        print(self.url)
+
         self.is_parsed = False
         if parse:
             self._parse()
@@ -361,6 +379,22 @@ class FeedParser:
     def ensure_parsed(self):
         if not self.is_parsed:
             self._parse()
+    
+    def fetch_with_backoff(self, url, max_retries=5):
+        delay = 1  # Start with 1 second delay
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, headers=request_headers)
+                if response.status_code == 200:
+                    return response
+                elif response.status_code == 429:  # Too many requests
+                    time.sleep(delay)
+                    delay *= 2  # Exponential backoff
+            except requests.exceptions.RequestException as e:
+                print(f"Attempt {attempt + 1} failed: {e}")
+                time.sleep(delay)
+                delay *= 2
+        return None
 
     def _get_main_branch_name(self):
         url = self.url
@@ -370,7 +404,8 @@ class FeedParser:
             f"/{self.repo_name}/hovercards/citation/sidebar_partial?tree_name="
         )
         tree_indicator_len = len(tree_indicator)
-        reqs = requests.get(url)
+        # reqs = requests.get(url)
+        reqs = self.fetch_with_backoff(url)
         soup = BeautifulSoup(reqs.text, "html.parser")
         branch_name = "main"
         for link in soup.find_all("include-fragment"):
@@ -387,39 +422,78 @@ class FeedParser:
         pyproject_toml_url = self.get_download_url(
             GLOBAL_PATHS.pyproject_filename, self.folder_path
         )
-        response = requests.get(pyproject_toml_url)
-        self.raw_datetime = self._get_pyproject_datetime_text()
+        print(pyproject_toml_url)
+        # response = requests.get(pyproject_toml_url)
+        response = self.fetch_with_backoff(pyproject_toml_url)
+        # self.raw_datetime = self._get_pyproject_datetime_text()
+        try:
+            self.raw_datetime = self._get_pyproject_datetime_text()
+        except Exception:
+            from datetime import datetime, timezone
+            self.raw_datetime = datetime.now(timezone.utc).isoformat()
         self.datetime = FeedParser.parse_datetime(self.raw_datetime)
         script_info = ScriptPyProject(pyproject_text=response.text)
         return script_info
 
     def _get_links(self, main_url):
-        url_split = main_url.split("/")
+        # Parse owner/repo/ref/path from the incoming GitHub /tree/ URL
+        m = re.match(r"https?://github\.com/([^/]+)/([^/]+)/tree/([^/]+)(?:/(.*))?$", main_url)
+        if m:
+            owner, repo, ref, path = m.group(1), m.group(2), m.group(3), m.group(4) or ""
+        else:
+            owner, repo = self.repo_name.split("/", 1)
+            ref, path = self.branch_name, self.folder_path or ""
 
-        prefix = "/" + "/".join(url_split[3:])
-        prefix_len = len(prefix)
-        url_blob = url_split
-        url_blob[5] = "blob"
-        prefix_blob = "/" + "/".join(url_blob[3:])
-        prefix_blob_len = len(prefix_blob)
+        # 1) API path listing
+        api = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={ref}"
+        try:
+            r = requests.get(api, headers=_gh_headers(json=True), timeout=10)
+            if r.status_code == 200:
+                items = r.json()
+                dirs, files, dir_links = [], [], []
+                root_prefix = f"{self.folder_path}/" if self.folder_path else ""
+                for it in items:
+                    if it.get("type") == "dir":
+                        # relative directory path
+                        rel = it["path"][len(root_prefix):]
+                        dirs.append(rel)
+                        dir_links.append(f"https://github.com/{owner}/{repo}/tree/{ref}/{it['path']}")
+                    elif it.get("type") == "file":
+                        # relative file path
+                        rel = it["path"][len(root_prefix):]
+                        files.append(rel)
+                return dirs, files, dir_links
+        except Exception:
+            pass
 
-        url_split[5] = "file-list"
-        main_url = "/".join(url_split)
+        # 2) Fallback to HTML (old behavior), but with headers/guards
+        try:
+            url_split = main_url.split("/")
+            prefix = "/" + "/".join(url_split[3:])
+            prefix_len = len(prefix)
+            url_blob = url_split[:]
+            url_blob[5] = "blob"
+            prefix_blob = "/" + "/".join(url_blob[3:])
+            prefix_blob_len = len(prefix_blob)
+            url_split[5] = "file-list"
+            main_url = "/".join(url_split)
 
-        reqs = requests.get(main_url)
-        soup = BeautifulSoup(reqs.text, "html.parser")
+            r = requests.get(main_url, headers={"User-Agent": GITHUB_UA, "Accept": "text/html"}, timeout=10)
+            if r.status_code != 200:
+                return [], [], []
+            soup = BeautifulSoup(r.text, "html.parser")
 
-        dirs = []
-        files = []
-        dir_links = []
-        for link in soup.find_all("a", class_="js-navigation-open Link--primary"):
-            url = unquote(link.get("href"))
-            if url[:prefix_blob_len] == prefix_blob:
-                files.append(url[self._file_root_prefix_len :])
-            if (url[:prefix_len] == prefix) and (url != prefix):
-                dirs.append(url[self._dir_root_prefix_len :])
-                dir_links.append("https://github.com" + url)
-        return dirs, files, dir_links
+            dirs, files, dir_links = [], [], []
+            for link in soup.find_all("a", class_="js-navigation-open Link--primary"):
+                url = unquote(link.get("href"))
+                if url[:prefix_blob_len] == prefix_blob:
+                    files.append(url[self._file_root_prefix_len:])
+                if (url[:prefix_len] == prefix) and (url != prefix):
+                    dirs.append(url[self._dir_root_prefix_len:])
+                    dir_links.append("https://github.com" + url)
+            return dirs, files, dir_links
+        except Exception:
+            return [], [], []
 
     def get_files_and_folders(self):
         self.ensure_parsed()
@@ -463,7 +537,8 @@ class FeedParser:
         return f"https://raw.githubusercontent.com/{self.repo_name}/{self.branch_name}/{folder_path}/{file}"
 
     def _get_tags(self, url):
-        reqs = requests.get(url)
+        # reqs = requests.get(url)
+        reqs = self.fetch_with_backoff(url)
         soup = BeautifulSoup(reqs.text, "html.parser")
         tags = []
         for div in soup.find_all("div", class_="commit js-details-container Details"):
@@ -515,7 +590,8 @@ class FeedParser:
             g = FeedParser(url, False)
             pyproject_toml_url = f"https://raw.githubusercontent.com/{g.repo_name}/{tag}/{g.folder_path}/{GLOBAL_PATHS.pyproject_filename}"
             try:
-                response = requests.get(pyproject_toml_url)
+                # response = requests.get(pyproject_toml_url)
+                response = self.fetch_with_backoff(pyproject_toml_url)
                 script_info = ScriptPyProject(pyproject_text=response.text)
                 version = script_info.version
                 if version not in version_list:
@@ -528,27 +604,81 @@ class FeedParser:
         self.version_list = version_list
         self.version_description_list = version_description_list
 
-    @classmethod
-    def parse_datetime(cls, raw_datetime):
-        return datetime.strptime(raw_datetime, "%Y-%m-%dT%H:%M:%S%z")
+    @staticmethod
+    def parse_datetime(raw_datetime):
+        from datetime import datetime, timezone
+        if not raw_datetime:
+            return datetime.now(timezone.utc)
+
+        s = raw_datetime.strip()
+
+        # Normalize common ISO forms:
+        # - RFC3339 "Z" → "+00:00"
+        if s.endswith("Z"):
+            s = s[:-1] + "+00:00"
+
+        # Try a few formats (with/without microseconds, with offset, naive)
+        formats = [
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M:%S",
+        ]
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(s, fmt)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+            except ValueError:
+                continue
+
+        # Fallback: Python's ISO parser (handles "+00:00")
+        try:
+            dt = datetime.fromisoformat(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            # Final fallback: now, so we don't crash
+            return datetime.now(timezone.utc)
 
     def _get_pyproject_datetime_text(self) -> datetime:
+        """
+        Get last-commit datetime for pyproject.toml via API, then fallback to raw Last-Modified,
+        finally to now() to avoid crashes when GitHub changes HTML.
+        """
+        # Ensure parsed (sets repo_name, branch_name, folder_path)
         self.ensure_parsed()
-        url_split = self.url.split("/")
-        url_split[5] = "file-list"
-        url = "/".join(url_split)
-        reqs = requests.get(url)
-        soup = BeautifulSoup(reqs.text, "html.parser")
-        for div in soup.find_all(
-            "div",
-            class_="Box-row Box-row--focus-gray py-2 d-flex position-relative js-navigation-item",
-        ):
-            subdiv = div.find("a", title="pyproject.toml")
-            if subdiv:
-                time_div: Union[Any, None] = div.find("relative-time")
-                if time_div:
-                    return time_div.get("datetime")
-        raise LookupError("No datetime found!")
+        owner, repo = self.repo_name.split("/", 1)
+        ref = self.branch_name
+        path = f"{self.folder_path}/{GLOBAL_PATHS.pyproject_filename}" if self.folder_path else GLOBAL_PATHS.pyproject_filename
+
+        # 1) API: commits for that file
+        try:
+            api = f"https://api.github.com/repos/{owner}/{repo}/commits?path={path}&sha={ref}&per_page=1"
+            r = requests.get(api, headers=_gh_headers(json=True), timeout=10)
+            if r.status_code == 200:
+                commits = r.json()
+                if commits:
+                    return commits[0]["commit"]["committer"]["date"]
+        except Exception:
+            pass
+
+        # 2) HEAD raw: use Last-Modified
+        try:
+            raw = f"https://raw.githubusercontent.com/{self.repo_name}/{ref}/{path}"
+            r = requests.head(raw, headers={"User-Agent": GITHUB_UA}, timeout=10)
+            lm = r.headers.get("Last-Modified")
+            if lm:
+                dt = datetime.strptime(lm, "%a, %d %b %Y %H:%M:%S %Z").replace(tzinfo=timezone.utc)
+                return dt.isoformat()
+        except Exception:
+            pass
+
+        # 3) Fallback: now
+        return datetime.now(timezone.utc).isoformat()
+        
 
     def is_main_branch(self):
         return self.branch_name == self.default_branch

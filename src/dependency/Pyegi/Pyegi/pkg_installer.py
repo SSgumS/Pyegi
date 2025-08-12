@@ -169,8 +169,10 @@ def download_script(g: FeedParser):
     feed_file.update_script(script)
 
     print(f"Downloading {script_id} files...")
+    print(files)
     for file in files:
         file_download_url = g.get_download_url(file, g.folder_path)
+        print(file_download_url)
         path = normal_path_join(script_path, file)
         was_in_keeps = False
         for entry in g.script_info.keeps:

@@ -30,6 +30,9 @@ from utils import (
 )
 from datetime import datetime
 from typing import List, Union
+import warnings
+
+warnings.simplefilter("ignore", DeprecationWarning)
 
 
 system_inputs = sys.argv
