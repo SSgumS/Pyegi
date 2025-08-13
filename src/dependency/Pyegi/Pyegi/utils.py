@@ -7,7 +7,6 @@ from PyQt6.QtCore import QLocale
 from enum import Enum
 import toml
 from os.path import exists
-import urllib.request
 from urllib.parse import unquote
 import requests
 from bs4 import BeautifulSoup
@@ -19,6 +18,7 @@ import time
 import copy
 import warnings
 from minimals.minimal_utils import *
+import sys
 
 GITHUB_UA = "Pyegi/1.0 (+https://github.com/SSgumS/Pyegi)"
 
@@ -28,7 +28,7 @@ def _gh_headers(json=True):
     if json:
         h["Accept"] = "application/vnd.github+json"
     tok = os.environ.get("GITHUB_TOKEN")
-    if tok:
+    if tok and (tok.startswith("ghp_") or tok.startswith("github_pat_")):
         h["Authorization"] = f"Bearer {tok}"
     return h
 
@@ -345,8 +345,6 @@ class FeedParser:
         else:
             self.ID = self.repo_name + "/"
 
-        print(self.url)
-
         self.is_parsed = False
         if parse:
             self._parse()
@@ -422,7 +420,6 @@ class FeedParser:
         pyproject_toml_url = self.get_download_url(
             GLOBAL_PATHS.pyproject_filename, self.folder_path
         )
-        print(pyproject_toml_url)
         # response = requests.get(pyproject_toml_url)
         response = self.fetch_with_backoff(pyproject_toml_url)
         # self.raw_datetime = self._get_pyproject_datetime_text()
@@ -662,7 +659,8 @@ class FeedParser:
                 commits = r.json()
                 if commits:
                     return commits[0]["commit"]["committer"]["date"]
-        except Exception:
+        except Exception as e:
+            print(f"API commit fetch failed: {e}", file=sys.stderr)
             pass
 
         # 2) HEAD raw: use Last-Modified
@@ -673,7 +671,8 @@ class FeedParser:
             if lm:
                 dt = datetime.strptime(lm, "%a, %d %b %Y %H:%M:%S %Z").replace(tzinfo=timezone.utc)
                 return dt.isoformat()
-        except Exception:
+        except Exception as e:
+            print(f"HEAD request for Last-Modified failed: {e}", file=sys.stderr)
             pass
 
         # 3) Fallback: now
